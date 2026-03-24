@@ -217,7 +217,7 @@ const Colaboradores: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Salário Base (Kz)</label>
-                  <input required type="number" value={formData.salarioBase} onChange={e => setFormData({...formData, salarioBase: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-black text-primary" />
+                  <input required type="text" value={formData.salarioBase === 0 || !formData.salarioBase ? '' : formData.salarioBase.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, salarioBase: Number(e.target.value.replace(/\D/g, '')) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-black text-primary" placeholder="0" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Data de Admissão</label>

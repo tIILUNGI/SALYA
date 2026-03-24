@@ -158,7 +158,7 @@ const Processamento: React.FC = () => {
                 <option key={y} value={y}>{y}</option>
               ))}
             </select>
-            <input type="number" min="1" max="31" value={selectedDay} onChange={e => setSelectedDay(e.target.value)} className="w-20 bg-slate-50 dark:bg-slate-800 border-none rounded-lg py-2 px-4 font-black text-sm outline-none" />
+            <input type="text" min="1" max="31" value={selectedDay} onChange={e => setSelectedDay(e.target.value.replace(/\D/g, ''))} className="w-20 bg-slate-50 dark:bg-slate-800 border-none rounded-lg py-2 px-4 font-black text-sm outline-none" placeholder="1" />
           </div>
         </div>
       </div>
@@ -211,8 +211,8 @@ const Processamento: React.FC = () => {
               </div>
               
               <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Alimentação</label><input type="number" value={formAlimentacao === 0 ? '' : formAlimentacao} onChange={e => setFormAlimentacao(Number(e.target.value))} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transporte</label><input type="number" value={formTransporte === 0 ? '' : formTransporte} onChange={e => setFormTransporte(Number(e.target.value))} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Alimentação</label><input type="text" value={formAlimentacao === 0 ? '' : formAlimentacao.toLocaleString('pt-AO')} onChange={e => setFormAlimentacao(Number(e.target.value.replace(/\D/g, '')))} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold" placeholder="0" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transporte</label><input type="text" value={formTransporte === 0 ? '' : formTransporte.toLocaleString('pt-AO')} onChange={e => setFormTransporte(Number(e.target.value.replace(/\D/g, '')))} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold" placeholder="0" /></div>
               </div>
 
               <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -234,20 +234,20 @@ const Processamento: React.FC = () => {
                           <label className="text-[10px] font-black text-primary uppercase tracking-widest truncate">{s.nome}</label>
                           <button type="button" onClick={() => removeOutroSubsidio(idx)} className="text-red-400"><span className="material-symbols-outlined text-sm">close</span></button>
                        </div>
-                       <input type="number" value={s.valor === 0 ? '' : s.valor} onChange={e => handleUpdateSubsidioValor(idx, Number(e.target.value))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 rounded-xl py-2 px-3 font-bold text-sm" />
+                       <input type="text" value={s.valor === 0 ? '' : s.valor.toLocaleString('pt-AO')} onChange={e => handleUpdateSubsidioValor(idx, Number(e.target.value.replace(/\D/g, '')))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 rounded-xl py-2 px-3 font-bold text-sm" placeholder="0" />
                     </div>
                   ))}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Horas Extra</label><input type="number" value={formHorasExtra === 0 ? '' : formHorasExtra} onChange={e => setFormHorasExtra(Number(e.target.value))} className="w-full px-5 py-4 bg-emerald-50/20 border border-emerald-100 rounded-2xl font-bold" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Bónus</label><input type="number" value={formBonus === 0 ? '' : formBonus} onChange={e => setFormBonus(Number(e.target.value))} className="w-full px-5 py-4 bg-emerald-50/20 border border-emerald-100 rounded-2xl font-bold" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Horas Extra</label><input type="text" value={formHorasExtra === 0 ? '' : formHorasExtra.toLocaleString('pt-AO')} onChange={e => setFormHorasExtra(Number(e.target.value.replace(/\D/g, '')))} className="w-full px-5 py-4 bg-emerald-50/20 border border-emerald-100 rounded-2xl font-bold" placeholder="0" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Bónus</label><input type="text" value={formBonus === 0 ? '' : formBonus.toLocaleString('pt-AO')} onChange={e => setFormBonus(Number(e.target.value.replace(/\D/g, '')))} className="w-full px-5 py-4 bg-emerald-50/20 border border-emerald-100 rounded-2xl font-bold" placeholder="0" /></div>
               </div>
 
               <div className="space-y-1.5 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <label className="text-[10px] font-black text-red-500 uppercase tracking-widest">Descontos / Faltas</label>
-                <input type="number" value={formFaltas === 0 ? '' : formFaltas} onChange={e => setFormFaltas(Number(e.target.value))} className="w-full px-6 py-4 bg-red-50/30 border-2 border-red-50 rounded-3xl font-black text-red-600 text-xl" />
+                <input type="text" value={formFaltas === 0 ? '' : formFaltas.toLocaleString('pt-AO')} onChange={e => setFormFaltas(Number(e.target.value.replace(/\D/g, '')))} className="w-full px-6 py-4 bg-red-50/30 border-2 border-red-50 rounded-3xl font-black text-red-600 text-xl" placeholder="0" />
               </div>
               
               <button type="submit" className="w-full py-5 bg-primary text-white rounded-[24px] font-black flex items-center justify-center gap-3 shadow-2xl shadow-primary/20 transition-all uppercase tracking-[4px] text-xs">

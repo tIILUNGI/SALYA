@@ -246,11 +246,11 @@ const Configuracoes: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Taxa Trabalhador (%)</label>
-                      <input type="number" value={config.taxaINSS} onChange={(e) => setConfig({...config, taxaINSS: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" />
+                      <input type="text" value={config.taxaINSS || ''} onChange={(e) => setConfig({...config, taxaINSS: Number(e.target.value.replace(/\D/g, '')) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" placeholder="0" />
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Taxa Patronal (%)</label>
-                      <input type="number" value={config.taxaINSSPatronal} onChange={(e) => setConfig({...config, taxaINSSPatronal: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" />
+                      <input type="text" value={config.taxaINSSPatronal || ''} onChange={(e) => setConfig({...config, taxaINSSPatronal: Number(e.target.value.replace(/\D/g, '')) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" placeholder="0" />
                     </div>
                   </div>
                 </div>
@@ -282,7 +282,7 @@ const Configuracoes: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
                       <div><p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Dia de Processamento</p><p className="text-xs text-slate-400 mt-1">Dia do mês para fecho salarial</p></div>
-                      <input type="number" min={1} max={28} value={config.diaProcessamento} onChange={(e) => setConfig({...config, diaProcessamento: Number(e.target.value)})} className="w-20 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg text-center font-black" />
+                      <input type="text" value={config.diaProcessamento || ''} onChange={(e) => setConfig({...config, diaProcessamento: Number(e.target.value.replace(/\D/g, '')) || 1})} className="w-20 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg text-center font-black" placeholder="1" />
                     </div>
                   </div>
                 </div>
