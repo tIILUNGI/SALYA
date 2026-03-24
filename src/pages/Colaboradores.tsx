@@ -1,9 +1,10 @@
 import React, { useState, useContext } from 'react';
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
+import { api } from '../services/api';
 
 const Colaboradores: React.FC = () => {
-  const { colaboradores, setColaboradores, empresaId, showConfirm } = useContext(AppContext);
+  const { colaboradores, setColaboradores, empresaId, showConfirm, setMessage } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'All' | 'Ativo' | 'Afastado'>('All');
   
@@ -24,8 +25,17 @@ const Colaboradores: React.FC = () => {
     dataAdmissao: new Date().toISOString().split('T')[0]
   });
 
+  const refreshColaboradores = async () => {
+    try {
+      const data = await api.get('/trabalhadores');
+      setColaboradores(data._embedded?.colaboradores || []);
+    } catch (error) {
+      console.error('Error refreshing colaboradores:', error);
+    }
+  };
+
   const filteredColaboradores = colaboradores.filter(c => {
-    const isFromCompany = c.empresaId === empresaId;
+    const isFromCompany = !empresaId || c.empresaId === empresaId || (c as any).empresa?.id === empresaId;
     const matchesSearch = c.nome.toLowerCase().includes(searchTerm.toLowerCase()) || (c.nif && c.nif.includes(searchTerm)) || (c.cargo && c.cargo.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesFilter = filter === 'All' ? true : c.status === filter;
     return isFromCompany && matchesSearch && matchesFilter;
@@ -54,24 +64,25 @@ const Colaboradores: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const dataToSave = { ...formData, empresaId: empresaId || undefined };
-    
-    if (!editingId) {
-      const year = dataToSave.dataAdmissao ? new Date(dataToSave.dataAdmissao).getFullYear() : new Date().getFullYear();
-      const cargoAbrev = (dataToSave.cargo || 'FUNC').substring(0, 3).toUpperCase();
-      const companyColabs = colaboradores.filter(c => c.empresaId === empresaId);
-      const sequence = companyColabs.length + 1;
-      dataToSave.numeroColaborador = `${year}${cargoAbrev}${sequence}`;
+    try {
+      const dataToSave = { ...formData, empresaId: empresaId || undefined };
       
-      const newColab = { ...dataToSave, id: Date.now() } as Colaborador;
-      setColaboradores([...colaboradores, newColab]);
-    } else {
-      setColaboradores(colaboradores.map(c => c.id === editingId ? { ...c, ...dataToSave } as Colaborador : c));
+      if (!editingId) {
+        await api.post('/trabalhadores', dataToSave);
+        setMessage({ title: 'Sucesso', text: 'Colaborador cadastrado com sucesso!', type: 'success' });
+      } else {
+        await api.put(`/trabalhadores/${editingId}`, dataToSave);
+        setMessage({ title: 'Sucesso', text: 'Dados atualizados com sucesso!', type: 'success' });
+      }
+      
+      refreshColaboradores();
+      setIsModalOpen(false);
+    } catch (error) {
+      setMessage({ title: 'Erro', text: 'Não foi possível salvar os dados.', type: 'error' });
     }
-    setIsModalOpen(false);
   };
 
   const handleDelete = (id: number) => {
@@ -81,8 +92,14 @@ const Colaboradores: React.FC = () => {
     showConfirm({
       title: 'Remover Colaborador',
       text: `Tem a certeza que deseja eliminar o colaborador "${colab.nome}"? Esta acção removerá todos os registros associados.`,
-      onConfirm: () => {
-        setColaboradores(colaboradores.filter(c => c.id !== id));
+      onConfirm: async () => {
+        try {
+          await api.delete(`/trabalhadores/${id}`);
+          setMessage({ title: 'Remover', text: 'Colaborador removido com sucesso!', type: 'success' });
+          refreshColaboradores();
+        } catch (error) {
+          setMessage({ title: 'Erro', text: 'Não foi possível remover o colaborador.', type: 'error' });
+        }
       }
     });
   };
@@ -205,31 +222,31 @@ const Colaboradores: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Nome Completo</label>
-                  <input required type="text" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
+                  <input required type="text" value={formData.nome || ''} onChange={e => setFormData({...formData, nome: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Cargo / Função</label>
-                  <input required type="text" value={formData.cargo} onChange={e => setFormData({...formData, cargo: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
+                  <input required type="text" value={formData.cargo || ''} onChange={e => setFormData({...formData, cargo: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">NIF</label>
-                  <input required type="text" value={formData.nif} onChange={e => setFormData({...formData, nif: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
+                  <input required type="text" value={formData.nif || ''} onChange={e => setFormData({...formData, nif: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Salário Base (Kz)</label>
-                  <input required type="number" value={formData.salarioBase} onChange={e => setFormData({...formData, salarioBase: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-black text-primary" />
+                  <input required type="number" value={formData.salarioBase || 0} onChange={e => setFormData({...formData, salarioBase: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-black text-primary" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Data de Admissão</label>
-                  <input required type="date" value={formData.dataAdmissao} onChange={e => setFormData({...formData, dataAdmissao: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
+                  <input required type="date" value={formData.dataAdmissao || ''} onChange={e => setFormData({...formData, dataAdmissao: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">IBAN</label>
-                  <input required type="text" value={formData.iban} onChange={e => setFormData({...formData, iban: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-mono text-xs font-bold" />
+                  <input required type="text" value={formData.iban || ''} onChange={e => setFormData({...formData, iban: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-mono text-xs font-bold" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
-                  <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value as any})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold">
+                  <select value={formData.status || 'Ativo'} onChange={e => setFormData({...formData, status: e.target.value as any})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold">
                     <option value="Ativo">Ativo</option>
                     <option value="Afastado">Afastado</option>
                   </select>

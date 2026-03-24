@@ -7,6 +7,7 @@ import Configuracoes from './pages/Configuracoes';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import { Colaborador } from './types';
+import { api } from './services/api';
 
 interface User {
   email: string;
@@ -63,6 +64,33 @@ function App() {
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [message, setMessage] = useState<{ title: string; text: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
   const [confirmData, setConfirmData] = useState<{ title: string; text: string; onConfirm: () => void } | null>(null);
+
+  const fetchGlobalData = async () => {
+    try {
+      // Fetch Empresas
+      const empresasData = await api.get('/empresas');
+      const empresasList = empresasData._embedded?.empresas || [];
+      setEmpresas(empresasList);
+      
+      if (empresasList.length > 0) {
+        setEmpresa(empresasList[0]);
+        setEmpresaId(empresasList[0].id);
+        setIsConfigured(true);
+      }
+
+      // Fetch Colaboradores
+      const colaboradoresData = await api.get('/trabalhadores');
+      setColaboradores(colaboradoresData._embedded?.colaboradores || []);
+    } catch (error) {
+      console.error('Error fetching global data:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchGlobalData();
+    }
+  }, [isAuthenticated]);
 
   const showConfirm = (config: { title: string; text: string; onConfirm: () => void }) => {
     setConfirmData(config);

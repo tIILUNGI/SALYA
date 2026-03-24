@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
+import { api } from '../services/api';
 import { taxasIRT } from '../data/mockData';
 import { ConfiguracaoEmpresa } from '../types';
 
@@ -48,35 +49,39 @@ const Configuracoes: React.FC = () => {
     setActiveTab('empresa');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!config.nome || !config.nif) {
       alert('Por favor, preencha o Nome e o NIF antes de salvar.');
       return;
     }
 
-    const empresaComId = { ...config, id: config.id || Date.now() };
-    const empresaExistenteIdx = empresas.findIndex(e => e.id === empresaComId.id);
-    
-    let novasEmpresas = [...empresas];
-    if (empresaExistenteIdx >= 0) {
-      novasEmpresas[empresaExistenteIdx] = empresaComId;
-    } else {
-      novasEmpresas.push(empresaComId);
-    }
-    
-    setEmpresas(novasEmpresas);
-    setEmpresa(empresaComId);
-    setEmpresaId(empresaComId.id || null);
-    setIsConfigured(true);
-    setSaved(true);
-    
-    setTimeout(() => {
-      setSaved(false);
-      // Se era a primeira configuração, vai para o processamento
-      if (!isConfigured) {
-        navigate('/processamento');
+    try {
+      let savedEmpresa;
+      if (empresa?.id) {
+        savedEmpresa = await api.put(`/empresas/${empresa.id}`, config);
+      } else {
+        savedEmpresa = await api.post('/empresas', config);
       }
-    }, 1500);
+      
+      const empresasData = await api.get('/empresas');
+      const novasEmpresas = empresasData._embedded?.empresas || [];
+      
+      setEmpresas(novasEmpresas);
+      setEmpresa(savedEmpresa);
+      setEmpresaId(savedEmpresa.id || null);
+      setIsConfigured(true);
+      setSaved(true);
+      
+      setTimeout(() => {
+        setSaved(false);
+        if (!isConfigured) {
+          navigate('/processamento');
+        }
+      }, 1500);
+    } catch (error) {
+      console.error('Error saving configurations:', error);
+      alert('Erro ao salvar as configurações.');
+    }
   };
 
   const handleSelectBusiness = (bus: any) => {
@@ -192,21 +197,21 @@ const Configuracoes: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{config.categoria === 'Particular' ? 'Nome do Empregador' : 'Nome da Empresa'}</label>
-                      <input type="text" value={config.nome} placeholder={config.categoria === 'Particular' ? 'Ex: José da Silva' : 'Ex: SALYA Lda'} onChange={(e) => setConfig({...config, nome: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                      <input type="text" value={config.nome || ''} placeholder={config.categoria === 'Particular' ? 'Ex: José da Silva' : 'Ex: SALYA Lda'} onChange={(e) => setConfig({...config, nome: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">NIF</label>
-                      <input type="text" value={config.nif} onChange={(e) => setConfig({...config, nif: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                      <input type="text" value={config.nif || ''} onChange={(e) => setConfig({...config, nif: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Regime Fiscal</label>
-                      <select value={config.regimeFiscal} onChange={(e) => setConfig({...config, regimeFiscal: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
+                      <select value={config.regimeFiscal || 'Geral'} onChange={(e) => setConfig({...config, regimeFiscal: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
                         <option>Geral</option><option>Simplificado</option><option>Isento</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de Entidade</label>
-                      <select value={config.tipoEntidade} onChange={(e) => setConfig({...config, tipoEntidade: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
+                      <select value={config.tipoEntidade || 'Lda'} onChange={(e) => setConfig({...config, tipoEntidade: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
                         <option>Lda</option><option>SA</option><option>EI</option><option>Sucursal</option>
                       </select>
                     </div>
@@ -217,15 +222,15 @@ const Configuracoes: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Endereço</label>
-                       <input type="text" value={config.endereco} onChange={(e) => setConfig({...config, endereco: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                       <input type="text" value={config.endereco || ''} onChange={(e) => setConfig({...config, endereco: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                     <div>
                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Município</label>
-                       <input type="text" value={config.municipio} onChange={(e) => setConfig({...config, municipio: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                       <input type="text" value={config.municipio || ''} onChange={(e) => setConfig({...config, municipio: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                     <div>
                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Província</label>
-                       <input type="text" value={config.provincia} onChange={(e) => setConfig({...config, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                       <input type="text" value={config.provincia || ''} onChange={(e) => setConfig({...config, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                     <div>
                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Telefone</label>
