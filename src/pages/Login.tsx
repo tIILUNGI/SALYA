@@ -124,13 +124,7 @@ const Login: React.FC = () => {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
                       <span className="material-symbols-outlined text-xl">person</span>
                     </div>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all dark:text-white font-bold"
-                      required
-                    />
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={(e) => { if (e.target.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value)) { setEmail(''); }}} className="w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all dark:text-white font-bold" required placeholder="empresa@email.com" />
                   </div>
                 </div>
                 
@@ -203,7 +197,7 @@ const Login: React.FC = () => {
                 </div>
                 <div className="space-y-1.5 uppercase tracking-wider text-[10px] font-bold text-slate-400">
                   <label>E-mail Corporativo</label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-bold" required />
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={(e) => { if (e.target.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value)) { setEmail(''); }}} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-bold" required placeholder="empresa@email.com" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5 uppercase tracking-wider text-[10px] font-bold text-slate-400">
@@ -267,7 +261,7 @@ const Login: React.FC = () => {
               <form className="space-y-5" onSubmit={handleForgotPassword}>
                 <div className="space-y-2 uppercase tracking-wider text-[10px] font-bold text-slate-400">
                   <label>E-mail de Registo</label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-bold" required />
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={(e) => { if (e.target.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value)) { setEmail(''); }}} className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-bold" required placeholder="empresa@email.com" />
                 </div>
                 <button type="submit" className="w-full bg-primary hover:bg-primary/90 text-white font-black py-4 rounded-xl shadow-xl shadow-primary/20 transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-2 active:scale-[0.98]">
                   Enviar Link
