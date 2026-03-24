@@ -222,7 +222,6 @@ const Colaboradores: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Nome Completo</label>
-<<<<<<< HEAD
                   <input required type="text" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value.replace(/[0-9]/g, '')})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Ex: João Paulo" />
                 </div>
                 <div>
@@ -232,25 +231,10 @@ const Colaboradores: React.FC = () => {
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">NIF</label>
                   <input required type="text" value={formData.nif} onChange={e => setFormData({...formData, nif: e.target.value.replace(/\D/g, '').slice(0, 9)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Ex: 123456789" />
-=======
-                  <input required type="text" value={formData.nome || ''} onChange={e => setFormData({...formData, nome: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Cargo / Função</label>
-                  <input required type="text" value={formData.cargo || ''} onChange={e => setFormData({...formData, cargo: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">NIF</label>
-                  <input required type="text" value={formData.nif || ''} onChange={e => setFormData({...formData, nif: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
->>>>>>> 16782721f452a589df3c9a4fe31ac9ae0ed804ea
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Salário Base (Kz)</label>
-<<<<<<< HEAD
-                  <input required type="number" value={formData.salarioBase || 0} onChange={e => setFormData({...formData, salarioBase: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-black text-primary" />
-=======
                   <input required type="text" value={formData.salarioBase === 0 || !formData.salarioBase ? '' : formData.salarioBase.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, salarioBase: Number(e.target.value.replace(/\D/g, '')) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-black text-primary" placeholder="0" />
->>>>>>> eaaf0805588990c6b1f57568e520fb29e0cb2751
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Data de Admissão</label>
@@ -258,11 +242,7 @@ const Colaboradores: React.FC = () => {
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">IBAN</label>
-<<<<<<< HEAD
                   <input required type="text" value={formData.iban} onChange={e => setFormData({...formData, iban: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 25)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-mono text-xs font-bold" placeholder="AO06 1234 5678 9012 3456 7890 1" />
-=======
-                  <input required type="text" value={formData.iban || ''} onChange={e => setFormData({...formData, iban: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-mono text-xs font-bold" />
->>>>>>> 16782721f452a589df3c9a4fe31ac9ae0ed804ea
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
