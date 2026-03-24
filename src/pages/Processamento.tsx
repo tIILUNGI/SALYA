@@ -1,11 +1,11 @@
 import React, { useState, useContext } from 'react';
-import { taxasIRT } from '../data/mockData';
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
+import { api } from '../services/api';
 
 const Processamento: React.FC = () => {
-  const { empresa, colaboradores, empresaId } = useContext(AppContext);
-  const ativos = colaboradores.filter(c => c.status === 'Ativo' && c.empresaId === empresaId);
+  const { empresa, colaboradores, empresaId, setMessage } = useContext(AppContext);
+  const ativos = colaboradores.filter(c => c.status === 'Ativo' && (!empresaId || c.empresaId === empresaId || (c as any).empresa?.id === empresaId));
   
   const currentYear = new Date().getFullYear();
   const currentDay = new Date().getDate();
@@ -29,12 +29,7 @@ const Processamento: React.FC = () => {
   const [formHorasExtra, setFormHorasExtra] = useState(0);
   const [formBonus, setFormBonus] = useState(0);
 
-  const calcularIRT = (baseSujeitaIRT: number) => {
-    const escalao = taxasIRT.find(t => baseSujeitaIRT >= t.minimo && baseSujeitaIRT <= t.maximo);
-    if (!escalao) return 0;
-    const calc = ((baseSujeitaIRT - escalao.minimo) * (escalao.taxa / 100)) + escalao.parcelaAbt;
-    return calc > 0 ? calc : 0;
-  };
+  const [calcResults, setCalcResults] = useState<{ totalBruto: number; valorINSS: number; valorIRT: number; totalDescontos: number; salarioLiquido: number } | null>(null);
 
   const handleStartProcessar = (colab: Colaborador) => {
     setSelectedColab(colab);
@@ -54,7 +49,7 @@ const Processamento: React.FC = () => {
     if (value === 'Outro') {
       setShowNewSubsidioModal(true);
     } else if (value !== '') {
-      if (!outrosSubsidios.find(s => s.nome === value)) {
+      if (!outrosSubsidios.find((s: { nome: string }) => s.nome === value)) {
         setOutrosSubsidios([...outrosSubsidios, { nome: value, valor: 0 }]);
       }
     }
@@ -76,27 +71,61 @@ const Processamento: React.FC = () => {
   };
 
   const removeOutroSubsidio = (index: number) => {
-    setOutrosSubsidios(outrosSubsidios.filter((_, i) => i !== index));
+    setOutrosSubsidios(outrosSubsidios.filter((_: any, i: number) => i !== index));
   };
 
-  const handleConfirmForm = (e: React.FormEvent) => {
+  const monthToNum = (m: string) => ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].indexOf(m) + 1;
+
+  const handleConfirmForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowFormModal(false);
-    setShowReceiptModal(true);
+    if (!selectedColab) return;
+
+    try {
+      const dto = {
+        trabalhadorId: selectedColab.id,
+        mes: monthToNum(selectedMonth),
+        ano: parseInt(selectedYear),
+        diasTrabalhados: 22,
+        diasUteis: 22,
+        diasAlimentacao: 1,
+        diasTransporte: 1,
+        valorDiaAlimentacao: formAlimentacao,
+        valorDiaTransporte: formTransporte,
+        outrosSubsidiosTotal: outrosSubsidios.reduce((acc: number, s: { valor: number }) => acc + s.valor, 0) + formFerias,
+        horasExtraTotal: formHorasExtra,
+        bonusTotal: formBonus,
+        faltasTotal: formFaltas
+      };
+
+      const result = await api.post('/processamentos/processar-salario', dto);
+      
+      setCalcResults({
+        totalBruto: result.totalBruto,
+        valorINSS: result.descontos - (result.totalBruto - result.salarioLiquido - result.descontos), // Rough extraction if not returned explicitly
+        valorIRT: 0, // Will be calculated below for display if backend doesn't split it
+        totalDescontos: result.descontos,
+        salarioLiquido: result.salarioLiquido
+      });
+
+      // Update results if backend provides more details
+      if (result.valorINSS !== undefined) {
+         setCalcResults({
+           totalBruto: result.totalBruto,
+           valorINSS: result.valorINSS,
+           valorIRT: result.valorIRT,
+           totalDescontos: result.descontos,
+           salarioLiquido: result.salarioLiquido
+         });
+      }
+
+      setShowFormModal(false);
+      setShowReceiptModal(true);
+    } catch (error) {
+      setMessage({ title: 'Erro', text: 'Não foi possível processar o salário.', type: 'error' });
+    }
   };
 
-  const currentCalc = () => {
-    const totalOutros = outrosSubsidios.reduce((acc, curr) => acc + curr.valor, 0);
-    const totalBruto = formSalario + formAlimentacao + formTransporte + formFerias + totalOutros + formHorasExtra + formBonus;
-    const baseSalarioLiquidoFaltas = formSalario - formFaltas;
-    const taxaINSS = empresa?.taxaINSS || 3;
-    const valorINSS = baseSalarioLiquidoFaltas * (taxaINSS / 100);
-    const baseIRT = baseSalarioLiquidoFaltas - valorINSS + formAlimentacao + formTransporte + formFerias + totalOutros + formHorasExtra + formBonus; 
-    const valorIRT = calcularIRT(baseIRT);
-    const totalDescontos = valorINSS + valorIRT + formFaltas;
-    const salarioLiquido = totalBruto - totalDescontos;
-    return { totalBruto, valorINSS, valorIRT, totalDescontos, salarioLiquido };
-  };
+  const currentCalc = () => calcResults || { totalBruto: 0, valorINSS: 0, valorIRT: 0, totalDescontos: 0, salarioLiquido: 0 };
 
   const handleImprimir = () => {
     window.print();
@@ -228,7 +257,7 @@ const Processamento: React.FC = () => {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  {outrosSubsidios.map((s, idx) => (
+                  {outrosSubsidios.map((s: { nome: string; valor: number }, idx: number) => (
                     <div key={idx} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                        <div className="flex justify-between items-center mb-2">
                           <label className="text-[10px] font-black text-primary uppercase tracking-widest truncate">{s.nome}</label>
@@ -350,7 +379,7 @@ const Processamento: React.FC = () => {
                     <tr className="bg-slate-50/50 font-black"><td className="p-4">Vencimento Base Mensal</td><td className="p-4 text-right">{Number(formSalario).toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>
                     {formAlimentacao > 0 && <tr><td className="p-4">Subsídio de Alimentação</td><td className="p-4 text-right">{formAlimentacao.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>}
                     {formTransporte > 0 && <tr><td className="p-4">Subsídio de Transporte</td><td className="p-4 text-right">{formTransporte.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>}
-                    {outrosSubsidios.map((s, idx) => (
+                    {outrosSubsidios.map((s: { nome: string; valor: number }, idx: number) => (
                       <tr key={idx}><td className="p-4">{s.nome}</td><td className="p-4 text-right">{s.valor.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>
                     ))}
                     {formHorasExtra > 0 && <tr><td className="p-4">Remuneração Extra (H.E)</td><td className="p-4 text-right">{formHorasExtra.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>}

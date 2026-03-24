@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
-import { configuracaoEmpresa, colaboradores as mockColaboradores } from '../data/mockData';
+import { api } from '../services/api';
 
 type ViewMode = 'login' | 'register' | 'confirm' | 'forgot';
 
@@ -9,7 +9,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const { 
     setIsAuthenticated, setColaboradores, setEmpresa, setUser, 
-    setIsConfigured, setEmpresas, setEmpresaId 
+    setIsConfigured, setEmpresas, setEmpresaId, setMessage, empresa
   } = useContext(AppContext);
   
   const [mode, setMode] = useState<ViewMode>('login');
@@ -21,64 +21,88 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errorString, setErrorString] = useState('');
 
-  const executeLogin = (userEmail: string, userName: string) => {
-    setIsAuthenticated(true);
-    setUser({ email: userEmail, name: userName });
+  const fetchGlobalData = async () => {
+    try {
+      // Fetch Empresas
+      const empresasData = await api.get('/empresas');
+      const empresasList = empresasData._embedded?.empresas || [];
+      setEmpresas(empresasList);
+      
+      if (empresasList.length > 0) {
+        setEmpresa(empresasList[0]);
+        setEmpresaId(empresasList[0].id);
+        setIsConfigured(true);
+      } else {
+        setIsConfigured(false);
+      }
 
-    if (userEmail === 'admin@salya.com') {
-      const empresaComId = { ...configuracaoEmpresa, id: 1 };
-      setEmpresas([empresaComId]);
-      setEmpresaId(1);
-      setEmpresa(empresaComId);
-      setColaboradores(mockColaboradores.map(c => ({ ...c, empresaId: 1 })));
-      setIsConfigured(true);
-      navigate('/processamento');
-    } else {
-      setEmpresas([]);
-      setEmpresaId(null);
-      setEmpresa(null);
-      setColaboradores([]);
-      setIsConfigured(false);
-      navigate('/configuracoes');
+      // Fetch Colaboradores
+      const colaboradoresData = await api.get('/trabalhadores');
+      setColaboradores(colaboradoresData._embedded?.colaboradores || []);
+    } catch (error) {
+      console.error('Error fetching global data:', error);
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorString('');
-    if (email && password) {
-      executeLogin(email, 'Administrador');
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const { token, user } = response;
+      
+      localStorage.setItem('salya_token', token);
+      setIsAuthenticated(true);
+      setUser(user);
+      
+      await fetchGlobalData();
+      
+      if (empresa) {
+        navigate('/processamento');
+      } else {
+        navigate('/configuracoes');
+      }
+    } catch (error: any) {
+      setErrorString(error.message || 'Erro ao realizar login');
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorString('');
     if (password !== confirmPassword) {
       setErrorString('As palavras-passe não coincidem.');
       return;
     }
-    if (name && email && password) {
-      setMode('confirm');
+    
+    try {
+      const response = await api.post('/auth/register', { name, email, password });
+      const { token, user } = response;
+      
+      localStorage.setItem('salya_token', token);
+      setIsAuthenticated(true);
+      setUser(user);
+      
+      navigate('/configuracoes');
+    } catch (error: any) {
+      setErrorString(error.message || 'Erro ao registrar usuário');
     }
   };
 
   const handleConfirm = (e: React.FormEvent) => {
     e.preventDefault();
-    if (confirmCode) {
-      setMode('login');
-      setEmail('');
-      setPassword('');
-      setName('');
-      setConfirmPassword('');
-      setConfirmCode('');
-    }
+    // This mode is just a placeholder for now since register gives back the token immediately
+    setMode('login');
   };
 
-  const handleForgotPassword = (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
+    try {
+      await api.post('/auth/forgot-password', { email });
+      setMessage({ title: 'Sucesso', text: 'Se o email estiver cadastrado, uma nova senha temporária será enviada.', type: 'success' });
       setMode('login');
+    } catch (error: any) {
+      setErrorString(error.message || 'Erro ao processar solicitação');
     }
   };
 
