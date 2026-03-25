@@ -68,7 +68,7 @@ function App() {
   const fetchGlobalData = async () => {
     try {
       // Fetch Empresas
-      const empresasData = await api.get('/empresas');
+      const empresasData = await api.get('/empresas?size=1000');
       const empresasList = empresasData._embedded?.empresas || [];
       setEmpresas(empresasList);
       
@@ -79,7 +79,7 @@ function App() {
       }
 
       // Fetch Colaboradores
-      const colaboradoresData = await api.get('/trabalhadores');
+      const colaboradoresData = await api.get('/trabalhadores?size=1000');
       setColaboradores(colaboradoresData._embedded?.colaboradores || []);
     } catch (error) {
       console.error('Error fetching global data:', error);

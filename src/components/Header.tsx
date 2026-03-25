@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { AppContext } from '../App';
 
 const Header: React.FC = () => {
-  const { empresa } = useContext(AppContext);
+  const { empresa, setEmpresa, empresaId, setEmpresaId, empresas } = useContext(AppContext);
   const [showNotifications, setShowNotifications] = useState(false);
   // ...
   const [notifications, setNotifications] = useState([
@@ -44,12 +44,44 @@ const Header: React.FC = () => {
             type="text"
           />
         </div>
-        {empresa && (
-          <div className="flex items-center gap-2 px-4 py-1.5 bg-primary/5 rounded-full border border-primary/10">
-            <span className="material-symbols-outlined text-primary text-sm">domain</span>
-            <span className="text-[10px] font-black text-primary uppercase tracking-widest">{empresa.nome}</span>
+        <div className="relative group">
+          {empresa && (
+            <button className="flex items-center gap-2 px-4 py-1.5 bg-primary/5 rounded-full border border-primary/10 hover:bg-primary/10 transition-all">
+              <span className="material-symbols-outlined text-primary text-sm">domain</span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-widest">{empresa.nome}</span>
+              <span className="material-symbols-outlined text-primary text-xs">expand_more</span>
+            </button>
+          )}
+          
+          <div className="absolute left-0 top-full mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[2px]">Meus Negócios</h3>
+            </div>
+            <div className="max-h-60 overflow-y-auto">
+              {empresas.map((bus) => (
+                <button 
+                  key={bus.id}
+                  onClick={() => {
+                    setEmpresa(bus);
+                    setEmpresaId(bus.id);
+                  }}
+                  className={`w-full flex items-center gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left ${empresaId === bus.id ? 'bg-primary/5' : ''}`}
+                >
+                  <div className={`size-8 rounded-lg flex items-center justify-center ${empresaId === bus.id ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                    <span className="material-symbols-outlined text-sm">{bus.categoria === 'Particular' ? 'home' : 'business'}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-bold truncate ${empresaId === bus.id ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>{bus.nome}</p>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase">NIF: {bus.nif}</p>
+                  </div>
+                  {empresaId === bus.id && (
+                    <span className="material-symbols-outlined text-primary text-sm">check</span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
-        )}
+        </div>
       </div>
       <div className="flex items-center gap-4">
         <div className="relative">

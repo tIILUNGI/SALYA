@@ -8,7 +8,7 @@ import { ConfiguracaoEmpresa } from '../types';
 const Configuracoes: React.FC = () => {
   const { empresa, setEmpresa, isConfigured, setIsConfigured, empresas, setEmpresas, empresaId, setEmpresaId, showConfirm } = useContext(AppContext);
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('empresa');
+  const [activeTab, setActiveTab] = useState(empresas && empresas.length > 1 ? 'gestao' : 'empresa');
   
   const emptyConfig: ConfiguracaoEmpresa = {
     id: Date.now(),
@@ -63,7 +63,7 @@ const Configuracoes: React.FC = () => {
         savedEmpresa = await api.post('/empresas', config);
       }
       
-      const empresasData = await api.get('/empresas');
+      const empresasData = await api.get('/empresas?size=1000');
       const novasEmpresas = empresasData._embedded?.empresas || [];
       
       setEmpresas(novasEmpresas);
