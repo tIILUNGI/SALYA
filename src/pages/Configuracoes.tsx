@@ -35,16 +35,18 @@ const Configuracoes: React.FC = () => {
   const [config, setConfig] = useState<ConfiguracaoEmpresa>(empresa ? { ...empresa, id: empresa.id || Date.now() } : { ...emptyConfig });
   const [setupStep, setSetupStep] = useState(!empresa ? 'choice' : 'form');
   const [saved, setSaved] = useState(false);
+  const [isCreatingNew, setIsCreatingNew] = useState(!empresa);
 
   // Sincronizar quando a empresa mudar via switcher
   useEffect(() => {
-    if (empresa) {
+    if (empresa && !isCreatingNew) {
       setConfig({ ...empresa });
     }
-  }, [empresa]);
+  }, [empresa, isCreatingNew]);
 
   const handleChooseCategory = (category: 'Empresa' | 'Particular') => {
     setConfig({ ...emptyConfig, id: Date.now(), categoria: category });
+    setIsCreatingNew(true);
     setSetupStep('form');
     setActiveTab('empresa');
   };
@@ -57,20 +59,28 @@ const Configuracoes: React.FC = () => {
 
     try {
       let savedEmpresa;
-      if (empresa?.id) {
-        savedEmpresa = await api.put(`/empresas/${empresa.id}`, config);
+      const dataToSave = { ...config };
+      if (!isCreatingNew && empresa?.id) {
+        savedEmpresa = await api.patch(`/empresas/${empresa.id}`, dataToSave);
       } else {
-        savedEmpresa = await api.post('/empresas', config);
+        // Excluir ID para o backend gerar e evitar erro 409 Conflict
+        const { id, ...postData } = dataToSave as any;
+        savedEmpresa = await api.post('/empresas', postData);
       }
       
       const empresasData = await api.get('/empresas');
       const novasEmpresas = empresasData._embedded?.empresas || [];
-      
+
+      // Mesclar dados locais com resposta do backend para preservar todos os campos
+      const mergedEmpresa = { ...dataToSave, ...savedEmpresa };
+
       setEmpresas(novasEmpresas);
-      setEmpresa(savedEmpresa);
-      setEmpresaId(savedEmpresa.id || null);
+      setEmpresa(mergedEmpresa);
+      setConfig(mergedEmpresa);
+      setEmpresaId(mergedEmpresa.id || null);
       setIsConfigured(true);
       setSaved(true);
+      setIsCreatingNew(false);
       
       setTimeout(() => {
         setSaved(false);
@@ -80,7 +90,11 @@ const Configuracoes: React.FC = () => {
       }, 1500);
     } catch (error) {
       console.error('Error saving configurations:', error);
-      alert('Erro ao salvar as configurações.');
+      if (error instanceof Error && (error.message.toLowerCase().includes('conflict') || error.message.includes('409'))) {
+        alert('Erro 409: Já existe um negócio registrado com este NIF. Por favor, introduza um NIF diferente.');
+      } else {
+        alert('Erro ao criar/salvar as configurações. Verifique a sua conexão com o servidor.');
+      }
     }
   };
 
@@ -88,6 +102,7 @@ const Configuracoes: React.FC = () => {
     setEmpresa(bus);
     setEmpresaId(bus.id);
     setConfig({ ...bus });
+    setIsCreatingNew(false);
     setActiveTab('empresa');
     setSaved(true);
     setTimeout(() => setSaved(false), 1000);
@@ -100,9 +115,13 @@ const Configuracoes: React.FC = () => {
     showConfirm({
       title: 'Eliminar Negócio',
       text: `Tem a certeza que deseja eliminar "${busToDelete.nome}"? Todos os dados associados serão perdidos permanentemente.`,
-      onConfirm: () => {
-        const novasEmpresas = empresas.filter(e => e.id !== id);
-        setEmpresas(novasEmpresas);
+      onConfirm: async () => {
+        try {
+          // Deleta do backend (assegura que não há "fantasmas" no banco de dados)
+          await api.delete(`/empresas/${id}`);
+          
+          const novasEmpresas = empresas.filter(e => e.id !== id);
+          setEmpresas(novasEmpresas);
 
         if (empresaId === id) {
           if (novasEmpresas.length > 0) {
@@ -116,6 +135,10 @@ const Configuracoes: React.FC = () => {
             setIsConfigured(false);
             setSetupStep('choice');
           }
+        }
+        } catch (error) {
+          console.error('Erro ao eliminar a empresa:', error);
+          alert('Houve um erro tentar excluir a empresa. Tente novamente.');
         }
       }
     });
@@ -151,7 +174,7 @@ const Configuracoes: React.FC = () => {
           )}
           {setupStep === 'form' && (
             <button onClick={handleSave} className={`px-6 py-2.5 rounded-lg font-bold transition-all flex items-center gap-2 ${saved ? 'bg-emerald-500 text-white' : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20'}`}>
-              {saved ? <><span className="material-symbols-outlined">check</span> Guardado!</> : <><span className="material-symbols-outlined">save</span> Criar/Salvar Negócio</>}
+              {saved ? <><span className="material-symbols-outlined">check</span> Guardado!</> : <><span className="material-symbols-outlined">save</span> {isCreatingNew ? 'Criar Negócio' : 'Guardar Alterações'}</>}
             </button>
           )}
         </div>
@@ -267,8 +290,8 @@ const Configuracoes: React.FC = () => {
                         <tr className="bg-slate-50 dark:bg-slate-800/50"><th className="p-4 text-[10px] font-black text-slate-400 uppercase">Escalão</th><th className="p-4 text-[10px] font-black text-slate-400 uppercase">Mínimo</th><th className="p-4 text-[10px] font-black text-slate-400 uppercase">Máximo</th><th className="p-4 text-[10px] font-black text-slate-400 uppercase">Taxa</th><th className="p-4 text-[10px] font-black text-slate-400 uppercase text-right">Parcela</th></tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {taxasIRT.map(t => (
-                          <tr key={t.id} className="hover:bg-slate-50/50 transition-all font-bold text-sm"><td className="p-4">{t.faixa}</td><td className="p-4">{t.minimo.toLocaleString()}</td><td className="p-4">{t.maximo.toLocaleString()}</td><td className="p-4">{t.taxa}%</td><td className="p-4 text-right">{t.parcelaAbt.toLocaleString()} Kz</td></tr>
+                        {taxasIRT.map((t, idx) => (
+                          <tr key={`irt-${idx}`} className="hover:bg-slate-50/50 transition-all font-bold text-sm"><td className="p-4">{t.faixa}</td><td className="p-4">{t.minimo.toLocaleString()}</td><td className="p-4">{t.maximo.toLocaleString()}</td><td className="p-4">{t.taxa}%</td><td className="p-4 text-right">{t.parcelaAbt.toLocaleString()} Kz</td></tr>
                         ))}
                       </tbody>
                     </table>
@@ -298,8 +321,8 @@ const Configuracoes: React.FC = () => {
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                   <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Meus Negócios</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                    {empresas.map((bus) => (
-                      <div key={bus.id} className={`p-6 rounded-xl border-2 transition-all ${empresaId === bus.id ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-800'}`}>
+                    {empresas.map((bus, idx) => (
+                      <div key={`empresa-${bus.id || idx}`} className={`p-6 rounded-xl border-2 transition-all ${empresaId === bus.id ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-800'}`}>
                          <div className="flex items-center gap-3 mb-4">
                             <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                               <span className="material-symbols-outlined">{bus.categoria === 'Particular' ? 'home' : 'business'}</span>

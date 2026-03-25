@@ -79,7 +79,7 @@ function App() {
       }
 
       // Fetch Colaboradores
-      const colaboradoresData = await api.get('/trabalhadores');
+      const colaboradoresData = await api.get('/colaboradores');
       setColaboradores(colaboradoresData._embedded?.colaboradores || []);
     } catch (error) {
       console.error('Error fetching global data:', error);

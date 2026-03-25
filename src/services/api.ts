@@ -30,7 +30,7 @@ export const api = {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Network response was not ok');
+      throw new Error(errorData.error || `Network response was not ok: ${response.status} ${response.statusText}`);
     }
     return response.json();
   },
@@ -38,6 +38,16 @@ export const api = {
   async put(endpoint: string, data: any) {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Network response was not ok');
+    return response.json();
+  },
+
+  async patch(endpoint: string, data: any) {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PATCH',
       headers: getHeaders(),
       body: JSON.stringify(data),
     });

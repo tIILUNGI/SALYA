@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
 import { api } from '../services/api';
+import html2pdf from 'html2pdf.js';
 
 const Processamento: React.FC = () => {
   const { empresa, colaboradores, empresaId, setMessage } = useContext(AppContext);
@@ -138,12 +139,11 @@ const Processamento: React.FC = () => {
     const opt = {
       margin: 0,
       filename: `Recibo_${selectedColab?.nome.replace(/ /g, '_')}_${selectedMonth}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: { scale: 3, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
     };
-    // @ts-ignore
-    window.html2pdf().from(element).set(opt).save();
+    html2pdf().from(element).set(opt).save();
   };
 
   return (
