@@ -40,6 +40,21 @@ body {
   background: #94a3b8;
 }
 
+/* Card component styles */
+@layer components {
+  .card {
+    @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+  }
+  
+  .card-header {
+    @apply px-6 py-4 border-b border-slate-100;
+  }
+  
+  .card-body {
+    @apply p-6;
+  }
+}
+
 /* Page transitions */
 .page-enter {
   opacity: 0;

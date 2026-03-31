@@ -160,8 +160,11 @@ const Configuracoes: React.FC = () => {
             <span className="material-symbols-outlined text-xs">chevron_right</span>
             <span className="text-slate-900 dark:text-white font-medium">Configurações</span>
           </nav>
-          <h1 className="text-3xl font-black tracking-tight">{setupStep === 'choice' ? 'Adicionar Novo Negócio' : (isConfigured ? 'Configurações do Sistema' : 'Novo Cadastro')}</h1>
-          <p className="text-slate-500 mt-1">{setupStep === 'choice' ? 'Escolha o tipo de perfil para o novo negócio.' : 'Preencha os dados abaixo e clique em Salvar.'}</p>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-1 h-8 bg-primary rounded-full"></div>
+            <h1 className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">{setupStep === 'choice' ? 'Adicionar Novo Negócio' : (isConfigured ? 'Configurações do Sistema' : 'Novo Cadastro')}</h1>
+          </div>
+          <p className="text-slate-500 mt-1 ml-4">{setupStep === 'choice' ? 'Escolha o tipo de perfil para o novo negócio.' : 'Preencha os dados abaixo e clique em Salvar.'}</p>
         </div>
         <div className="flex items-center gap-3">
           {(setupStep === 'form' && isConfigured) && (

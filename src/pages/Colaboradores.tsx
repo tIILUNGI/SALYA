@@ -108,8 +108,11 @@ const Colaboradores: React.FC = () => {
     <div className="p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-black tracking-tight">Colaboradores</h1>
-          <p className="text-slate-500 dark:text-slate-400">Gerencie informações, contratos e status da sua equipe.</p>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-1 h-8 bg-primary rounded-full"></div>
+            <h1 className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">Colaboradores</h1>
+          </div>
+          <p className="text-slate-500 dark:text-slate-400 ml-4">Gerencie informações, contratos e status da sua equipe.</p>
         </div>
         <button onClick={() => handleOpenModal()} className="flex items-center justify-center gap-2 rounded-xl h-12 px-6 bg-primary text-white text-sm font-black hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 uppercase tracking-widest">
           <span className="material-symbols-outlined text-[20px]">person_add</span>
