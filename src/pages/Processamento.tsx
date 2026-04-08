@@ -1,7 +1,20 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
 import { api } from '../services/api';
+
+interface Movimento {
+  id: number;
+  descricao: string;
+  tipo: string;
+  valor: number;
+  data: string;
+  mes: number;
+  ano: number;
+  colaborador?: { id: number; nome: string };
+}
+
+const monthToNum = (m: string) => ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].indexOf(m) + 1;
 
 const Processamento: React.FC = () => {
   const { empresa, colaboradores, empresaId, setMessage } = useContext(AppContext);
@@ -12,6 +25,44 @@ const Processamento: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState('Janeiro');
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [selectedDay, setSelectedDay] = useState(currentDay.toString());
+  const [activeTab, setActiveTab] = useState<'Normal' | 'Movimentos' | 'Exportacao'>('Normal');
+
+  // Movimentos Externos state
+  const [movimentos, setMovimentos] = useState<Movimento[]>([]);
+  const [showMovModal, setShowMovModal] = useState(false);
+  const [movForm, setMovForm] = useState({ descricao: '', tipo: 'Combustível', valor: 0, colaboradorId: '' });
+  const [movLoading, setMovLoading] = useState(false);
+
+  const fetchMovimentos = useCallback(async () => {
+    try {
+      const mes = monthToNum(selectedMonth);
+      const ano = parseInt(selectedYear);
+      const data = await api.get(`/movimentos/periodo?mes=${mes}&ano=${ano}`);
+      setMovimentos(Array.isArray(data) ? data : []);
+    } catch { setMovimentos([]); }
+  }, [selectedMonth, selectedYear]);
+
+  useEffect(() => { if (activeTab === 'Movimentos') fetchMovimentos(); }, [activeTab, fetchMovimentos]);
+
+  const handleSaveMovimento = async () => {
+    if (!movForm.descricao || !movForm.valor) return;
+    setMovLoading(true);
+    try {
+      await api.post('/movimentos', { ...movForm, mes: monthToNum(selectedMonth), ano: parseInt(selectedYear), valor: movForm.valor, colaboradorId: movForm.colaboradorId || null });
+      setShowMovModal(false);
+      setMovForm({ descricao: '', tipo: 'Combustível', valor: 0, colaboradorId: '' });
+      fetchMovimentos();
+      setMessage({ title: 'Sucesso', text: 'Movimento registado com sucesso.', type: 'success' });
+    } catch { setMessage({ title: 'Erro', text: 'Não foi possível registar o movimento.', type: 'error' }); }
+    finally { setMovLoading(false); }
+  };
+
+  const handleDeleteMovimento = async (id: number) => {
+    try {
+      await api.delete(`/movimentos/${id}`);
+      setMovimentos(prev => prev.filter(m => m.id !== id));
+    } catch { /**/ }
+  };
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
@@ -173,7 +224,15 @@ const Processamento: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-4 mb-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+      <div className="glass-card mb-6 p-2 flex gap-2 w-full md:w-max overflow-x-auto text-nowrap mt-4">
+        <button onClick={() => setActiveTab('Normal')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Normal' ? 'bg-primary text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Processamento Normal</button>
+        <button onClick={() => setActiveTab('Movimentos')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Movimentos' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Movimentos Externos</button>
+        <button onClick={() => setActiveTab('Exportacao')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Exportacao' ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Exportação de Dados</button>
+      </div>
+
+      {activeTab === 'Normal' && (
+        <div className="animate-in fade-in slide-up">
+      <div className="flex items-center gap-4 mb-8 glass-card p-6">
         <div className="flex flex-col">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Período</span>
           <div className="flex items-center gap-2">
@@ -192,7 +251,7 @@ const Processamento: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+      <div className="glass-card overflow-hidden">
         <table className="w-full text-left">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
@@ -222,6 +281,108 @@ const Processamento: React.FC = () => {
           </tbody>
         </table>
       </div>
+      </div>
+      )}
+
+      {activeTab === 'Movimentos' && (
+        <div className="animate-in fade-in slide-up space-y-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-black uppercase text-slate-800 dark:text-white">Movimentos Externos — {selectedMonth} {selectedYear}</h3>
+            <button onClick={() => setShowMovModal(true)} className="bg-primary text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 flex items-center gap-2 hover:bg-primary/90 transition-all">
+              <span className="material-symbols-outlined text-sm">add</span>
+              Novo Movimento
+            </button>
+          </div>
+
+          <div className="glass-card overflow-hidden">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                  <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Funcionário</th>
+                  <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Descrição</th>
+                  <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tipo</th>
+                  <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Valor (Kz)</th>
+                  <th className="p-6"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {movimentos.length === 0 ? (
+                  <tr><td colSpan={5} className="p-10 text-center text-slate-400 text-sm">Nenhum movimento para este período.</td></tr>
+                ) : movimentos.map(m => (
+                  <tr key={m.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
+                    <td className="p-6 text-sm font-black text-slate-800 dark:text-white uppercase">{m.colaborador?.nome || '—'}</td>
+                    <td className="p-6 text-sm text-slate-600 dark:text-slate-300">{m.descricao}</td>
+                    <td className="p-6"><span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">{m.tipo}</span></td>
+                    <td className="p-6 text-right font-black text-primary">{Number(m.valor).toLocaleString('pt-AO')} Kz</td>
+                    <td className="p-6 text-right"><button onClick={() => handleDeleteMovimento(m.id)} className="text-red-400 hover:text-red-600"><span className="material-symbols-outlined text-sm">delete</span></button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Modal Novo Movimento */}
+          {showMovModal && (
+            <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[90] p-4 backdrop-blur-sm">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl p-8 space-y-5">
+                <h3 className="text-lg font-black uppercase tracking-widest text-slate-800 dark:text-white">Novo Movimento Externo</h3>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Funcionário</label>
+                  <select value={movForm.colaboradorId} onChange={e => setMovForm({...movForm, colaboradorId: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold outline-none">
+                    <option value="">Sem Funcionário (Geral)</option>
+                    {ativos.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo</label>
+                  <select value={movForm.tipo} onChange={e => setMovForm({...movForm, tipo: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold outline-none">
+                    {['Combustível','Telecomunicações','Alimentação Extra','Formação','Prestação de Serviço','Outro'].map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Descrição</label>
+                  <input type="text" value={movForm.descricao} onChange={e => setMovForm({...movForm, descricao: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold outline-none focus:ring-2 focus:ring-primary" placeholder="ex: Combustível viatura empresa" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-primary uppercase tracking-widest mb-2">Valor (Kz)</label>
+                  <input type="text" value={movForm.valor ? Number(movForm.valor).toLocaleString('pt-AO') : ''} onChange={e => setMovForm({...movForm, valor: Number(e.target.value.replace(/\D/g,''))})} className="w-full px-4 py-3 rounded-xl border-2 border-primary/40 bg-primary/5 text-primary font-black outline-none focus:border-primary" placeholder="0" />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setShowMovModal(false)} className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-400 text-xs font-black uppercase tracking-widest">Cancelar</button>
+                  <button type="button" onClick={handleSaveMovimento} disabled={movLoading} className="flex-1 py-3 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary/90 disabled:opacity-50">{movLoading ? 'A guardar...' : 'Guardar'}</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'Exportacao' && (
+        <div className="animate-in fade-in slide-up pb-10">
+          <div className="mb-6">
+             <h3 className="text-xl font-black uppercase text-slate-800 dark:text-white">Exportação Rápida</h3>
+             <p className="text-slate-500 text-sm">Gere ficheiros e gráficos da folha com um clique.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+             <button className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-emerald-500/50 hover:bg-emerald-50/30 transition-all group">
+                <span className="material-symbols-outlined text-4xl text-emerald-500 group-hover:scale-110 transition-transform">table_view</span>
+                <span className="font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest text-xs">Exportar Excel</span>
+             </button>
+             <button className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-red-500/50 hover:bg-red-50/30 transition-all group">
+                <span className="material-symbols-outlined text-4xl text-red-500 group-hover:scale-110 transition-transform">picture_as_pdf</span>
+                <span className="font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest text-xs">Exportar PDF</span>
+             </button>
+             <button className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-primary-500/50 hover:bg-primary-50/30 transition-all group">
+                <span className="material-symbols-outlined text-4xl text-primary-500 group-hover:scale-110 transition-transform">mail</span>
+                <span className="font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest text-xs">Enviar por Email</span>
+             </button>
+             <button className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-amber-500/50 hover:bg-amber-50/30 transition-all group">
+                <span className="material-symbols-outlined text-4xl text-amber-500 group-hover:scale-110 transition-transform">insights</span>
+                <span className="font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest text-xs">Gerar Gráfico</span>
+             </button>
+          </div>
+        </div>
+      )}
 
       {showFormModal && selectedColab && (
         <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[90] p-4 backdrop-blur-sm">

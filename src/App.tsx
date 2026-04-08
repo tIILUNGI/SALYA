@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Alertas from './pages/Alertas';
+import Simulacao from './pages/Simulacao';
+import Rescisoes from './pages/Rescisoes';
+import Relatorios from './pages/Relatorios';
 import Colaboradores from './pages/Colaboradores';
 import Processamento from './pages/Processamento';
 import Configuracoes from './pages/Configuracoes';
@@ -190,11 +195,11 @@ function App() {
 
 function MainLayout() {
   const location = useLocation();
-  const [currentPage, setCurrentPage] = useState('processamento');
+  const [currentPage, setCurrentPage] = useState('dashboard');
   const { empresa } = React.useContext(AppContext);
 
   useEffect(() => {
-    const path = location.pathname.replace('/', '') || 'processamento';
+    const path = location.pathname.replace('/', '') || 'dashboard';
     setCurrentPage(path);
   }, [location]);
 
@@ -229,10 +234,14 @@ function MainLayout() {
             <Routes>
               {hasEmpresa && (
                 <>
-                  <Route path="/" element={<Navigate to="/processamento" replace />} />
-                  <Route path="/dashboard" element={<Navigate to="/processamento" replace />} />
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/alertas" element={<Alertas />} />
                   <Route path="/colaboradores" element={<Colaboradores />} />
                   <Route path="/processamento" element={<Processamento />} />
+                  <Route path="/simulacao" element={<Simulacao />} />
+                  <Route path="/rescisoes" element={<Rescisoes />} />
+                  <Route path="/relatorios" element={<Relatorios />} />
                 </>
               )}
               <Route path="/configuracoes" element={<Configuracoes />} />

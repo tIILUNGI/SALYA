@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 /* Hide number input spinners */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
@@ -15,41 +17,43 @@ input[type="number"] {
 
 body {
   font-family: 'Inter', sans-serif;
+  @apply text-slate-800 dark:text-slate-200 antialiased selection:bg-primary-500 selection:text-white;
 }
 
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  @apply bg-transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  @apply bg-slate-200 dark:bg-slate-700 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  @apply bg-slate-300 dark:bg-slate-600;
 }
 
-/* Page transitions */
-.page-enter {
-  opacity: 0;
-  transform: translateY(10px);
+/* Glassmorphism utilities */
+.glass {
+  @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-800/50 shadow-glass;
 }
 
-.page-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 300ms ease-out, transform 300ms ease-out;
+.glass-card {
+  @apply bg-white dark:bg-slate-800/80 backdrop-blur-xl border border-slate-100 dark:border-slate-700/50 shadow-sm rounded-2xl transition-all duration-300 hover:shadow-md;
+}
+
+/* Base Animations */
+.animate-in {
+  animation-fill-mode: forwards;
 }
 
 /* Print Styles for A4 Receipt */

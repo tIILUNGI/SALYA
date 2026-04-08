@@ -13,6 +13,7 @@ export interface Colaborador {
   banco?: string;
   inss?: string;
   dataAdmissao?: string;
+  fimContrato?: string;
   departamento?: string;
   tipoContrato?: 'Efectivo' | 'Prestador' | 'Estagiário' | 'Contrato por Tempo Indeterminado' | 'Contrato a Termo Certo' | 'Contrato a Termo Incerto' | 'Contrato de Trabalho Eventual';
   genero?: 'Masculino' | 'Feminino';

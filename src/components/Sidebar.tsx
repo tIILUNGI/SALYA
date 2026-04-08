@@ -12,8 +12,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage }) => {
   const { user, setUser, setIsAuthenticated, setIsConfigured, empresa } = useContext(AppContext);
 
   const menuItems = [
-    { id: 'colaboradores', label: 'Colaboradores', icon: 'group' },
+    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+    { id: 'alertas', label: 'Alertas', icon: 'notifications_active' },
+    { id: 'colaboradores', label: 'Funcionários', icon: 'group' },
     { id: 'processamento', label: 'Processamento', icon: 'account_balance_wallet' },
+    { id: 'simulacao', label: 'Simulações', icon: 'calculate' },
+    { id: 'rescisoes', label: 'Rescisões', icon: 'person_remove' },
     { id: 'configuracoes', label: 'Configurações', icon: 'settings' },
   ];
 

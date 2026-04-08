@@ -1,7 +1,15 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
 import { api } from '../services/api';
+
+interface Documento {
+  id: number;
+  titulo: string;
+  tipoDocumento: string;
+  dataValidade?: string;
+  arquivoUrl?: string;
+}
 
 const Colaboradores: React.FC = () => {
   const { colaboradores, setColaboradores, empresaId, showConfirm, setMessage } = useContext(AppContext);
@@ -9,7 +17,41 @@ const Colaboradores: React.FC = () => {
   const [filter, setFilter] = useState<'All' | 'Ativo' | 'Afastado'>('All');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTab, setModalTab] = useState<'Dados' | 'Documentos'>('Dados');
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  // Documentos state
+  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const [docForm, setDocForm] = useState({ titulo: '', tipoDocumento: 'Contrato', dataValidade: '' });
+  const [docLoading, setDocLoading] = useState(false);
+  const [showDocForm, setShowDocForm] = useState(false);
+
+  const fetchDocumentos = useCallback(async (colabId: number) => {
+    try {
+      const data = await api.get(`/documentos/colaborador/${colabId}`);
+      setDocumentos(Array.isArray(data) ? data : []);
+    } catch { setDocumentos([]); }
+  }, []);
+
+  const handleAddDocumento = async () => {
+    if (!editingId || !docForm.titulo) return;
+    setDocLoading(true);
+    try {
+      await api.post('/documentos', { ...docForm, colaboradorId: editingId });
+      await fetchDocumentos(editingId);
+      setDocForm({ titulo: '', tipoDocumento: 'Contrato', dataValidade: '' });
+      setShowDocForm(false);
+      setMessage({ title: 'Sucesso', text: 'Documento adicionado.', type: 'success' });
+    } catch { setMessage({ title: 'Erro', text: 'Não foi possível guardar o documento.', type: 'error' }); }
+    finally { setDocLoading(false); }
+  };
+
+  const handleDeleteDocumento = async (docId: number) => {
+    try {
+      await api.delete(`/documentos/${docId}`);
+      setDocumentos(prev => prev.filter(d => d.id !== docId));
+    } catch { /**/ }
+  };
   
   const [formData, setFormData] = useState<Partial<Colaborador>>({
     nome: '',
@@ -68,7 +110,15 @@ const Colaboradores: React.FC = () => {
     e.preventDefault();
     
     try {
-      const dataToSave = { ...formData, empresaId: empresaId || undefined };
+      // Limpar campos de string vazia para null para evitar conflitos de restrição única no backend
+      const sanitizedData = { ...formData };
+      ['email', 'nif', 'telefone', 'iban', 'inss', 'numeroColaborador'].forEach(key => {
+        if (sanitizedData[key as keyof Colaborador] === '') {
+          (sanitizedData as any)[key] = null;
+        }
+      });
+
+      const dataToSave = { ...sanitizedData, empresaId: empresaId || undefined };
       
       if (!editingId) {
         await api.post('/trabalhadores', dataToSave);
@@ -117,7 +167,7 @@ const Colaboradores: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 mb-6 shadow-sm">
+      <div className="glass-card p-4 mb-6">
         <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
           <div className="flex flex-1 w-full max-w-md items-center gap-3">
             <div className="relative w-full group">
@@ -145,7 +195,7 @@ const Colaboradores: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
@@ -210,8 +260,12 @@ const Colaboradores: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-900 dark:bg-black text-white">
               <h3 className="text-lg font-black uppercase tracking-widest">{editingId ? 'Editar Cadastro' : 'Novo Colaborador'}</h3>
+              <div className="flex gap-4">
+                <button type="button" onClick={() => setModalTab('Dados')} className={`text-xs font-black uppercase tracking-widest ${modalTab === 'Dados' ? 'text-primary' : 'text-slate-500'}`}>Dados</button>
+                <button type="button" onClick={() => { setModalTab('Documentos'); if (editingId) fetchDocumentos(editingId); }} className={`text-xs font-black uppercase tracking-widest ${modalTab === 'Documentos' ? 'text-primary' : 'text-slate-500'}`}>Documentos</button>
+              </div>
               <button 
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => { setIsModalOpen(false); setDocumentos([]); setShowDocForm(false); setModalTab('Dados'); }}
                 className="size-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all"
               >
                 <span className="material-symbols-outlined text-sm">close</span>
@@ -219,6 +273,7 @@ const Colaboradores: React.FC = () => {
             </div>
             
             <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8">
+              {modalTab === 'Dados' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Nome Completo</label>
@@ -240,9 +295,21 @@ const Colaboradores: React.FC = () => {
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Data de Admissão</label>
                   <input required type="date" value={formData.dataAdmissao || ''} onChange={e => setFormData({...formData, dataAdmissao: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
                 </div>
+                <div>
+                  <label className="block text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">Fim de Contrato (opcional)</label>
+                  <input type="date" value={formData.fimContrato || ''} onChange={e => setFormData({...formData, fimContrato: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/10 outline-none focus:ring-2 focus:ring-amber-500 font-bold" />
+                </div>
                 <div className="md:col-span-2">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">IBAN</label>
                   <input required type="text" value={formData.iban || ''} onChange={e => setFormData({...formData, iban: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-mono text-xs font-bold" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">E-mail</label>
+                  <input type="email" value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="exemplo@email.com" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Telefone</label>
+                  <input type="text" value={formData.telefone || ''} onChange={e => setFormData({...formData, telefone: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="+244 ..." />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
@@ -252,6 +319,80 @@ const Colaboradores: React.FC = () => {
                   </select>
                 </div>
               </div>
+              ) : (
+                <div className="space-y-5">
+                  {/* Add document button */}
+                  <div className="flex justify-between items-center">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Documentos Associados</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowDocForm(s => !s)}
+                      className="text-xs font-black bg-primary/10 text-primary px-4 py-2 rounded-lg uppercase tracking-widest flex items-center gap-1 hover:bg-primary hover:text-white transition-all"
+                    >
+                      <span className="material-symbols-outlined text-sm">{showDocForm ? 'close' : 'add'}</span>
+                      {showDocForm ? 'Cancelar' : 'Adicionar'}
+                    </button>
+                  </div>
+
+                  {/* Inline add form */}
+                  {showDocForm && (
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-3 border border-slate-200 dark:border-slate-700">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tipo</label>
+                          <select value={docForm.tipoDocumento} onChange={e => setDocForm({...docForm, tipoDocumento: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold outline-none">
+                            {['Contrato','BI','Passaporte','Certificado','Currículo','Outro'].map(t => <option key={t}>{t}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Validade</label>
+                          <input type="date" value={docForm.dataValidade} onChange={e => setDocForm({...docForm, dataValidade: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold outline-none" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Descrição / Título</label>
+                        <input type="text" value={docForm.titulo} onChange={e => setDocForm({...docForm, titulo: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold outline-none focus:ring-2 focus:ring-primary" placeholder="ex: Contrato de Trabalho 2026" />
+                      </div>
+                      <button type="button" onClick={handleAddDocumento} disabled={docLoading || !docForm.titulo} className="w-full py-2 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-lg hover:bg-primary/90 disabled:opacity-50">
+                        {docLoading ? 'A guardar...' : 'Guardar Documento'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Document list */}
+                  {documentos.length === 0 ? (
+                    <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-8 flex flex-col items-center text-center">
+                      <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">folder_open</span>
+                      <p className="font-bold text-slate-500 text-sm">Nenhum documento associado.</p>
+                      <p className="text-xs text-slate-400 mt-1">Clique em "Adicionar" para registar um documento.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {documentos.map(doc => {
+                        const isExpiring = doc.dataValidade && new Date(doc.dataValidade) < new Date(Date.now() + 30 * 86400000);
+                        const isExpired = doc.dataValidade && new Date(doc.dataValidade) < new Date();
+                        return (
+                          <div key={doc.id} className={`flex items-center justify-between p-4 border rounded-xl bg-white dark:bg-slate-800 ${isExpired ? 'border-red-200' : isExpiring ? 'border-amber-200' : 'border-slate-100 dark:border-slate-700'}`}>
+                            <div className="flex items-center gap-3">
+                              <span className={`material-symbols-outlined ${isExpired ? 'text-red-500' : isExpiring ? 'text-amber-500' : 'text-primary'}`}>description</span>
+                              <div>
+                                <p className="text-sm font-bold text-slate-800 dark:text-white">{doc.titulo}</p>
+                                <p className="text-[10px] text-slate-400">
+                                  {doc.tipoDocumento}
+                                  {doc.dataValidade ? ` · ${isExpired ? '⚠ Expirado' : 'Válido até'} ${new Date(doc.dataValidade).toLocaleDateString('pt-AO')}` : ''}
+                                </p>
+                              </div>
+                            </div>
+                            <button type="button" onClick={() => handleDeleteDocumento(doc.id)} className="text-red-400 hover:text-red-600">
+                              <span className="material-symbols-outlined text-sm">delete</span>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="mt-10 flex gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">Cancelar</button>
                 <button type="submit" className="flex-1 py-4 rounded-xl bg-primary text-white text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all">Finalizar Cadastro</button>
