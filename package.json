@@ -6,12 +6,19 @@
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
     "autoprefixer": "^10.4.17",
+<<<<<<< HEAD
+=======
+    "html2pdf.js": "^0.14.0",
+>>>>>>> 67727589e0d247b3d63f7d4317424210e00a57fd
     "postcss": "^8.4.35",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.0",
     "react-scripts": "5.0.1",
+<<<<<<< HEAD
     "recharts": "^3.8.1",
+=======
+>>>>>>> 67727589e0d247b3d63f7d4317424210e00a57fd
     "tailwindcss": "^3.4.1",
     "typescript": "^4.9.5"
   },

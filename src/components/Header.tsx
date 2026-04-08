@@ -1,15 +1,61 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AppContext } from '../App';
+import { api } from '../services/api';
 
 const Header: React.FC = () => {
+<<<<<<< HEAD
   const { empresa, setEmpresa, empresaId, setEmpresaId, empresas } = useContext(AppContext);
+=======
+  const { empresa, empresaId } = useContext(AppContext);
+>>>>>>> 67727589e0d247b3d63f7d4317424210e00a57fd
   const [showNotifications, setShowNotifications] = useState(false);
-  // ...
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'Processamento Concluído', message: 'O salário de Março/2026 foi processado com sucesso.', time: '2 horas atrás', read: false },
-    { id: 2, title: 'Novo Colaborador', message: 'Um novo colaborador foi adicionado ao sistema.', time: '1 dia atrás', read: true },
-    { id: 3, title: 'Guia de IRS Pendente', message: 'A guia de IRS do mês Fevereiro está pendente de pagamento.', time: '2 dias atrás', read: true },
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loadingNotifs, setLoadingNotifs] = useState(false);
+
+  // Fetch real notifications from backend
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!empresaId) return;
+      setLoadingNotifs(true);
+      try {
+        const data = await api.get(`/notificacoes?empresaId=${empresaId}`);
+        const notifList = data._embedded?.notificacoes || [];
+        // Transform backend data to frontend format
+        const transformed = notifList.map((n: any) => ({
+          id: n.id,
+          title: n.titulo,
+          message: n.mensagem,
+          time: formatTimeAgo(n.createdAt),
+          read: n.lido,
+          tipo: n.tipo
+        }));
+        setNotifications(transformed);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        // Keep empty on error - no fake notifications
+        setNotifications([]);
+      } finally {
+        setLoadingNotifs(false);
+      }
+    };
+    fetchNotifications();
+  }, [empresaId]);
+
+  const formatTimeAgo = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMins < 1) return 'agora';
+    if (diffMins < 60) return `${diffMins} minutos atrás`;
+    if (diffHours < 24) return `${diffHours} horas atrás`;
+    if (diffDays < 7) return `${diffDays} dias atrás`;
+    return date.toLocaleDateString('pt-AO');
+  };
 
   const currentDate = new Date().toLocaleDateString('pt-AO', {
     weekday: 'long',
@@ -20,17 +66,40 @@ const Header: React.FC = () => {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const handleMarkAllRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
+  const handleMarkAllRead = async () => {
+    // Mark all as read in backend
+    try {
+      for (const notif of notifications) {
+        if (!notif.read) {
+          await api.patch(`/notificacoes/${notif.id}`, { lido: true });
+        }
+      }
+      setNotifications(notifications.map(n => ({ ...n, read: true })));
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
+    }
   };
 
-  const handleClearAll = () => {
-    setNotifications([]);
-    setShowNotifications(false);
+  const handleClearAll = async () => {
+    // Delete all notifications in backend
+    try {
+      for (const notif of notifications) {
+        await api.delete(`/notificacoes/${notif.id}`);
+      }
+      setNotifications([]);
+      setShowNotifications(false);
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
+    }
   };
 
-  const markAsRead = (id: number) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+  const markAsRead = async (id: number) => {
+    try {
+      await api.patch(`/notificacoes/${id}`, { lido: true });
+      setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
   return (

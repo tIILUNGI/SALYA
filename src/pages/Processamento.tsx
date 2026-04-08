@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
 import { api } from '../services/api';
+import html2pdf from 'html2pdf.js';
 
 interface Movimento {
   id: number;
@@ -189,12 +190,11 @@ const Processamento: React.FC = () => {
     const opt = {
       margin: 0,
       filename: `Recibo_${selectedColab?.nome.replace(/ /g, '_')}_${selectedMonth}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: { scale: 3, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
     };
-    // @ts-ignore
-    window.html2pdf().from(element).set(opt).save();
+    html2pdf().from(element).set(opt).save();
   };
 
   return (
@@ -219,8 +219,11 @@ const Processamento: React.FC = () => {
 
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-3xl font-black tracking-widest text-slate-800 dark:text-white uppercase">Processamento</h2>
-          <p className="text-slate-500 text-sm font-medium">Controlo Mensal de Salários</p>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-1 h-8 bg-primary rounded-full"></div>
+            <h2 className="text-3xl font-black tracking-widest text-slate-800 dark:text-white uppercase">Processamento</h2>
+          </div>
+          <p className="text-slate-500 text-sm font-medium ml-4">Controlo Mensal de Salários</p>
         </div>
       </div>
 
@@ -247,6 +250,21 @@ const Processamento: React.FC = () => {
               ))}
             </select>
             <input type="text" min="1" max="31" value={selectedDay} onChange={e => setSelectedDay(e.target.value.replace(/\D/g, ''))} className="w-20 bg-slate-50 dark:bg-slate-800 border-none rounded-lg py-2 px-4 font-black text-sm outline-none" placeholder="1" />
+          </div>
+        </div>
+        <div className="h-12 w-px bg-slate-200 dark:bg-slate-700 mx-4"></div>
+        <div className="flex-1 grid grid-cols-3 gap-6">
+          <div className="text-center">
+            <p className="text-2xl font-black text-primary">{ativos.length}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Colaboradores</p>
+          </div>
+          <div className="text-center border-l border-slate-200 dark:border-slate-700">
+            <p className="text-2xl font-black text-emerald-500">{ativos.filter(c => c.status === 'Ativo').length}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ativos</p>
+          </div>
+          <div className="text-center border-l border-slate-200 dark:border-slate-700">
+            <p className="text-2xl font-black text-slate-700 dark:text-slate-300">{ativos.reduce((acc, c) => acc + (c.salarioBase || 0), 0).toLocaleString()}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Massa Salarial</p>
           </div>
         </div>
       </div>

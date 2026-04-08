@@ -84,7 +84,11 @@ function App() {
       }
 
       // Fetch Colaboradores
+<<<<<<< HEAD
       const colaboradoresData = await api.get('/trabalhadores?size=1000');
+=======
+      const colaboradoresData = await api.get('/colaboradores');
+>>>>>>> 67727589e0d247b3d63f7d4317424210e00a57fd
       setColaboradores(colaboradoresData._embedded?.colaboradores || []);
     } catch (error) {
       console.error('Error fetching global data:', error);
