@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
-import { api } from '../services/api';
+import { api, API_BASE_URL } from '../services/api';
 
 interface Documento {
   id: number;
@@ -23,6 +23,7 @@ const Colaboradores: React.FC = () => {
   // Documentos state
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [docForm, setDocForm] = useState({ titulo: '', tipoDocumento: 'Contrato', dataValidade: '' });
+  const [docFile, setDocFile] = useState<File | null>(null);
   const [docLoading, setDocLoading] = useState(false);
   const [showDocForm, setShowDocForm] = useState(false);
 
@@ -36,13 +37,27 @@ const Colaboradores: React.FC = () => {
   const handleAddDocumento = async () => {
     if (!editingId || !docForm.titulo) return;
     setDocLoading(true);
+    const colabId = editingId;
     try {
-      await api.post('/documentos', { ...docForm, colaboradorId: editingId });
-      await fetchDocumentos(editingId);
+      if (docFile) {
+        const formData = new FormData();
+        formData.append('titulo', docForm.titulo);
+        formData.append('tipoDocumento', docForm.tipoDocumento);
+        if (docForm.dataValidade) {
+          formData.append('dataValidade', docForm.dataValidade);
+        }
+        formData.append('colaboradorId', String(colabId));
+        formData.append('file', docFile);
+        await api.postForm('/documentos', formData);
+      } else {
+        await api.post('/documentos', { ...docForm, colaboradorId: colabId });
+      }
+      await fetchDocumentos(colabId);
       setDocForm({ titulo: '', tipoDocumento: 'Contrato', dataValidade: '' });
+      setDocFile(null);
       setShowDocForm(false);
       setMessage({ title: 'Sucesso', text: 'Documento adicionado.', type: 'success' });
-    } catch { setMessage({ title: 'Erro', text: 'Não foi possível guardar o documento.', type: 'error' }); }
+    } catch { setMessage({ title: 'Erro', text: 'Nao foi possivel guardar o documento.', type: 'error' }); }
     finally { setDocLoading(false); }
   };
 
@@ -268,7 +283,7 @@ const Colaboradores: React.FC = () => {
                 <button type="button" onClick={() => { setModalTab('Documentos'); if (editingId) fetchDocumentos(editingId); }} className={`text-xs font-black uppercase tracking-widest ${modalTab === 'Documentos' ? 'text-primary' : 'text-slate-500'}`}>Documentos</button>
               </div>
               <button 
-                onClick={() => { setIsModalOpen(false); setDocumentos([]); setShowDocForm(false); setModalTab('Dados'); }}
+                onClick={() => { setIsModalOpen(false); setDocumentos([]); setShowDocForm(false); setModalTab('Dados'); setDocFile(null); }}
                 className="size-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all"
               >
                 <span className="material-symbols-outlined text-sm">close</span>
@@ -356,6 +371,18 @@ const Colaboradores: React.FC = () => {
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Descrição / Título</label>
                         <input type="text" value={docForm.titulo} onChange={e => setDocForm({...docForm, titulo: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold outline-none focus:ring-2 focus:ring-primary" placeholder="ex: Contrato de Trabalho 2026" />
                       </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ficheiro (opcional)</label>
+                        <input
+                          type="file"
+                          onChange={e => setDocFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                          className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold outline-none"
+                        />
+                        {docFile && (
+                          <p className="text-[10px] text-slate-400 mt-1">Selecionado: {docFile.name}</p>
+                        )}
+                      </div>
+
                       <button type="button" onClick={handleAddDocumento} disabled={docLoading || !docForm.titulo} className="w-full py-2 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-lg hover:bg-primary/90 disabled:opacity-50">
                         {docLoading ? 'A guardar...' : 'Guardar Documento'}
                       </button>
@@ -384,6 +411,16 @@ const Colaboradores: React.FC = () => {
                                   {doc.tipoDocumento}
                                   {doc.dataValidade ? ` · ${isExpired ? '⚠ Expirado' : 'Válido até'} ${new Date(doc.dataValidade).toLocaleDateString('pt-AO')}` : ''}
                                 </p>
+                                {doc.arquivoUrl && (
+                                  <a
+                                    href={`${API_BASE_URL}${doc.arquivoUrl}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+                                  >
+                                    Ver/baixar ficheiro
+                                  </a>
+                                )}
                               </div>
                             </div>
                             <button type="button" onClick={() => handleDeleteDocumento(doc.id)} className="text-red-400 hover:text-red-600">
