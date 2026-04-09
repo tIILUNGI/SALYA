@@ -126,8 +126,6 @@ const Processamento: React.FC = () => {
     setOutrosSubsidios(outrosSubsidios.filter((_: any, i: number) => i !== index));
   };
 
-  const monthToNum = (m: string) => ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].indexOf(m) + 1;
-
   const handleConfirmForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedColab) return;
@@ -403,68 +401,147 @@ const Processamento: React.FC = () => {
       )}
 
       {showFormModal && selectedColab && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[90] p-4 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-[40px] max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95">
-            <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between">
-              <div>
-                <h2 className="font-black text-2xl text-slate-900 dark:text-white uppercase tracking-tighter">Entrada de Dados</h2>
-                <div className="text-primary text-[10px] font-black uppercase tracking-widest mt-1">{selectedColab.nome}</div>
-              </div>
-              <button onClick={() => setShowFormModal(false)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button>
-            </div>
-            <form onSubmit={handleConfirmForm} className="p-10 space-y-8">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Salário Base (Kz)</label>
-                <input required type="text" value={formSalario ? formSalario.toLocaleString('pt-AO') : ''} onChange={e => setFormSalario(Number(e.target.value.replace(/\D/g, '')))} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-3xl font-black text-primary text-3xl focus:border-primary outline-none transition-all" />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Alimentação</label><input type="text" value={formAlimentacao === 0 ? '' : formAlimentacao.toLocaleString('pt-AO')} onChange={e => setFormAlimentacao(Number(e.target.value.replace(/\D/g, '')))} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold" placeholder="0" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transporte</label><input type="text" value={formTransporte === 0 ? '' : formTransporte.toLocaleString('pt-AO')} onChange={e => setFormTransporte(Number(e.target.value.replace(/\D/g, '')))} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold" placeholder="0" /></div>
-              </div>
-
-              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center justify-between">
-                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Outros Subsídios</h4>
-                   <select onChange={handleAddSubsidio} className="text-[10px] bg-slate-900 text-white rounded-lg py-1.5 px-3 font-black uppercase tracking-widest cursor-pointer outline-none">
-                     <option value="">+ Adicionar</option>
-                     <option value="Subsídio de Chefia">Chefia</option>
-                     <option value="Subsídio de Disponibilidade">Disponibilidade</option>
-                     <option value="Gratificação">Gratificação</option>
-                     <option value="Outro">Outro...</option>
-                   </select>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  {outrosSubsidios.map((s: { nome: string; valor: number }, idx: number) => (
-                    <div key={idx} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                       <div className="flex justify-between items-center mb-2">
-                          <label className="text-[10px] font-black text-primary uppercase tracking-widest truncate">{s.nome}</label>
-                          <button type="button" onClick={() => removeOutroSubsidio(idx)} className="text-red-400"><span className="material-symbols-outlined text-sm">close</span></button>
-                       </div>
-                       <input type="text" value={s.valor === 0 ? '' : s.valor.toLocaleString('pt-AO')} onChange={e => handleUpdateSubsidioValor(idx, Number(e.target.value.replace(/\D/g, '')))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 rounded-xl py-2 px-3 font-bold text-sm" placeholder="0" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Horas Extra</label><input type="text" value={formHorasExtra === 0 ? '' : formHorasExtra.toLocaleString('pt-AO')} onChange={e => setFormHorasExtra(Number(e.target.value.replace(/\D/g, '')))} className="w-full px-5 py-4 bg-emerald-50/20 border border-emerald-100 rounded-2xl font-bold" placeholder="0" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Bónus</label><input type="text" value={formBonus === 0 ? '' : formBonus.toLocaleString('pt-AO')} onChange={e => setFormBonus(Number(e.target.value.replace(/\D/g, '')))} className="w-full px-5 py-4 bg-emerald-50/20 border border-emerald-100 rounded-2xl font-bold" placeholder="0" /></div>
-              </div>
-
-              <div className="space-y-1.5 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <label className="text-[10px] font-black text-red-500 uppercase tracking-widest">Descontos / Faltas</label>
-                <input type="text" value={formFaltas === 0 ? '' : formFaltas.toLocaleString('pt-AO')} onChange={e => setFormFaltas(Number(e.target.value.replace(/\D/g, '')))} className="w-full px-6 py-4 bg-red-50/30 border-2 border-red-50 rounded-3xl font-black text-red-600 text-xl" placeholder="0" />
-              </div>
-              
-              <button type="submit" className="w-full py-5 bg-primary text-white rounded-[24px] font-black flex items-center justify-center gap-3 shadow-2xl shadow-primary/20 transition-all uppercase tracking-[4px] text-xs">
-                Gerar Recibo
-              </button>
-            </form>
-          </div>
+  <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[90] p-4 backdrop-blur-sm">
+    <div className="bg-white dark:bg-slate-900 rounded-[32px] max-w-3xl w-full max-h-[92vh] overflow-y-auto shadow-2xl animate-in zoom-in-95">
+      <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between">
+        <div>
+          <h2 className="font-black text-2xl text-slate-900 dark:text-white uppercase tracking-tighter">Planilha de Processamento</h2>
+          <div className="text-primary text-[10px] font-black uppercase tracking-widest mt-1">{selectedColab.nome}</div>
         </div>
-      )}
+        <button onClick={() => setShowFormModal(false)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button>
+      </div>
+      <form onSubmit={handleConfirmForm} className="p-8 space-y-6">
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estrutura tipo Excel</div>
+          <select onChange={handleAddSubsidio} className="text-[10px] bg-slate-900 text-white rounded-lg py-1.5 px-3 font-black uppercase tracking-widest cursor-pointer outline-none">
+            <option value="">+ Adicionar subsídio</option>
+            <option value="Subsídio de Chefia">Chefia</option>
+            <option value="Subsídio de Disponibilidade">Disponibilidade</option>
+            <option value="Gratificação">Gratificação</option>
+            <option value="Outro">Outro...</option>
+          </select>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 dark:bg-slate-800/60">
+              <tr>
+                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Item</th>
+                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Valor (Kz)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tr>
+                <td className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300">Salário Base</td>
+                <td className="px-4 py-3">
+                  <input
+                    required
+                    type="text"
+                    value={formSalario ? formSalario.toLocaleString('pt-AO') : ''}
+                    onChange={e => setFormSalario(Number(e.target.value.replace(/\D/g, '')))}
+                    className="w-full text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-black text-primary"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-medium text-slate-600 dark:text-slate-300">Alimentação</td>
+                <td className="px-4 py-3">
+                  <input
+                    type="text"
+                    value={formAlimentacao === 0 ? '' : formAlimentacao.toLocaleString('pt-AO')}
+                    onChange={e => setFormAlimentacao(Number(e.target.value.replace(/\D/g, '')))}
+                    className="w-full text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-bold"
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-medium text-slate-600 dark:text-slate-300">Transporte</td>
+                <td className="px-4 py-3">
+                  <input
+                    type="text"
+                    value={formTransporte === 0 ? '' : formTransporte.toLocaleString('pt-AO')}
+                    onChange={e => setFormTransporte(Number(e.target.value.replace(/\D/g, '')))}
+                    className="w-full text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-bold"
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-medium text-emerald-600">Horas Extra</td>
+                <td className="px-4 py-3">
+                  <input
+                    type="text"
+                    value={formHorasExtra === 0 ? '' : formHorasExtra.toLocaleString('pt-AO')}
+                    onChange={e => setFormHorasExtra(Number(e.target.value.replace(/\D/g, '')))}
+                    className="w-full text-right bg-emerald-50/40 border border-emerald-100 rounded-xl px-3 py-2 font-bold"
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-medium text-emerald-600">Bónus</td>
+                <td className="px-4 py-3">
+                  <input
+                    type="text"
+                    value={formBonus === 0 ? '' : formBonus.toLocaleString('pt-AO')}
+                    onChange={e => setFormBonus(Number(e.target.value.replace(/\D/g, '')))}
+                    className="w-full text-right bg-emerald-50/40 border border-emerald-100 rounded-xl px-3 py-2 font-bold"
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+              {outrosSubsidios.length > 0 ? (
+                outrosSubsidios.map((s: { nome: string; valor: number }, idx: number) => (
+                  <tr key={`sub-${idx}`}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-slate-600 dark:text-slate-300">{s.nome}</span>
+                        <button type="button" onClick={() => removeOutroSubsidio(idx)} className="text-red-400 hover:text-red-600">
+                          <span className="material-symbols-outlined text-sm">close</span>
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="text"
+                        value={s.valor === 0 ? '' : s.valor.toLocaleString('pt-AO')}
+                        onChange={e => handleUpdateSubsidioValor(idx, Number(e.target.value.replace(/\D/g, '')))}
+                        className="w-full text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-bold"
+                        placeholder="0"
+                      />
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="px-4 py-3 text-slate-400 text-xs">Sem outros subsídios</td>
+                  <td className="px-4 py-3 text-right text-slate-400 text-xs">0</td>
+                </tr>
+              )}
+              <tr>
+                <td className="px-4 py-3 font-black text-red-500">Descontos / Faltas</td>
+                <td className="px-4 py-3">
+                  <input
+                    type="text"
+                    value={formFaltas === 0 ? '' : formFaltas.toLocaleString('pt-AO')}
+                    onChange={e => setFormFaltas(Number(e.target.value.replace(/\D/g, '')))}
+                    className="w-full text-right bg-red-50/60 border border-red-200 rounded-xl px-3 py-2 font-black text-red-600"
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <button type="submit" className="w-full py-4 bg-primary text-white rounded-2xl font-black flex items-center justify-center gap-3 shadow-2xl shadow-primary/20 transition-all uppercase tracking-[4px] text-xs">
+          Gerar Recibo
+        </button>
+      </form>
+    </div>
+  </div>
+)}
 
       {/* New Subsídio Name Modal */}
       {showNewSubsidioModal && (
@@ -612,3 +689,4 @@ const Processamento: React.FC = () => {
 };
 
 export default Processamento;
+

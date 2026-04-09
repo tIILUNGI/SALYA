@@ -84,11 +84,7 @@ function App() {
       }
 
       // Fetch Colaboradores
-<<<<<<< HEAD
       const colaboradoresData = await api.get('/trabalhadores?size=1000');
-=======
-      const colaboradoresData = await api.get('/colaboradores');
->>>>>>> 67727589e0d247b3d63f7d4317424210e00a57fd
       setColaboradores(colaboradoresData._embedded?.colaboradores || []);
     } catch (error) {
       console.error('Error fetching global data:', error);
@@ -208,6 +204,8 @@ function MainLayout() {
   }, [location]);
 
   const hasEmpresa = empresa && empresa.nome && empresa.nif;
+  const canAcessarSemEmpresa = location.pathname === '/dashboard' || location.pathname === '/configuracoes';
+  const deveRedirecionar = !hasEmpresa && !canAcessarSemEmpresa;
 
   return (
     <div className="flex min-h-screen bg-background-light dark:bg-background-dark">
@@ -232,14 +230,14 @@ function MainLayout() {
       <div className="flex-1 flex flex-col min-h-screen md:ml-64 w-full md:w-[calc(100%-16rem)]">
         <Header />
         <main className="flex-1 p-0">
-          {(!hasEmpresa && currentPage !== 'configuracoes') ? (
+          {deveRedirecionar ? (
             <Navigate to="/configuracoes" replace />
           ) : (
             <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               {hasEmpresa && (
                 <>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/alertas" element={<Alertas />} />
                   <Route path="/colaboradores" element={<Colaboradores />} />
                   <Route path="/processamento" element={<Processamento />} />

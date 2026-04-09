@@ -3,11 +3,7 @@ import { AppContext } from '../App';
 import { api } from '../services/api';
 
 const Header: React.FC = () => {
-<<<<<<< HEAD
   const { empresa, setEmpresa, empresaId, setEmpresaId, empresas } = useContext(AppContext);
-=======
-  const { empresa, empresaId } = useContext(AppContext);
->>>>>>> 67727589e0d247b3d63f7d4317424210e00a57fd
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loadingNotifs, setLoadingNotifs] = useState(false);

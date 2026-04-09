@@ -3,22 +3,6 @@ import { api } from '../services/api';
 import { AppContext } from '../App';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 
-const dataProcessamento = [
-  { name: 'Jan', total: 4000 },
-  { name: 'Fev', total: 3000 },
-  { name: 'Mar', total: 5200 },
-  { name: 'Abr', total: 2780 },
-  { name: 'Mai', total: 6890 },
-  { name: 'Jun', total: 4390 },
-];
-
-const dataAbsentismo = [
-  { name: 'TI', faltas: 4, justificadas: 2 },
-  { name: 'RH', faltas: 1, justificadas: 1 },
-  { name: 'Operações', faltas: 12, justificadas: 8 },
-  { name: 'Financeiro', faltas: 2, justificadas: 0 },
-];
-
 const Dashboard: React.FC = () => {
   const { empresa } = useContext(AppContext);
   const [stats, setStats] = useState({
@@ -32,6 +16,8 @@ const Dashboard: React.FC = () => {
     documentosExpirando: 0,
     salariosPendentes: 0
   });
+  const [chartProcessamento, setChartProcessamento] = useState<any[]>([]);
+  const [chartAbsentismo, setChartAbsentismo] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,12 +25,22 @@ const Dashboard: React.FC = () => {
       try {
         const response = await api.get('/dashboard/stats');
         setStats(response);
-        
+
         try {
           const alertasData = await api.get('/alertas/resumo');
           setAlertas(alertasData);
         } catch (e) {
           console.error('Error fetching alerts', e);
+        }
+
+        try {
+          const charts = await api.get('/dashboard/charts');
+          setChartProcessamento(charts.processamentoMensal || []);
+          setChartAbsentismo(charts.absentismoDepartamento || []);
+        } catch (e) {
+          console.error('Error fetching charts', e);
+          setChartProcessamento([]);
+          setChartAbsentismo([]);
         }
       } catch (error) {
         console.error('Error fetching dashboard stats', error);
@@ -163,7 +159,7 @@ const Dashboard: React.FC = () => {
         <div className="glass-card p-6 h-[320px]">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Evolução de Custos Salariais</h3>
           <ResponsiveContainer width="100%" height="85%">
-            <AreaChart data={dataProcessamento} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+            <AreaChart data={chartProcessamento} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorTotalDb" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
@@ -182,7 +178,7 @@ const Dashboard: React.FC = () => {
         <div className="glass-card p-6 h-[320px]">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Absentismo por Departamento</h3>
           <ResponsiveContainer width="100%" height="85%">
-            <BarChart data={dataAbsentismo} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+            <BarChart data={chartAbsentismo} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9"/>
               <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
               <YAxis stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
@@ -199,3 +195,5 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+
+

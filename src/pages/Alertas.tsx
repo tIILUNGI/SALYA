@@ -21,7 +21,7 @@ const severidadeBadge: Record<string, string> = {
 const Alertas: React.FC = () => {
   const { colaboradores } = useContext(AppContext);
   const [alertas, setAlertas] = useState<AlertaItem[]>([]);
-  const [activeTab, setActiveTab] = useState<'Pendentes' | 'Resolvidos'>('Pendentes');
+  const [activeTab, setActiveTab] = useState<'Pendente' | 'Resolvido'>('Pendente');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -97,7 +97,7 @@ const Alertas: React.FC = () => {
   };
 
   const filtered = alertas.filter(a => a.status === activeTab);
-  const pendentes = alertas.filter(a => a.status === 'Pendentes').length;
+  const pendentes = alertas.filter(a => a.status === 'Pendente').length;
 
   return (
     <div className="p-8 animate-in fade-in slide-up">
@@ -115,14 +115,14 @@ const Alertas: React.FC = () => {
       {/* Tabs */}
       <div className="glass-card mb-6 p-2 flex gap-2 w-max">
         <button
-          onClick={() => setActiveTab('Pendentes')}
-          className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Pendentes' ? 'bg-amber-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+          onClick={() => setActiveTab('Pendente')}
+          className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Pendente' ? 'bg-amber-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
         >
           Pendentes ({alertas.filter(a => a.status === 'Pendente').length})
         </button>
         <button
-          onClick={() => setActiveTab('Resolvidos')}
-          className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Resolvidos' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+          onClick={() => setActiveTab('Resolvido')}
+          className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Resolvido' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
         >
           Resolvidos ({alertas.filter(a => a.status === 'Resolvido').length})
         </button>

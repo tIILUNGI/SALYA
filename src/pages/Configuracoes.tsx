@@ -2,8 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api } from '../services/api';
-import { taxasIRT } from '../data/mockData';
-import { ConfiguracaoEmpresa } from '../types';
+import { ConfiguracaoEmpresa, TaxaIRT } from '../types';
 
 const Configuracoes: React.FC = () => {
   const { empresa, setEmpresa, isConfigured, setIsConfigured, empresas, setEmpresas, empresaId, setEmpresaId, showConfirm } = useContext(AppContext);
@@ -36,6 +35,9 @@ const Configuracoes: React.FC = () => {
   const [setupStep, setSetupStep] = useState(!empresa ? 'choice' : 'form');
   const [saved, setSaved] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(!empresa);
+  const [taxasIRT, setTaxasIRT] = useState<TaxaIRT[]>([]);
+  const [taxasLoading, setTaxasLoading] = useState(false);
+  const [taxasError, setTaxasError] = useState('');
 
   // Sincronizar quando a empresa mudar via switcher
   useEffect(() => {
@@ -43,6 +45,28 @@ const Configuracoes: React.FC = () => {
       setConfig({ ...empresa });
     }
   }, [empresa, isCreatingNew]);
+
+  useEffect(() => {
+    const fetchTaxas = async () => {
+      setTaxasLoading(true);
+      setTaxasError('');
+      try {
+        const data = await api.get('/taxas/irt');
+        if (Array.isArray(data)) {
+          setTaxasIRT(data);
+        } else {
+          setTaxasIRT([]);
+          setTaxasError('Formato invÃ¡lido de taxas.');
+        }
+      } catch (error) {
+        setTaxasIRT([]);
+        setTaxasError('Erro ao carregar taxas.');
+      } finally {
+        setTaxasLoading(false);
+      }
+    };
+    fetchTaxas();
+  }, []);
 
   const handleChooseCategory = (category: 'Empresa' | 'Particular') => {
     setConfig({ ...emptyConfig, id: Date.now(), categoria: category });
@@ -293,10 +317,20 @@ const Configuracoes: React.FC = () => {
                         <tr className="bg-slate-50 dark:bg-slate-800/50"><th className="p-4 text-[10px] font-black text-slate-400 uppercase">Escalão</th><th className="p-4 text-[10px] font-black text-slate-400 uppercase">Mínimo</th><th className="p-4 text-[10px] font-black text-slate-400 uppercase">Máximo</th><th className="p-4 text-[10px] font-black text-slate-400 uppercase">Taxa</th><th className="p-4 text-[10px] font-black text-slate-400 uppercase text-right">Parcela</th></tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {taxasIRT.map((t, idx) => (
-                          <tr key={`irt-${idx}`} className="hover:bg-slate-50/50 transition-all font-bold text-sm"><td className="p-4">{t.faixa}</td><td className="p-4">{t.minimo.toLocaleString()}</td><td className="p-4">{t.maximo.toLocaleString()}</td><td className="p-4">{t.taxa}%</td><td className="p-4 text-right">{t.parcelaAbt.toLocaleString()} Kz</td></tr>
-                        ))}
-                      </tbody>
+  {taxasLoading ? (
+    <tr>
+      <td colSpan={5} className="p-6 text-center text-xs text-slate-400">A carregar...</td>
+    </tr>
+  ) : taxasIRT.length === 0 ? (
+    <tr>
+      <td colSpan={5} className="p-6 text-center text-xs text-slate-400">{taxasError || 'Sem dados disponíveis.'}</td>
+    </tr>
+  ) : (
+    taxasIRT.map((t, idx) => (
+      <tr key={`irt-${idx}`} className="hover:bg-slate-50/50 transition-all font-bold text-sm"><td className="p-4">{t.faixa}</td><td className="p-4">{t.minimo.toLocaleString()}</td><td className="p-4">{t.maximo.toLocaleString()}</td><td className="p-4">{t.taxa}%</td><td className="p-4 text-right">{t.parcelaAbt.toLocaleString()} Kz</td></tr>
+    ))
+  )}
+</tbody>
                     </table>
                   </div>
                 </div>
@@ -364,3 +398,5 @@ const Configuracoes: React.FC = () => {
 };
 
 export default Configuracoes;
+
+

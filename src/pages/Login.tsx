@@ -9,7 +9,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate()
   const { 
     setIsAuthenticated, setColaboradores, setEmpresa, setUser, 
-    setIsConfigured, setEmpresas, setEmpresaId, setMessage, empresa
+    setIsConfigured, setEmpresas, setEmpresaId, setMessage
   } = useContext(AppContext);
   
   const [mode, setMode] = useState<ViewMode>('login');
@@ -24,7 +24,7 @@ const Login: React.FC = () => {
   const fetchGlobalData = async () => {
     try {
       // Fetch Empresas
-      const empresasData = await api.get('/empresas');
+      const empresasData = await api.get('/empresas?size=1000');
       const empresasList = empresasData._embedded?.empresas || [];
       setEmpresas(empresasList);
       
@@ -37,7 +37,7 @@ const Login: React.FC = () => {
       }
 
       // Fetch Colaboradores
-      const colaboradoresData = await api.get('/colaboradores');
+      const colaboradoresData = await api.get('/trabalhadores?size=1000');
       setColaboradores(colaboradoresData._embedded?.colaboradores || []);
     } catch (error) {
       console.error('Error fetching global data:', error);
@@ -56,12 +56,7 @@ const Login: React.FC = () => {
       setUser(user);
       
       await fetchGlobalData();
-      
-      if (empresa) {
-        navigate('/processamento');
-      } else {
-        navigate('/configuracoes');
-      }
+      navigate('/dashboard');
     } catch (error: any) {
       setErrorString(error.message || 'Erro ao realizar login');
     }
@@ -84,7 +79,7 @@ const Login: React.FC = () => {
       setUser(user);
       
       await fetchGlobalData();
-      navigate('/configuracoes');
+      navigate('/dashboard');
     } catch (error: any) {
       setErrorString(error.message || 'Erro ao registar');
     }
@@ -102,7 +97,7 @@ const Login: React.FC = () => {
       setUser(user);
       
       await fetchGlobalData();
-      navigate('/configuracoes');
+      navigate('/dashboard');
     } catch (error: any) {
       setErrorString(error.message || 'Erro ao confirmar');
     }
@@ -112,8 +107,8 @@ const Login: React.FC = () => {
     e.preventDefault();
     setErrorString('');
     try {
-      await api.post('/auth/forgot', { email });
-      setMessage({ title: 'Sucesso', type: 'success', text: 'Código enviado para o seu email' });
+      await api.post('/auth/forgot-password', { email });
+      setMessage({ title: 'Sucesso', type: 'success', text: 'Email de recuperação enviado (caso exista conta).' });
     } catch (error: any) {
       setErrorString(error.message || 'Erro ao recuperar password');
     }
@@ -301,7 +296,7 @@ const Login: React.FC = () => {
             <form onSubmit={handleConfirm} className="space-y-6">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Confirmar Email</h2>
-                <p className="text-slate-500 dark:text-slate-400">Introduza o código enviado para o seu email</p>
+                <p className="text-slate-500 dark:text-slate-400">Introduza o Email de recuperação enviado (caso exista conta).</p>
               </div>
 
               {errorString && (
@@ -389,3 +384,4 @@ const Login: React.FC = () => {
 };
 
 export default Login;
+
