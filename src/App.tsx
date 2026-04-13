@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Alertas from './pages/Alertas';
@@ -143,8 +144,9 @@ function App() {
     }}>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
-          <Route path="*" element={isAuthenticated ? <MainLayout /> : <Navigate to="/login" replace />} />
+          <Route path="*" element={isAuthenticated ? <MainLayout /> : <Navigate to="/" replace />} />
         </Routes>
 
         {/* Global Notification Modal */}
