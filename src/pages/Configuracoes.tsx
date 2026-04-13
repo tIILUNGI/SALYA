@@ -152,11 +152,11 @@ const Configuracoes: React.FC = () => {
       const dataToSave = { ...config };
       
       if (!isCreatingNew && empresa?.id) {
-        savedEmpresa = await api.patch(`/empresas/${empresa.id}`, dataToSave);
+        savedEmpresa = await api.patch(`/api/empresas/${empresa.id}`, dataToSave);
       } else {
         // Excluir ID para o backend gerar e evitar erro 409 Conflict
         const { id, ...postData } = dataToSave;
-        savedEmpresa = await api.post('/empresas', postData);
+        savedEmpresa = await api.post('/api/empresas', postData);
       }
       
       await refreshData();
