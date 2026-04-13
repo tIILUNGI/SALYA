@@ -93,6 +93,7 @@ export const getApiErrorMessage = (error: any) => {
 export const api = {
   async get(endpoint: string) {
     console.group(`📡 GET ${endpoint}`);
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: getHeaders(),
     });
@@ -112,7 +113,7 @@ export const api = {
     return responseData;
   },
 
-  async post(endpoint: string, data: any) {
+async post(endpoint: string, data: any) {
     console.group(`📡 POST ${endpoint}`);
     console.log('📦 Dados enviados:', JSON.stringify(data, null, 2));
 

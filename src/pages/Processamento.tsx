@@ -21,6 +21,53 @@ const Processamento: React.FC = () => {
   const { empresa, colaboradores, empresaId, setMessage } = useContext(AppContext);
   const ativos = colaboradores.filter(c => c.status === 'Ativo' && (!empresaId || c.empresaId === empresaId || (c as any).empresa?.id === empresaId));
   
+  const handleExportExcel = () => {
+    const headers = ['Nome', 'Cargo', 'Salário Base', 'IRT', 'INSS', 'Líquido'];
+    const rows = ativos.map(c => [c.nome, c.cargo, c.salarioBase || 0, 0, 0, c.salarioBase || 0]);
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `folha_salario_${selectedMonth}_${selectedYear}.csv`;
+    link.click();
+    setMessage?.({ title: 'Sucesso', text: 'Ficheiro exportado com sucesso', type: 'success' });
+  };
+
+  const handleExportPDF = async () => {
+    const element = document.getElementById('processamento-content');
+    if (!element) return;
+    try { 
+      await html2pdf().set({ margin: 10, filename: `recibo_${selectedMonth}_${selectedYear}.pdf`, image: { type: 'jpeg' as const, quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(element).save(); 
+    } catch { console.error('Erro ao gerar PDF'); }
+  };
+
+  const handleGenerateChart = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 600;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#3b82f6';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('Gráfico de Folha Salarial', 20, 40);
+    const maxSalary = Math.max(...ativos.map(c => c.salarioBase || 0));
+    ativos.forEach((c, i) => {
+      const barHeight = ((c.salarioBase || 0) / maxSalary) * 250;
+      ctx.fillStyle = '#3b82f6';
+      ctx.fillRect(50 + (i * 80), 350 - barHeight, 60, barHeight);
+      ctx.fillStyle = '#333';
+      ctx.font = '10px sans-serif';
+      ctx.fillText(c.nome?.substring(0, 8) || '', 50 + (i * 80), 370);
+    });
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = `grafico_${selectedMonth}_${selectedYear}.png`;
+    link.click();
+    setMessage?.({ title: 'Sucesso', text: 'Gráfico gerado com sucesso', type: 'success' });
+  };
+  
   const currentYear = new Date().getFullYear();
   const currentDay = new Date().getDate();
   const [selectedMonth, setSelectedMonth] = useState('Janeiro');
@@ -229,9 +276,8 @@ const Processamento: React.FC = () => {
       </div>
 
       <div className="glass-card mb-6 p-2 flex gap-2 w-full md:w-max overflow-x-auto text-nowrap mt-4">
-        <button onClick={() => setActiveTab('Normal')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Normal' ? 'bg-primary text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Processamento Normal</button>
-        <button onClick={() => setActiveTab('Movimentos')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Movimentos' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Movimentos Externos</button>
-        <button onClick={() => setActiveTab('Exportacao')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Exportacao' ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Exportação de Dados</button>
+        <button onClick={() => setActiveTab('Normal')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Normal' ? 'bg-primary text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Processamento</button>
+        <button onClick={() => setActiveTab('Exportacao')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Exportacao' ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Exportar</button>
       </div>
 
       {activeTab === 'Normal' && (
@@ -382,24 +428,24 @@ const Processamento: React.FC = () => {
              <h3 className="text-xl font-black uppercase text-slate-800 dark:text-white">Exportação Rápida</h3>
              <p className="text-slate-500 text-sm">Gere ficheiros e gráficos da folha com um clique.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-             <button className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-emerald-500/50 hover:bg-emerald-50/30 transition-all group">
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+             <button onClick={handleExportExcel} className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-emerald-500/50 hover:bg-emerald-50/30 transition-all group cursor-pointer">
                 <span className="material-symbols-outlined text-4xl text-emerald-500 group-hover:scale-110 transition-transform">table_view</span>
                 <span className="font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest text-xs">Exportar Excel</span>
              </button>
-             <button className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-red-500/50 hover:bg-red-50/30 transition-all group">
+             <button onClick={handleExportPDF} className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-red-500/50 hover:bg-red-50/30 transition-all group cursor-pointer">
                 <span className="material-symbols-outlined text-4xl text-red-500 group-hover:scale-110 transition-transform">picture_as_pdf</span>
                 <span className="font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest text-xs">Exportar PDF</span>
              </button>
-             <button className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-primary-500/50 hover:bg-primary-50/30 transition-all group">
+             <button onClick={() => setMessage?.({ title: 'Email', text: 'Funcionalidade de email em desenvolvimento', type: 'info' })} className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-primary-500/50 hover:bg-primary-50/30 transition-all group cursor-pointer">
                 <span className="material-symbols-outlined text-4xl text-primary-500 group-hover:scale-110 transition-transform">mail</span>
                 <span className="font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest text-xs">Enviar por Email</span>
              </button>
-             <button className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-amber-500/50 hover:bg-amber-50/30 transition-all group">
+             <button onClick={handleGenerateChart} className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-amber-500/50 hover:bg-amber-50/30 transition-all group cursor-pointer">
                 <span className="material-symbols-outlined text-4xl text-amber-500 group-hover:scale-110 transition-transform">insights</span>
                 <span className="font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest text-xs">Gerar Gráfico</span>
              </button>
-          </div>
+           </div>
         </div>
       )}
 
@@ -417,9 +463,9 @@ const Processamento: React.FC = () => {
         <div className="flex items-center justify-between gap-4">
           <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estrutura tipo Excel</div>
           <select onChange={handleAddSubsidio} className="text-[10px] bg-slate-900 text-white rounded-lg py-1.5 px-3 font-black uppercase tracking-widest cursor-pointer outline-none">
-            <option value="">+ Adicionar subsídio</option>
-            <option value="Subsídio de Chefia">Chefia</option>
-            <option value="Subsídio de Disponibilidade">Disponibilidade</option>
+            <option value="">+ Adicionar ganho</option>
+            <option value="Ganho de Chefia">Chefia</option>
+            <option value="Ganho de Disponibilidade">Disponibilidade</option>
             <option value="Gratificação">Gratificação</option>
             <option value="Outro">Outro...</option>
           </select>
@@ -518,7 +564,7 @@ const Processamento: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td className="px-4 py-3 text-slate-400 text-xs">Sem outros subsídios</td>
+                  <td className="px-4 py-3 text-slate-400 text-xs">Sem outros ganhos</td>
                   <td className="px-4 py-3 text-right text-slate-400 text-xs">0</td>
                 </tr>
               )}
@@ -546,11 +592,11 @@ const Processamento: React.FC = () => {
   </div>
 )}
 
-      {/* New Subsídio Name Modal */}
+      {/* New Ganho Name Modal */}
       {showNewSubsidioModal && (
         <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-[110] p-4 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-sm w-full shadow-2xl">
-            <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase mb-4">Nome do Subsídio</h3>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase mb-4">Nome do Ganho</h3>
             <input 
               autoFocus
               value={tempSubsidioName}
@@ -636,8 +682,8 @@ const Processamento: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     <tr className="bg-slate-50/50 font-black"><td className="p-4">Vencimento Base Mensal</td><td className="p-4 text-right">{Number(formSalario).toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>
-                    {formAlimentacao > 0 && <tr><td className="p-4">Subsídio de Alimentação</td><td className="p-4 text-right">{formAlimentacao.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>}
-                    {formTransporte > 0 && <tr><td className="p-4">Subsídio de Transporte</td><td className="p-4 text-right">{formTransporte.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>}
+                    {formAlimentacao > 0 && <tr><td className="p-4">Ganho de Alimentação</td><td className="p-4 text-right">{formAlimentacao.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>}
+                    {formTransporte > 0 && <tr><td className="p-4">Ganho de Transporte</td><td className="p-4 text-right">{formTransporte.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>}
                     {outrosSubsidios.map((s: { nome: string; valor: number }, idx: number) => (
                       <tr key={idx}><td className="p-4">{s.nome}</td><td className="p-4 text-right">{s.valor.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>
                     ))}

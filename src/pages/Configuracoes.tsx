@@ -250,7 +250,7 @@ const Configuracoes: React.FC = () => {
   };
 
   const tabs = [
-    { id: 'empresa', label: 'Dados da Empresa', icon: 'business' },
+    { id: 'empresa', label: 'Dados da Entidade', icon: 'business' },
     { id: 'impostos', label: 'Taxas de Impostos', icon: 'percent' },
     { id: 'processamento', label: 'Notificações', icon: 'notifications' },
     { id: 'gestao', label: 'Minhas Entidades', icon: 'account_tree' },

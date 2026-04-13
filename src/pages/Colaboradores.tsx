@@ -14,10 +14,10 @@ interface Documento {
 const Colaboradores: React.FC = () => {
   const { colaboradores, setColaboradores, empresaId, showConfirm, setMessage } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState<'All' | 'Ativo' | 'Afastado'>('All');
+  const [filter, setFilter] = useState<'All' | 'Ativo' | 'Inativo'>('All');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalTab, setModalTab] = useState<'Dados' | 'Documentos'>('Dados');
+  const [modalTab, setModalTab] = useState<'Pessoais' | 'Contratuais' | 'Documentos'>('Pessoais');
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Documentos state
@@ -224,8 +224,8 @@ const Colaboradores: React.FC = () => {
             <button onClick={() => setFilter('Ativo')} className={`flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold uppercase tracking-wider border ${filter === 'Ativo' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-50 text-slate-500 border-slate-200'} transition-all`}>
               Ativos
             </button>
-            <button onClick={() => setFilter('Afastado')} className={`flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold uppercase tracking-wider border ${filter === 'Afastado' ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-50 text-slate-500 border-slate-200'} transition-all`}>
-              Afastados
+            <button onClick={() => setFilter('Inativo')} className={`flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold uppercase tracking-wider border ${filter === 'Inativo' ? 'bg-red-500 text-white border-red-500' : 'bg-slate-50 text-slate-500 border-slate-200'} transition-all`}>
+              Inativos
             </button>
           </div>
         </div>
@@ -297,11 +297,12 @@ const Colaboradores: React.FC = () => {
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-900 dark:bg-black text-white">
               <h3 className="text-lg font-black uppercase tracking-widest">{editingId ? 'Editar Cadastro' : 'Novo Colaborador'}</h3>
               <div className="flex gap-4">
-                <button type="button" onClick={() => setModalTab('Dados')} className={`text-xs font-black uppercase tracking-widest ${modalTab === 'Dados' ? 'text-primary' : 'text-slate-500'}`}>Dados</button>
+                <button type="button" onClick={() => setModalTab('Pessoais')} className={`text-xs font-black uppercase tracking-widest ${modalTab === 'Pessoais' ? 'text-primary' : 'text-slate-500'}`}>Pessoais</button>
+                <button type="button" onClick={() => setModalTab('Contratuais')} className={`text-xs font-black uppercase tracking-widest ${modalTab === 'Contratuais' ? 'text-primary' : 'text-slate-500'}`}>Contratuais</button>
                 <button type="button" onClick={() => { setModalTab('Documentos'); if (editingId) fetchDocumentos(editingId); }} className={`text-xs font-black uppercase tracking-widest ${modalTab === 'Documentos' ? 'text-primary' : 'text-slate-500'}`}>Documentos</button>
               </div>
               <button 
-                onClick={() => { setIsModalOpen(false); setDocumentos([]); setShowDocForm(false); setModalTab('Dados'); setDocFile(null); }}
+                onClick={() => { setIsModalOpen(false); setDocumentos([]); setShowDocForm(false); setModalTab('Pessoais'); setDocFile(null); }}
                 className="size-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all"
               >
                 <span className="material-symbols-outlined text-sm">close</span>
@@ -309,19 +310,51 @@ const Colaboradores: React.FC = () => {
             </div>
             
             <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8">
-              {modalTab === 'Dados' ? (
+              {modalTab === 'Pessoais' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Nome Completo</label>
                   <input required type="text" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value.replace(/[0-9]/g, '')})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Ex: João Paulo" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Cargo / Função</label>
-                  <input required type="text" value={formData.cargo} onChange={e => setFormData({...formData, cargo: e.target.value.replace(/[0-9]/g, '')})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Ex: Técnico de TI" />
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Número de BI</label>
+                  <input required type="text" value={formData.bi || ''} onChange={e => setFormData({...formData, bi: e.target.value.toUpperCase()})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Ex: 123456789AB" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">NIF</label>
                   <input required type="text" value={formData.nif} onChange={e => setFormData({...formData, nif: e.target.value.replace(/\D/g, '').slice(0, 9)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Ex: 123456789" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Telefone</label>
+                  <input type="text" value={formData.telefone || ''} onChange={e => setFormData({...formData, telefone: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="+244 ..." />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">E-mail</label>
+                  <input type="email" value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="exemplo@email.com" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Morada</label>
+                  <input type="text" value={formData.morada || ''} onChange={e => setFormData({...formData, morada: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Rua..." />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Departamento</label>
+                  <input type="text" value={formData.departamento || ''} onChange={e => setFormData({...formData, departamento: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Ex: TI" />
+                </div>
+              </div>
+              ) : modalTab === 'Contratuais' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Cargo / Função</label>
+                  <input required type="text" value={formData.cargo} onChange={e => setFormData({...formData, cargo: e.target.value.replace(/[0-9]/g, '')})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Ex: Técnico de TI" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de Contrato</label>
+                  <select value={formData.tipoContrato || 'Efectivo'} onChange={e => setFormData({...formData, tipoContrato: e.target.value as any})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Prestador">Prestador</option>
+                    <option value="Estagiário">Estagiário</option>
+                    <option value="Contrato a Termo Certo">Contrato a Termo Certo</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Salário Base (Kz)</label>
@@ -335,23 +368,31 @@ const Colaboradores: React.FC = () => {
                   <label className="block text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">Fim de Contrato (opcional)</label>
                   <input type="date" value={formData.fimContrato || ''} onChange={e => setFormData({...formData, fimContrato: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/10 outline-none focus:ring-2 focus:ring-amber-500 font-bold" />
                 </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Modalidade</label>
+                  <select value={formData.modalidade || 'Tempo Inteiro'} onChange={e => setFormData({...formData, modalidade: e.target.value as any})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold">
+                    <option value="Tempo Inteiro">Tempo Inteiro</option>
+                    <option value="Tempo Parcial">Tempo Parcial</option>
+                    <option value="Prestação de Serviços">Prestação de Serviços</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Subsídio de Férias (Kz)</label>
+                  <input type="text" value={formData.subsudioFerias === 0 || !formData.subsudioFerias ? '' : formData.subsudioFerias.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, subsudioFerias: Number(e.target.value.replace(/\D/g, '')) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-black text-primary" placeholder="0" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Subsídio de Natal (Kz)</label>
+                  <input type="text" value={formData.subsudioNatal === 0 || !formData.subsudioNatal ? '' : formData.subsudioNatal.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, subsudioNatal: Number(e.target.value.replace(/\D/g, '')) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-black text-primary" placeholder="0" />
+                </div>
                 <div className="md:col-span-2">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">IBAN</label>
                   <input required type="text" value={formData.iban} onChange={e => setFormData({...formData, iban: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 25)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-mono text-xs font-bold" placeholder="AO06 1234 5678 9012 3456 7890 1" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">E-mail</label>
-                  <input type="email" value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="exemplo@email.com" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Telefone</label>
-                  <input type="text" value={formData.telefone || ''} onChange={e => setFormData({...formData, telefone: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="+244 ..." />
-                </div>
-                <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
                   <select value={formData.status || 'Ativo'} onChange={e => setFormData({...formData, status: e.target.value as any})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold">
                     <option value="Ativo">Ativo</option>
-                    <option value="Afastado">Afastado</option>
+                    <option value="Inativo">Inativo</option>
                   </select>
                 </div>
               </div>
@@ -453,7 +494,11 @@ const Colaboradores: React.FC = () => {
               )}
               <div className="mt-10 flex gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">Cancelar</button>
-                <button type="submit" className="flex-1 py-4 rounded-xl bg-primary text-white text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all">Finalizar Cadastro</button>
+                {modalTab === 'Documentos' ? (
+                  <button type="submit" className="flex-1 py-4 rounded-xl bg-primary text-white text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all">Finalizar Cadastro</button>
+                ) : (
+                  <button type="button" onClick={(e) => { e.preventDefault(); setModalTab(modalTab === 'Pessoais' ? 'Contratuais' : 'Documentos'); }} className="flex-1 py-4 rounded-xl bg-primary text-white text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all">Seguinte</button>
+                )}
               </div>
             </form>
           </div>
