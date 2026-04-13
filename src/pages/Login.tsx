@@ -223,6 +223,15 @@ const Login: React.FC = () => {
                     Criar conta
                   </button>
                 </div>
+                <div className="pt-4 border-t border-slate-100 mt-4">
+                  <button 
+                    type="button"
+                    onClick={() => navigate('/')}
+                    className="text-sm text-slate-400 hover:text-slate-600 font-medium"
+                  >
+                    ← Voltar à página inicial
+                  </button>
+                </div>
               </div>
             </form>
           )}
