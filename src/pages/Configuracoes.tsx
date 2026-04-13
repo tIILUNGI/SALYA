@@ -147,61 +147,52 @@ const Configuracoes: React.FC = () => {
     return;
   }
 
-  try {
-    let savedEmpresa;
-    const dataToSave = { ...config };
-    
-    console.log('Data to save:', dataToSave);
-    
-    if (!isCreatingNew && empresa?.id) {
-      console.log('Atualizando empresa existente ID:', empresa.id);
-      savedEmpresa = await api.patch(`/api/empresas/${empresa.id}`, dataToSave);
-    } else {
-      // Excluir ID para o backend gerar e evitar erro 409 Conflict
-      const { id, ...postData } = dataToSave;
-      console.log('Criando nova empresa com dados:', postData);
-      savedEmpresa = await api.post('/api/empresas', postData);
-    }
-    
-    console.log('Resposta do servidor:', savedEmpresa);
-    
-    await refreshData();
-    
-    setSaved(true);
-    setIsCreatingNew(false);
-    
-    setMessage({
-      title: 'SUCESSO!',
-      text: isCreatingNew ? 'Empresa criada com sucesso!' : 'Configurações salvas com sucesso!',
-      type: 'success'
-    });
-    
-    setTimeout(() => {
-      setSaved(false);
-      if (!isConfigured) {
-        navigate('/processamento');
+    try {
+      let savedEmpresa;
+      const dataToSave = { ...config };
+      
+      if (!isCreatingNew && empresa?.id) {
+        savedEmpresa = await api.patch(`/empresas/${empresa.id}`, dataToSave);
+      } else {
+        // Excluir ID para o backend gerar e evitar erro 409 Conflict
+        const { id, ...postData } = dataToSave;
+        savedEmpresa = await api.post('/empresas', postData);
       }
-    }, 1500);
-  } catch (error: any) {
-    console.error('❌ Erro ao salvar:', error);
-    console.error('Detalhes do erro:', error.message);
-    
-    if (error.message?.toLowerCase().includes('conflict') || error.message?.includes('409')) {
+      
+      await refreshData();
+      
+      setSaved(true);
+      setIsCreatingNew(false);
+      
       setMessage({
-        title: 'ERRO!',
-        text: 'Já existe um negócio registrado com este NIF. Por favor, introduza um NIF diferente.',
-        type: 'error'
+        title: 'SUCESSO!',
+        text: isCreatingNew ? 'Empresa criada com sucesso!' : 'Configurações salvas com sucesso!',
+        type: 'success'
       });
-    } else {
-      setMessage({
-        title: 'ERRO!',
-        text: `Erro ao criar/salvar as configurações: ${error.message}`,
-        type: 'error'
-      });
+      
+      setTimeout(() => {
+        setSaved(false);
+        if (!isConfigured) {
+          navigate('/processamento');
+        }
+      }, 1500);
+    } catch (error: any) {
+      console.error('Error saving configurations:', error);
+      if (error.message?.toLowerCase().includes('conflict') || error.message?.includes('409')) {
+        setMessage({
+          title: 'ERRO!',
+          text: 'Já existe um negócio registrado com este NIF. Por favor, introduza um NIF diferente.',
+          type: 'error'
+        });
+      } else {
+        setMessage({
+          title: 'ERRO!',
+          text: 'Erro ao criar/salvar as configurações. Verifique a sua conexão com o servidor.',
+          type: 'error'
+        });
+      }
     }
-  }
-  console.groupEnd();
-};
+  };
 
   const handleSelectBusiness = (bus: any) => {
     setEmpresa(bus);
@@ -218,7 +209,7 @@ const Configuracoes: React.FC = () => {
     if (!busToDelete) return;
 
     showConfirm({
-      title: 'Eliminar Negócio',
+      title: 'Eliminar Entidade',
       text: `Tem a certeza que deseja eliminar "${busToDelete.nome}"? Todos os dados associados serão perdidos permanentemente.`,
       onConfirm: async () => {
         try {
@@ -243,7 +234,7 @@ const Configuracoes: React.FC = () => {
           
           setMessage({
             title: 'SUCESSO!',
-            text: 'Negócio eliminado com sucesso!',
+            text: 'Entidade eliminada com sucesso!',
             type: 'success'
           });
         } catch (error) {
@@ -262,7 +253,7 @@ const Configuracoes: React.FC = () => {
     { id: 'empresa', label: 'Dados da Empresa', icon: 'business' },
     { id: 'impostos', label: 'Taxas de Impostos', icon: 'percent' },
     { id: 'processamento', label: 'Processamento', icon: 'sync' },
-    { id: 'gestao', label: 'Meus Negócios', icon: 'account_tree' },
+    { id: 'gestao', label: 'Minhas Entidades', icon: 'account_tree' },
   ];
 
   return (
@@ -276,9 +267,9 @@ const Configuracoes: React.FC = () => {
           </nav>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-1 h-8 bg-primary rounded-full"></div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">{setupStep === 'choice' ? 'Adicionar Novo Negócio' : (isConfigured ? 'Configurações do Sistema' : 'Novo Cadastro')}</h1>
+            <h1 className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">{setupStep === 'choice' ? 'Adicionar Nova Entidade' : (isConfigured ? 'Configurações do Sistema' : 'Novo Cadastro')}</h1>
           </div>
-          <p className="text-slate-500 mt-1 ml-4">{setupStep === 'choice' ? 'Escolha o tipo de perfil para o novo negócio.' : 'Preencha os dados abaixo e clique em Salvar.'}</p>
+          <p className="text-slate-500 mt-1 ml-4">{setupStep === 'choice' ? 'Escolha o tipo de entidade que deseja registrar.' : 'Preencha os dados abaixo e clique em Guardar.'}</p>
         </div>
         <div className="flex items-center gap-3">
           {(setupStep === 'form' && isConfigured) && (
@@ -286,12 +277,12 @@ const Configuracoes: React.FC = () => {
               onClick={() => setSetupStep('choice')}
               className="px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
-              <span className="material-symbols-outlined">add</span> Criar Novo Negócio
+              <span className="material-symbols-outlined">add</span> Criar Nova Entidade
             </button>
           )}
           {setupStep === 'form' && (
             <button onClick={handleSave} className={`px-6 py-2.5 rounded-lg font-bold transition-all flex items-center gap-2 ${saved ? 'bg-emerald-500 text-white' : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20'}`}>
-              {saved ? <><span className="material-symbols-outlined">check</span> Guardado!</> : <><span className="material-symbols-outlined">save</span> {isCreatingNew ? 'Criar Negócio' : 'Guardar Alterações'}</>}
+              {saved ? <><span className="material-symbols-outlined">check</span> Guardado!</> : <><span className="material-symbols-outlined">save</span> {isCreatingNew ? 'Criar Entidade' : 'Guardar Alterações'}</>}
             </button>
           )}
         </div>
@@ -299,18 +290,15 @@ const Configuracoes: React.FC = () => {
 
       {setupStep === 'choice' ? (
         <div className="max-w-4xl mx-auto mt-12 text-center">
-          <h2 className="text-3xl font-black mb-4 uppercase">Escolha o seu perfil</h2>
-          <p className="text-slate-500 mb-10">Como pretende utilizar o SALYA? Seleccione a opção que melhor se adapta a si.</p>
+          <h2 className="text-3xl font-black mb-4 uppercase">Escolha o tipo de entidade</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <button onClick={() => handleChooseCategory('Empresa')} className="bg-white dark:bg-slate-900 p-8 rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-primary transition-all group text-left shadow-xl">
-              <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined text-4xl">business</span></div>
-              <h3 className="text-xl font-bold mb-2 uppercase">Empresa ou Negócio</h3>
-              <p className="text-slate-500 text-sm">Para empresas com diversos funcionários e obrigações fiscais complexas.</p>
+            <button onClick={() => handleChooseCategory('Empresa')} className="bg-white dark:bg-slate-900 p-8 rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-primary text-left shadow-xl">
+              <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-6"><span className="material-symbols-outlined text-4xl">business</span></div>
+              <h3 className="text-xl font-bold mb-2 uppercase">Empresa</h3>
             </button>
-            <button onClick={() => handleChooseCategory('Particular')} className="bg-white dark:bg-slate-900 p-8 rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-primary transition-all group text-left shadow-xl">
-              <div className="size-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 mb-6 group-hover:scale-110 transition-transform"><span className="material-symbols-outlined text-4xl">home</span></div>
-              <h3 className="text-xl font-bold mb-2 uppercase">Particular / Doméstico</h3>
-              <p className="text-slate-500 text-sm">Para gerir funcionários em sua residência particular ou prestadores únicos.</p>
+            <button onClick={() => handleChooseCategory('Particular')} className="bg-white dark:bg-slate-900 p-8 rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-primary text-left shadow-xl">
+              <div className="size-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 mb-6"><span className="material-symbols-outlined text-4xl">home</span></div>
+              <h3 className="text-xl font-bold mb-2 uppercase">Particular</h3>
             </button>
           </div>
           {empresas.length > 0 && (
@@ -347,12 +335,6 @@ const Configuracoes: React.FC = () => {
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Regime Fiscal</label>
                       <select value={config.regimeFiscal} onChange={(e) => setConfig({...config, regimeFiscal: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
                         <option>Geral</option><option>Simplificado</option><option>Isento</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de Entidade</label>
-                      <select value={config.tipoEntidade} onChange={(e) => setConfig({...config, tipoEntidade: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
-                        <option>Lda</option><option>SA</option><option>EI</option><option>Sucursal</option>
                       </select>
                     </div>
                   </div>
@@ -466,7 +448,7 @@ const Configuracoes: React.FC = () => {
             {activeTab === 'gestao' && (
               <div className="space-y-6">
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                  <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Meus Negócios</h3>
+                  <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Minhas Entidades</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                     {empresas.map((bus, idx) => (
                       <div key={`empresa-${bus.id || idx}`} className={`p-6 rounded-xl border-2 transition-all ${empresaId === bus.id ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-800'}`}>
@@ -489,7 +471,7 @@ const Configuracoes: React.FC = () => {
                           <button 
                             onClick={() => handleDeleteBusiness(bus.id)}
                             className="p-2 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"
-                            title="Eliminar Negócio"
+                            title="Eliminar Entidade"
                           >
                             <span className="material-symbols-outlined text-sm">delete</span>
                           </button>

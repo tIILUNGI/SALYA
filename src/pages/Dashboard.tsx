@@ -52,7 +52,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="p-8 animate-in fade-in slide-up page-enter-active">
+    <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Painel de Controlo</h1>
@@ -62,7 +62,7 @@ const Dashboard: React.FC = () => {
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+          <div className="rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
