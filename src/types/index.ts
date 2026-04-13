@@ -1,3 +1,35 @@
+export interface User {
+  id?: number;
+  name: string;
+  email: string;
+  phone?: string;
+  role?: string;
+}
+
+export interface Empresa {
+  id: number;
+  nome: string;
+  nif: string;
+  email?: string;
+  telefone?: string;
+  endereco?: string;
+  municipio?: string;
+  provincia?: string;
+  categoria?: string;  
+  banco?: string;      
+  iban?: string;       
+  taxaINSS?: number;   
+  taxaINSSPatronal?: number; 
+  taxaAGT?: number;    
+  regimeFiscal?: string;
+  tipoEntidade?: string;
+  processamentoAutomatico?: boolean;
+  envioAutomaticoContracheques?: boolean;
+  diaProcessamento?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Colaborador {
   id: number;
   numeroColaborador?: string;

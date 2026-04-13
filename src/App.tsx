@@ -11,12 +11,13 @@ import Processamento from './pages/Processamento';
 import Configuracoes from './pages/Configuracoes';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import { Colaborador } from './types';
+import { Colaborador,Empresa  } from './types';
 import { api } from './services/api';
 
 interface User {
   email: string;
   name: string;
+  id?: number;
 }
 
 interface AppContextType {
@@ -26,10 +27,10 @@ interface AppContextType {
   setIsAuthenticated: (value: boolean) => void;
   isConfigured: boolean;
   setIsConfigured: (value: boolean) => void;
-  empresas: any[];
-  setEmpresas: (value: any[]) => void;
-  empresa: any;
-  setEmpresa: (value: any) => void;
+  empresas: Empresa[];
+  setEmpresas: (value: Empresa[]) => void;
+  empresa: Empresa | null;
+  setEmpresa: (value: Empresa | null) => void;
   empresaId: number | null;
   setEmpresaId: (value: number | null) => void;
   colaboradores: Colaborador[];
@@ -37,6 +38,7 @@ interface AppContextType {
   message: { title: string; text: string; type: 'success' | 'error' | 'info' | 'warning' } | null;
   setMessage: (msg: { title: string; text: string; type: 'success' | 'error' | 'info' | 'warning' } | null) => void;
   showConfirm: (config: { title: string; text: string; onConfirm: () => void }) => void;
+  refreshData: () => Promise<void>;
 }
 
 export const AppContext = React.createContext<AppContextType>({
@@ -57,21 +59,25 @@ export const AppContext = React.createContext<AppContextType>({
   message: null,
   setMessage: () => {},
   showConfirm: () => {},
+  refreshData: async () => {},
 });
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isConfigured, setIsConfigured] = useState(false);
-  const [empresas, setEmpresas] = useState<any[]>([]);
-  const [empresa, setEmpresa] = useState<any>(null);
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [empresa, setEmpresa] = useState<Empresa | null>(null);
   const [empresaId, setEmpresaId] = useState<number | null>(null);
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [message, setMessage] = useState<{ title: string; text: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
   const [confirmData, setConfirmData] = useState<{ title: string; text: string; onConfirm: () => void } | null>(null);
 
-  const fetchGlobalData = async () => {
+  const refreshData = async () => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
       // Fetch Empresas
       const empresasData = await api.get('/empresas?size=1000');
       const empresasList = empresasData._embedded?.empresas || [];
@@ -81,6 +87,10 @@ function App() {
         setEmpresa(empresasList[0]);
         setEmpresaId(empresasList[0].id);
         setIsConfigured(true);
+      } else {
+        setEmpresa(null);
+        setEmpresaId(null);
+        setIsConfigured(false);
       }
 
       // Fetch Colaboradores
@@ -93,7 +103,7 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchGlobalData();
+      refreshData();
     }
   }, [isAuthenticated]);
 
@@ -105,7 +115,7 @@ function App() {
     <AppContext.Provider value={{ 
       user, setUser, isAuthenticated, setIsAuthenticated, isConfigured, setIsConfigured, 
       empresas, setEmpresas, empresa, setEmpresa, empresaId, setEmpresaId, 
-      colaboradores, setColaboradores, message, setMessage, showConfirm 
+      colaboradores, setColaboradores, message, setMessage, showConfirm, refreshData
     }}>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
@@ -196,59 +206,73 @@ function App() {
 function MainLayout() {
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const { empresa } = React.useContext(AppContext);
+  const { empresa, isConfigured, setIsConfigured, refreshData, setMessage } = React.useContext(AppContext);
 
   useEffect(() => {
     const path = location.pathname.replace('/', '') || 'dashboard';
     setCurrentPage(path);
   }, [location]);
 
-  const hasEmpresa = empresa && empresa.nome && empresa.nif;
-  const canAcessarSemEmpresa = location.pathname === '/dashboard' || location.pathname === '/configuracoes';
-  const deveRedirecionar = !hasEmpresa && !canAcessarSemEmpresa;
+  // Verificar se o usuário tem empresa configurada
+  const hasEmpresa = isConfigured && empresa && empresa.id;
+
+  // Função para atualizar após criar empresa
+  const handleCompanyCreated = async () => {
+    await refreshData();
+    if (isConfigured) {
+      setMessage({
+        title: 'SUCESSO!',
+        text: 'Empresa criada com sucesso! Agora você pode começar a usar o sistema.',
+        type: 'success'
+      });
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-background-light dark:bg-background-dark">
-      {hasEmpresa ? (
-        <div className="w-64 shrink-0 fixed h-full z-20">
-          <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        </div>
-      ) : (
-        <div className="w-64 shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-6 hidden md:flex flex-col fixed h-full z-20">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="bg-primary/10 p-2 rounded-lg text-primary">
-              <span className="material-symbols-outlined">payments</span>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white">SALYA</h1>
-          </div>
-          <div className="text-slate-500 text-sm mt-4 leading-relaxed">
-            <p className="font-medium">Bem-vindo ao sistema de processamento de salários.</p>
-            <p className="mt-2 text-xs">Por favor, configure os dados da sua empresa para começar a utilizar todas as funcionalidades.</p>
-          </div>
-        </div>
-      )}
+      {/* Sidebar - passa a função de callback */}
+      <Sidebar 
+        currentPage={currentPage} 
+        setCurrentPage={setCurrentPage}
+        onCompanyCreated={handleCompanyCreated}
+      />
+      
       <div className="flex-1 flex flex-col min-h-screen md:ml-64 w-full md:w-[calc(100%-16rem)]">
         <Header />
         <main className="flex-1 p-0">
-          {deveRedirecionar ? (
-            <Navigate to="/configuracoes" replace />
-          ) : (
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              {hasEmpresa && (
-                <>
-                  <Route path="/alertas" element={<Alertas />} />
-                  <Route path="/colaboradores" element={<Colaboradores />} />
-                  <Route path="/processamento" element={<Processamento />} />
-                  <Route path="/simulacao" element={<Simulacao />} />
-                  <Route path="/rescisoes" element={<Rescisoes />} />
-                  <Route path="/relatorios" element={<Relatorios />} />
-                </>
-              )}
-              <Route path="/configuracoes" element={<Configuracoes />} />
-            </Routes>
-          )}
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            
+            {/* Rotas que exigem empresa configurada */}
+            <Route 
+              path="/alertas" 
+              element={hasEmpresa ? <Alertas /> : <Navigate to="/configuracoes" replace />} 
+            />
+            <Route 
+              path="/colaboradores" 
+              element={hasEmpresa ? <Colaboradores /> : <Navigate to="/configuracoes" replace />} 
+            />
+            <Route 
+              path="/processamento" 
+              element={hasEmpresa ? <Processamento /> : <Navigate to="/configuracoes" replace />} 
+            />
+            <Route 
+              path="/simulacao" 
+              element={hasEmpresa ? <Simulacao /> : <Navigate to="/configuracoes" replace />} 
+            />
+            <Route 
+              path="/rescisoes" 
+              element={hasEmpresa ? <Rescisoes /> : <Navigate to="/configuracoes" replace />} 
+            />
+            <Route 
+              path="/relatorios" 
+              element={hasEmpresa ? <Relatorios /> : <Navigate to="/configuracoes" replace />} 
+            />
+            
+            {/* Configurações - sempre acessível */}
+            <Route path="/configuracoes" element={<Configuracoes />} />
+          </Routes>
         </main>
         <footer className="mt-auto p-8 border-t border-slate-200 dark:border-slate-800 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
           © 2026 SALYA SOFTWARE SOLUTIONS. TODOS OS DIREITOS RESERVADOS.

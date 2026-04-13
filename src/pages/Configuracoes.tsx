@@ -2,10 +2,63 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api } from '../services/api';
-import { ConfiguracaoEmpresa, TaxaIRT } from '../types';
+
+interface ConfiguracaoEmpresa {
+  id: number;
+  nome: string;
+  nif: string;
+  endereco: string;
+  municipio: string;
+  provincia: string;
+  telefone: string;
+  email: string;
+  banco: string;
+  iban: string;
+  taxaINSS: number;
+  taxaINSSPatronal: number;
+  taxaAGT: number;
+  processamentoAutomatico: boolean;
+  envioAutomaticoContracheques: boolean;
+  diaProcessamento: number;
+  regimeFiscal: string;
+  tipoEntidade: string;
+  categoria: string;
+}
+
+interface TaxaIRT {
+  id: number;
+  faixa: string;
+  minimo: number;
+  maximo: number;
+  taxa: number;
+  parcelaAbt: number;
+}
+
+// Função para mapear empresa da API para ConfiguracaoEmpresa
+const mapEmpresaToConfig = (emp: any): ConfiguracaoEmpresa => ({
+  id: emp.id || Date.now(),
+  nome: emp.nome || '',
+  nif: emp.nif || '',
+  endereco: emp.endereco || '',
+  municipio: emp.municipio || '',
+  provincia: emp.provincia || '',
+  telefone: emp.telefone || '',
+  email: emp.email || '',
+  banco: emp.banco || '',
+  iban: emp.iban || '',
+  taxaINSS: emp.taxaINSS ?? 3,
+  taxaINSSPatronal: emp.taxaINSSPatronal ?? 8,
+  taxaAGT: emp.taxaAGT ?? 2,
+  processamentoAutomatico: emp.processamentoAutomatico ?? false,
+  envioAutomaticoContracheques: emp.envioAutomaticoContracheques ?? false,
+  diaProcessamento: emp.diaProcessamento ?? 5,
+  regimeFiscal: emp.regimeFiscal || 'Geral',
+  tipoEntidade: emp.tipoEntidade || 'Lda',
+  categoria: emp.categoria || 'Empresa'
+});
 
 const Configuracoes: React.FC = () => {
-  const { empresa, setEmpresa, isConfigured, setIsConfigured, empresas, setEmpresas, empresaId, setEmpresaId, showConfirm } = useContext(AppContext);
+  const { empresa, setEmpresa, isConfigured, setIsConfigured, empresas, setEmpresas, empresaId, setEmpresaId, showConfirm, refreshData, setMessage } = useContext(AppContext);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(empresas && empresas.length > 1 ? 'gestao' : 'empresa');
   
@@ -31,7 +84,9 @@ const Configuracoes: React.FC = () => {
     categoria: 'Empresa'
   };
 
-  const [config, setConfig] = useState<ConfiguracaoEmpresa>(empresa ? { ...empresa, id: empresa.id || Date.now() } : { ...emptyConfig });
+  const [config, setConfig] = useState<ConfiguracaoEmpresa>(
+    empresa ? mapEmpresaToConfig(empresa) : { ...emptyConfig }
+  );
   const [setupStep, setSetupStep] = useState(!empresa ? 'choice' : 'form');
   const [saved, setSaved] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(!empresa);
@@ -42,7 +97,7 @@ const Configuracoes: React.FC = () => {
   // Sincronizar quando a empresa mudar via switcher
   useEffect(() => {
     if (empresa && !isCreatingNew) {
-      setConfig({ ...empresa });
+      setConfig(mapEmpresaToConfig(empresa));
     }
   }, [empresa, isCreatingNew]);
 
@@ -56,7 +111,7 @@ const Configuracoes: React.FC = () => {
           setTaxasIRT(data);
         } else {
           setTaxasIRT([]);
-          setTaxasError('Formato invÃ¡lido de taxas.');
+          setTaxasError('Formato inválido de taxas.');
         }
       } catch (error) {
         setTaxasIRT([]);
@@ -77,34 +132,36 @@ const Configuracoes: React.FC = () => {
 
   const handleSave = async () => {
     if (!config.nome || !config.nif) {
-      alert('Por favor, preencha o Nome e o NIF antes de salvar.');
+      setMessage({
+        title: 'ERRO!',
+        text: 'Por favor, preencha o Nome e o NIF antes de salvar.',
+        type: 'error'
+      });
       return;
     }
 
     try {
       let savedEmpresa;
       const dataToSave = { ...config };
+      
       if (!isCreatingNew && empresa?.id) {
         savedEmpresa = await api.patch(`/empresas/${empresa.id}`, dataToSave);
       } else {
         // Excluir ID para o backend gerar e evitar erro 409 Conflict
-        const { id, ...postData } = dataToSave as any;
+        const { id, ...postData } = dataToSave;
         savedEmpresa = await api.post('/empresas', postData);
       }
       
-      const empresasData = await api.get('/empresas?size=1000');
-      const novasEmpresas = empresasData._embedded?.empresas || [];
-
-      // Mesclar dados locais com resposta do backend para preservar todos os campos
-      const mergedEmpresa = { ...dataToSave, ...savedEmpresa };
-
-      setEmpresas(novasEmpresas);
-      setEmpresa(mergedEmpresa);
-      setConfig(mergedEmpresa);
-      setEmpresaId(mergedEmpresa.id || null);
-      setIsConfigured(true);
+      await refreshData();
+      
       setSaved(true);
       setIsCreatingNew(false);
+      
+      setMessage({
+        title: 'SUCESSO!',
+        text: isCreatingNew ? 'Empresa criada com sucesso!' : 'Configurações salvas com sucesso!',
+        type: 'success'
+      });
       
       setTimeout(() => {
         setSaved(false);
@@ -112,12 +169,20 @@ const Configuracoes: React.FC = () => {
           navigate('/processamento');
         }
       }, 1500);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving configurations:', error);
-      if (error instanceof Error && (error.message.toLowerCase().includes('conflict') || error.message.includes('409'))) {
-        alert('Erro 409: Já existe um negócio registrado com este NIF. Por favor, introduza um NIF diferente.');
+      if (error.message?.toLowerCase().includes('conflict') || error.message?.includes('409')) {
+        setMessage({
+          title: 'ERRO!',
+          text: 'Já existe um negócio registrado com este NIF. Por favor, introduza um NIF diferente.',
+          type: 'error'
+        });
       } else {
-        alert('Erro ao criar/salvar as configurações. Verifique a sua conexão com o servidor.');
+        setMessage({
+          title: 'ERRO!',
+          text: 'Erro ao criar/salvar as configurações. Verifique a sua conexão com o servidor.',
+          type: 'error'
+        });
       }
     }
   };
@@ -125,7 +190,7 @@ const Configuracoes: React.FC = () => {
   const handleSelectBusiness = (bus: any) => {
     setEmpresa(bus);
     setEmpresaId(bus.id);
-    setConfig({ ...bus });
+    setConfig(mapEmpresaToConfig(bus));
     setIsCreatingNew(false);
     setActiveTab('empresa');
     setSaved(true);
@@ -141,28 +206,37 @@ const Configuracoes: React.FC = () => {
       text: `Tem a certeza que deseja eliminar "${busToDelete.nome}"? Todos os dados associados serão perdidos permanentemente.`,
       onConfirm: async () => {
         try {
-          // Deleta do backend (assegura que não há "fantasmas" no banco de dados)
           await api.delete(`/empresas/${id}`);
-          
-          const novasEmpresas = empresas.filter(e => e.id !== id);
-          setEmpresas(novasEmpresas);
+          await refreshData();
 
-        if (empresaId === id) {
-          if (novasEmpresas.length > 0) {
-            const nextBus = novasEmpresas[0];
-            setEmpresa(nextBus);
-            setEmpresaId(nextBus.id);
-            setConfig({ ...nextBus });
-          } else {
-            setEmpresa(null);
-            setEmpresaId(null);
-            setIsConfigured(false);
-            setSetupStep('choice');
+          if (empresaId === id) {
+            if (empresas.length > 1) {
+              const nextBus = empresas.find(e => e.id !== id);
+              if (nextBus) {
+                setEmpresa(nextBus);
+                setEmpresaId(nextBus.id);
+                setConfig(mapEmpresaToConfig(nextBus));
+              }
+            } else {
+              setEmpresa(null);
+              setEmpresaId(null);
+              setIsConfigured(false);
+              setSetupStep('choice');
+            }
           }
-        }
+          
+          setMessage({
+            title: 'SUCESSO!',
+            text: 'Negócio eliminado com sucesso!',
+            type: 'success'
+          });
         } catch (error) {
           console.error('Erro ao eliminar a empresa:', error);
-          alert('Houve um erro tentar excluir a empresa. Tente novamente.');
+          setMessage({
+            title: 'ERRO!',
+            text: 'Houve um erro ao tentar excluir a empresa. Tente novamente.',
+            type: 'error'
+          });
         }
       }
     });
@@ -255,13 +329,13 @@ const Configuracoes: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Regime Fiscal</label>
-                      <select value={config.regimeFiscal || 'Geral'} onChange={(e) => setConfig({...config, regimeFiscal: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
+                      <select value={config.regimeFiscal} onChange={(e) => setConfig({...config, regimeFiscal: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
                         <option>Geral</option><option>Simplificado</option><option>Isento</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de Entidade</label>
-                      <select value={config.tipoEntidade || 'Lda'} onChange={(e) => setConfig({...config, tipoEntidade: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
+                      <select value={config.tipoEntidade} onChange={(e) => setConfig({...config, tipoEntidade: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
                         <option>Lda</option><option>SA</option><option>EI</option><option>Sucursal</option>
                       </select>
                     </div>
@@ -272,15 +346,15 @@ const Configuracoes: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Endereço</label>
-                       <input type="text" value={config.endereco || ''} onChange={(e) => setConfig({...config, endereco: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                       <input type="text" value={config.endereco} onChange={(e) => setConfig({...config, endereco: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                     <div>
                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Município</label>
-                       <input type="text" value={config.municipio || ''} onChange={(e) => setConfig({...config, municipio: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                       <input type="text" value={config.municipio} onChange={(e) => setConfig({...config, municipio: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                     <div>
                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Província</label>
-                       <input type="text" value={config.provincia || ''} onChange={(e) => setConfig({...config, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                       <input type="text" value={config.provincia} onChange={(e) => setConfig({...config, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                     <div>
                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Telefone</label>
@@ -301,11 +375,11 @@ const Configuracoes: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Taxa Trabalhador (%)</label>
-                      <input type="text" value={config.taxaINSS || ''} onChange={(e) => setConfig({...config, taxaINSS: Number(e.target.value.replace(/\D/g, '')) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" placeholder="0" />
+                      <input type="number" value={config.taxaINSS} onChange={(e) => setConfig({...config, taxaINSS: Number(e.target.value) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Taxa Patronal (%)</label>
-                      <input type="text" value={config.taxaINSSPatronal || ''} onChange={(e) => setConfig({...config, taxaINSSPatronal: Number(e.target.value.replace(/\D/g, '')) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800" placeholder="0" />
+                      <input type="number" value={config.taxaINSSPatronal} onChange={(e) => setConfig({...config, taxaINSSPatronal: Number(e.target.value) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                   </div>
                 </div>
@@ -314,23 +388,35 @@ const Configuracoes: React.FC = () => {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left">
                       <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-800/50"><th className="p-4 text-[10px] font-black text-slate-400 uppercase">Escalão</th><th className="p-4 text-[10px] font-black text-slate-400 uppercase">Mínimo</th><th className="p-4 text-[10px] font-black text-slate-400 uppercase">Máximo</th><th className="p-4 text-[10px] font-black text-slate-400 uppercase">Taxa</th><th className="p-4 text-[10px] font-black text-slate-400 uppercase text-right">Parcela</th></tr>
+                        <tr className="bg-slate-50 dark:bg-slate-800/50">
+                          <th className="p-4 text-[10px] font-black text-slate-400 uppercase">Escalão</th>
+                          <th className="p-4 text-[10px] font-black text-slate-400 uppercase">Mínimo</th>
+                          <th className="p-4 text-[10px] font-black text-slate-400 uppercase">Máximo</th>
+                          <th className="p-4 text-[10px] font-black text-slate-400 uppercase">Taxa</th>
+                          <th className="p-4 text-[10px] font-black text-slate-400 uppercase text-right">Parcela</th>
+                        </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-  {taxasLoading ? (
-    <tr>
-      <td colSpan={5} className="p-6 text-center text-xs text-slate-400">A carregar...</td>
-    </tr>
-  ) : taxasIRT.length === 0 ? (
-    <tr>
-      <td colSpan={5} className="p-6 text-center text-xs text-slate-400">{taxasError || 'Sem dados disponíveis.'}</td>
-    </tr>
-  ) : (
-    taxasIRT.map((t, idx) => (
-      <tr key={`irt-${idx}`} className="hover:bg-slate-50/50 transition-all font-bold text-sm"><td className="p-4">{t.faixa}</td><td className="p-4">{t.minimo.toLocaleString()}</td><td className="p-4">{t.maximo.toLocaleString()}</td><td className="p-4">{t.taxa}%</td><td className="p-4 text-right">{t.parcelaAbt.toLocaleString()} Kz</td></tr>
-    ))
-  )}
-</tbody>
+                        {taxasLoading ? (
+                          <tr>
+                            <td colSpan={5} className="p-6 text-center text-xs text-slate-400">A carregar...</td>
+                          </tr>
+                        ) : taxasIRT.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="p-6 text-center text-xs text-slate-400">{taxasError || 'Sem dados disponíveis.'}</td>
+                          </tr>
+                        ) : (
+                          taxasIRT.map((t, idx) => (
+                            <tr key={`irt-${idx}`} className="hover:bg-slate-50/50 transition-all font-bold text-sm">
+                              <td className="p-4">{t.faixa}</td>
+                              <td className="p-4">{t.minimo.toLocaleString()}</td>
+                              <td className="p-4">{t.maximo.toLocaleString()}</td>
+                              <td className="p-4">{t.taxa}%</td>
+                              <td className="p-4 text-right">{t.parcelaAbt.toLocaleString()} Kz</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
                     </table>
                   </div>
                 </div>
@@ -342,12 +428,20 @@ const Configuracoes: React.FC = () => {
                   <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Automações</h3>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                      <div><p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Processamento Automático</p><p className="text-xs text-slate-400 mt-1">Executar cálculos na data definida</p></div>
-                      <button onClick={() => setConfig({...config, processamentoAutomatico: !config.processamentoAutomatico})} className={`w-14 h-7 rounded-full transition-all flex items-center px-1 ${config.processamentoAutomatico ? 'bg-primary justify-end' : 'bg-slate-300 justify-start'}`}><div className="size-5 bg-white rounded-full shadow-lg" /></button>
+                      <div>
+                        <p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Processamento Automático</p>
+                        <p className="text-xs text-slate-400 mt-1">Executar cálculos na data definida</p>
+                      </div>
+                      <button onClick={() => setConfig({...config, processamentoAutomatico: !config.processamentoAutomatico})} className={`w-14 h-7 rounded-full transition-all flex items-center px-1 ${config.processamentoAutomatico ? 'bg-primary justify-end' : 'bg-slate-300 justify-start'}`}>
+                        <div className="size-5 bg-white rounded-full shadow-lg" />
+                      </button>
                     </div>
                     <div className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                      <div><p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Dia de Processamento</p><p className="text-xs text-slate-400 mt-1">Dia do mês para fecho salarial</p></div>
-                      <input type="text" value={config.diaProcessamento || ''} onChange={(e) => setConfig({...config, diaProcessamento: Number(e.target.value.replace(/\D/g, '')) || 1})} className="w-20 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg text-center font-black" placeholder="1" />
+                      <div>
+                        <p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Dia de Processamento</p>
+                        <p className="text-xs text-slate-400 mt-1">Dia do mês para fecho salarial</p>
+                      </div>
+                      <input type="number" min="1" max="31" value={config.diaProcessamento} onChange={(e) => setConfig({...config, diaProcessamento: Number(e.target.value) || 1})} className="w-20 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg text-center font-black" />
                     </div>
                   </div>
                 </div>
@@ -360,30 +454,30 @@ const Configuracoes: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                     {empresas.map((bus, idx) => (
                       <div key={`empresa-${bus.id || idx}`} className={`p-6 rounded-xl border-2 transition-all ${empresaId === bus.id ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-800'}`}>
-                         <div className="flex items-center gap-3 mb-4">
-                            <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                              <span className="material-symbols-outlined">{bus.categoria === 'Particular' ? 'home' : 'business'}</span>
-                            </div>
-                            <div>
-                              <p className="font-bold text-slate-900 dark:text-white">{bus.nome}</p>
-                              <p className="text-xs text-slate-400">NIF: {bus.nif}</p>
-                            </div>
-                         </div>
-                         <div className="flex gap-2">
-                           <button 
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                            <span className="material-symbols-outlined">{bus.categoria === 'Particular' ? 'home' : 'business'}</span>
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 dark:text-white">{bus.nome}</p>
+                            <p className="text-xs text-slate-400">NIF: {bus.nif}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button 
                             onClick={() => handleSelectBusiness(bus)}
                             className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase ${empresaId === bus.id ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
-                           >
-                             {empresaId === bus.id ? 'Selecionado' : 'Selecionar'}
-                           </button>
-                           <button 
+                          >
+                            {empresaId === bus.id ? 'Selecionado' : 'Selecionar'}
+                          </button>
+                          <button 
                             onClick={() => handleDeleteBusiness(bus.id)}
                             className="p-2 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"
                             title="Eliminar Negócio"
-                           >
-                             <span className="material-symbols-outlined text-sm">delete</span>
-                           </button>
-                         </div>
+                          >
+                            <span className="material-symbols-outlined text-sm">delete</span>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -398,5 +492,3 @@ const Configuracoes: React.FC = () => {
 };
 
 export default Configuracoes;
-
-

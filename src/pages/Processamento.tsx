@@ -571,7 +571,7 @@ const Processamento: React.FC = () => {
               <div className="flex justify-between items-start mb-10 border-b-2 border-primary pb-8">
                 <div>
                   <h1 className="text-2xl font-black text-primary uppercase tracking-tight">
-                    {empresa?.categoria === 'Particular' ? `PATRONAL: ${empresa?.nome}` : (empresa?.nome || 'ENTIDADE')}
+                   {empresa?.categoria === 'Particular' ? `PATRONAL: ${empresa?.nome}` : (empresa?.nome || 'ENTIDADE')}
                   </h1>
                   <div className="mt-2 space-y-0.5">
                     <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">NIF: {empresa?.nif || '-'}</p>
