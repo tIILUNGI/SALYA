@@ -127,6 +127,20 @@ const Login: React.FC = () => {
     }
   };
 
+  const handleResendCode = async () => {
+    setErrorString('');
+    try {
+      await api.post('/auth/resend-code', { email });
+      setMessage({
+        title: 'Código Enviado',
+        type: 'success',
+        text: 'Um novo código de verificação foi enviado para o seu email.'
+      });
+    } catch (error: any) {
+      setErrorString(error.message || 'Erro ao reenviar código');
+    }
+  };
+
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorString('');
@@ -360,8 +374,15 @@ const Login: React.FC = () => {
                 Confirmar
               </button>
 
-              <div className="text-center">
-                <button
+<div className="flex flex-col gap-3">
+                <button 
+                  type="button" 
+                  onClick={handleResendCode}
+                  className="text-sm text-slate-500 hover:text-slate-700 font-medium"
+                >
+                  Não recebeu o código? Reenviar
+                </button>
+                <button 
                   type="button"
                   onClick={() => switchMode('login')}
                   className="text-sm text-primary hover:text-primary/80 font-medium"
