@@ -252,7 +252,7 @@ const Configuracoes: React.FC = () => {
   const tabs = [
     { id: 'empresa', label: 'Dados da Empresa', icon: 'business' },
     { id: 'impostos', label: 'Taxas de Impostos', icon: 'percent' },
-    { id: 'processamento', label: 'Processamento', icon: 'sync' },
+    { id: 'processamento', label: 'Notificações', icon: 'notifications' },
     { id: 'gestao', label: 'Minhas Entidades', icon: 'account_tree' },
   ];
 
@@ -423,21 +423,21 @@ const Configuracoes: React.FC = () => {
             {activeTab === 'processamento' && (
               <div className="space-y-6">
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                  <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Automações</h3>
+                  <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Notificações Automatizadas</h3>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
                       <div>
-                        <p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Processamento Automático</p>
-                        <p className="text-xs text-slate-400 mt-1">Executar cálculos na data definida</p>
+                        <p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Notificar para Processar</p>
+                        <p className="text-xs text-slate-400 mt-1">Receba um alerta quando chegar o dia de processar os salários</p>
                       </div>
-                      <button onClick={() => setConfig({...config, processamentoAutomatico: !config.processamentoAutomatico})} className={`w-14 h-7 rounded-full transition-all flex items-center px-1 ${config.processamentoAutomatico ? 'bg-primary justify-end' : 'bg-slate-300 justify-start'}`}>
+                      <button onClick={() => setConfig({...config, processamentoAutomatico: !config.processamentoAutomatico})} className={`w-14 h-7 rounded-full flex items-center px-1 ${config.processamentoAutomatico ? 'bg-primary justify-end' : 'bg-slate-300 justify-start'}`}>
                         <div className="size-5 bg-white rounded-full shadow-lg" />
                       </button>
                     </div>
                     <div className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
                       <div>
                         <p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Dia de Processamento</p>
-                        <p className="text-xs text-slate-400 mt-1">Dia do mês para fecho salarial</p>
+                        <p className="text-xs text-slate-400 mt-1">Dia do mês em que deseja ser notificado</p>
                       </div>
                       <input type="number" min="1" max="31" value={config.diaProcessamento} onChange={(e) => setConfig({...config, diaProcessamento: Number(e.target.value) || 1})} className="w-20 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg text-center font-black" />
                     </div>
