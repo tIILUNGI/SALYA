@@ -4,7 +4,7 @@ import { AppContext } from '../App';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 
 const Dashboard: React.FC = () => {
-  const { empresa } = useContext(AppContext);
+  const { empresa, empresaId } = useContext(AppContext);
   const [stats, setStats] = useState({
     totalEmpresas: 0,
     totalColaboradores: 0,
@@ -22,19 +22,21 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
+      if (!empresaId) return;
+      
       try {
-        const response = await api.get('/dashboard/stats');
+        const response = await api.get(`/dashboard/stats?empresaId=${empresaId}`);
         setStats(response);
 
         try {
-          const alertasData = await api.get('/alertas/resumo');
+          const alertasData = await api.get(`/alertas/resumo?empresaId=${empresaId}`);
           setAlertas(alertasData);
         } catch (e) {
           console.error('Error fetching alerts', e);
         }
 
         try {
-          const charts = await api.get('/dashboard/charts');
+          const charts = await api.get(`/dashboard/charts?empresaId=${empresaId}`);
           setChartProcessamento(charts.processamentoMensal || []);
           setChartAbsentismo(charts.absentismoDepartamento || []);
         } catch (e) {
@@ -49,7 +51,7 @@ const Dashboard: React.FC = () => {
       }
     };
     fetchStats();
-  }, []);
+  }, [empresaId]);
 
   return (
     <div className="p-8">

@@ -88,19 +88,17 @@ function App() {
       const empresasList = normalizeList(empresasData, 'empresas');
       setEmpresas(empresasList);
       
-      if (empresasList.length > 0) {
+      if (empresasList.length > 0 && !empresaId) {
         setEmpresa(empresasList[0]);
         setEmpresaId(empresasList[0].id);
         setIsConfigured(true);
-      } else {
-        setEmpresa(null);
-        setEmpresaId(null);
-        setIsConfigured(false);
       }
 
-      // Fetch Colaboradores
-      const colaboradoresData = await api.get('/trabalhadores?size=1000');
-      setColaboradores(normalizeList(colaboradoresData, 'colaboradores'));
+      // Fetch Colaboradores only if empresaId is set
+      if (empresaId) {
+        const colaboradoresData = await api.get(`/trabalhadores?empresaId=${empresaId}&size=1000`);
+        setColaboradores(normalizeList(colaboradoresData, 'colaboradores'));
+      }
     } catch (error) {
       console.error('Error fetching global data:', error);
     }
@@ -126,6 +124,12 @@ function App() {
       refreshData();
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated && empresaId) {
+      refreshData();
+    }
+  }, [empresaId]);
 
   const showConfirm = (config: { title: string; text: string; onConfirm: () => void }) => {
     setConfirmData(config);

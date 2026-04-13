@@ -1,17 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { api } from '../services/api';
+import { AppContext } from '../App';
 
 const Relatorios: React.FC = () => {
+  const { empresaId } = useContext(AppContext);
   const [chartProcessamento, setChartProcessamento] = useState<any[]>([]);
   const [chartAbsentismo, setChartAbsentismo] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCharts = async () => {
+      if (!empresaId) return;
+      
       setLoading(true);
       try {
-        const charts = await api.get('/dashboard/charts');
+        const charts = await api.get(`/dashboard/charts?empresaId=${empresaId}`);
         setChartProcessamento(charts.processamentoMensal || []);
         setChartAbsentismo(charts.absentismoDepartamento || []);
       } catch {
@@ -22,7 +26,7 @@ const Relatorios: React.FC = () => {
       }
     };
     fetchCharts();
-  }, []);
+  }, [empresaId]);
 
   return (
     <div className="p-8 animate-in fade-in slide-up">

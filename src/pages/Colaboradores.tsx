@@ -90,18 +90,19 @@ const Colaboradores: React.FC = () => {
   };
 
   const refreshColaboradores = async () => {
+    if (!empresaId) return;
     try {
-      const data = await api.get('/trabalhadores?size=1000');
+      const data = await api.get(`/trabalhadores?empresaId=${empresaId}&size=1000`);
       setColaboradores(normalizeList(data, 'colaboradores'));
     } catch (error) {
       console.error('Error refreshing colaboradores:', error);
     }
   };
 
-  // Carregar colaboradores quando o componente montar
+  // Carregar colaboradores quando o componente montar ou empresaId mudar
   useEffect(() => {
     refreshColaboradores();
-  }, []);
+  }, [empresaId]);
 
   const filteredColaboradores = colaboradores.filter(c => {
     // Se não há empresa selecionada, mostrar todos os colaboradores
