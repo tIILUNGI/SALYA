@@ -125,8 +125,8 @@ function App() {
 
         {/* Global Notification Modal */}
         {message && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
-             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40">
+             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
                 <div className={`h-2 w-full ${
                   message.type === 'success' ? 'bg-emerald-500' : 
                   message.type === 'error' ? 'bg-red-500' : 
@@ -167,8 +167,8 @@ function App() {
 
         {/* Global Confirmation Modal */}
         {confirmData && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60">
+             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
                 <div className="h-2 w-full bg-red-500" />
                 <div className="p-8 text-center">
                    <div className="size-16 mx-auto rounded-full bg-red-50 flex items-center justify-center mb-6">

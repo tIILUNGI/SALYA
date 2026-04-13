@@ -232,7 +232,7 @@ const Processamento: React.FC = () => {
       </div>
 
       {activeTab === 'Normal' && (
-        <div className="animate-in fade-in slide-up">
+        <div>
       <div className="flex items-center gap-4 mb-8 glass-card p-6">
         <div className="flex flex-col">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Período</span>
