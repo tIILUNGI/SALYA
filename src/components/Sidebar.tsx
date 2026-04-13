@@ -126,16 +126,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">
             Bem-vindo ao Salya!
           </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-            Para começar a usar o sistema, você precisa criar sua empresa.
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Complete o cadastro da sua empresa nas Configurações.
           </p>
-          <button
-            onClick={() => setShowCompanyModal(true)}
-            className="w-full bg-primary text-white py-2.5 px-4 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-          >
-            <span className="material-symbols-outlined">add_business</span>
-            Criar Minha Empresa
-          </button>
         </div>
 
         <div className="p-4 border-t border-slate-200 dark:border-slate-800">
