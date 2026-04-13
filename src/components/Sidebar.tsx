@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
+import { api } from '../services/api';
 
 interface SidebarProps {
   currentPage: string;
@@ -54,18 +55,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
     setError('');
 
     try {
-      const token = localStorage.getItem('salya_token');
-      const response = await fetch('http://localhost:8081/api/empresas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(newCompany)
-      });
-
-      if (response.ok) {
-        const empresaCriada = await response.json();
+      const empresaCriada = await api.post('/api/empresas', newCompany);
+      if (empresaCriada) {
         setEmpresa(empresaCriada);
         setIsConfigured(true);
         setShowCompanyModal(false);
@@ -97,12 +88,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
         // Navigate to dashboard
         setCurrentPage('dashboard');
         navigate('/dashboard');
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || errorData.error || 'Erro ao criar empresa');
       }
-    } catch (err) {
-      setError('Erro de conexão com o servidor');
+    } catch (err: any) {
+      console.error('Erro ao criar empresa:', err);
+      setError(err?.message || 'Erro de conexão com o servidor');
     } finally {
       setIsCreating(false);
     }

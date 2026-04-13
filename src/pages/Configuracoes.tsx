@@ -130,15 +130,22 @@ const Configuracoes: React.FC = () => {
     setActiveTab('empresa');
   };
 
-  const handleSave = async () => {
-    if (!config.nome || !config.nif) {
-      setMessage({
-        title: 'ERRO!',
-        text: 'Por favor, preencha o Nome e o NIF antes de salvar.',
-        type: 'error'
-      });
-      return;
-    }
+ const handleSave = async () => {
+  console.group('💾 SAVING COMPANY');
+  console.log('Config atual:', config);
+  console.log('isCreatingNew:', isCreatingNew);
+  console.log('empresa?.id:', empresa?.id);
+  
+  if (!config.nome || !config.nif) {
+    console.warn('❌ Nome ou NIF vazio');
+    setMessage({
+      title: 'ERRO!',
+      text: 'Por favor, preencha o Nome e o NIF antes de salvar.',
+      type: 'error'
+    });
+    console.groupEnd();
+    return;
+  }
 
     try {
       let savedEmpresa;
@@ -174,7 +181,7 @@ const Configuracoes: React.FC = () => {
       if (error.message?.toLowerCase().includes('conflict') || error.message?.includes('409')) {
         setMessage({
           title: 'ERRO!',
-          text: 'Já existe uma entidade registrada com este NIF. Por favor, introduza um NIF diferente.',
+          text: 'Já existe um negócio registrado com este NIF. Por favor, introduza um NIF diferente.',
           type: 'error'
         });
       } else {
@@ -206,7 +213,7 @@ const Configuracoes: React.FC = () => {
       text: `Tem a certeza que deseja eliminar "${busToDelete.nome}"? Todos os dados associados serão perdidos permanentemente.`,
       onConfirm: async () => {
         try {
-          await api.delete(`/empresas/${id}`);
+          await api.delete(`/api/empresas/${id}`);
           await refreshData();
 
           if (empresaId === id) {

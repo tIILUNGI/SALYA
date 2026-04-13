@@ -6,12 +6,12 @@ import { api } from '../services/api';
 type ViewMode = 'login' | 'register' | 'confirm' | 'forgot';
 
 const Login: React.FC = () => {
-  const navigate = useNavigate()
-  const { 
-    setIsAuthenticated, setColaboradores, setEmpresa, setUser, 
+  const navigate = useNavigate();
+  const {
+    setIsAuthenticated, setColaboradores, setEmpresa, setUser,
     setIsConfigured, setEmpresas, setEmpresaId, setMessage
   } = useContext(AppContext);
-  
+
   const [mode, setMode] = useState<ViewMode>('login');
   const [email, setEmail] = useState('admin@salya.com');
   const [password, setPassword] = useState('admin123');
@@ -21,13 +21,17 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errorString, setErrorString] = useState('');
 
+  const normalizeList = (data: any, key?: string) => {
+    if (Array.isArray(data)) return data;
+    return key ? data?._embedded?.[key] || [] : [];
+  };
+
   const fetchGlobalData = async () => {
     try {
-      // Fetch Empresas
-      const empresasData = await api.get('/empresas?size=1000');
-      const empresasList = empresasData._embedded?.empresas || [];
+      const empresasData = await api.get('/api/empresas?size=1000');
+      const empresasList = normalizeList(empresasData, 'empresas');
       setEmpresas(empresasList);
-      
+
       if (empresasList.length > 0) {
         setEmpresa(empresasList[0]);
         setEmpresaId(empresasList[0].id);
@@ -49,11 +53,15 @@ const Login: React.FC = () => {
     try {
       const response = await api.post('/auth/login', { email, password });
       const { token, user } = response;
-      
-      localStorage.setItem('salya_token', token);
-      setIsAuthenticated(true);
-      setUser(user);
-      
+
+      if (token) {
+        localStorage.setItem('salya_token', token);
+        localStorage.setItem('token', token);
+        localStorage.setItem('salya_user', JSON.stringify(user));
+        setIsAuthenticated(true);
+        setUser(user);
+      }
+
       const hasEmpresa = await fetchGlobalData();
       navigate(hasEmpresa ? '/dashboard' : '/configuracoes');
     } catch (error: any) {
@@ -68,27 +76,29 @@ const Login: React.FC = () => {
       setErrorString('As palavras-passe não coincidem.');
       return;
     }
-    
+
     try {
       const response = await api.post('/auth/register', { name, email, password });
-      
+
       if (response.requiresVerification) {
-        setMessage({ 
-          title: 'Verificação Necessária', 
-          type: 'info', 
-          text: response.message || 'Verifique o seu email para ativar a conta.' 
+        setMessage({
+          title: 'Verificação Necessária',
+          text: response.message || 'Verifique o seu email para ativar a conta.',
+          type: 'info'
         });
         setMode('confirm');
         return;
       }
-      
+
       const { token, user } = response;
-      
+
       if (token) {
         localStorage.setItem('salya_token', token);
+        localStorage.setItem('token', token);
+        localStorage.setItem('salya_user', JSON.stringify(user));
         setIsAuthenticated(true);
         setUser(user);
-        
+
         const hasEmpresa = await fetchGlobalData();
         navigate(hasEmpresa ? '/dashboard' : '/configuracoes');
       }
@@ -103,11 +113,13 @@ const Login: React.FC = () => {
     try {
       const response = await api.post('/auth/verify-email', { email, code: confirmCode });
       const { token, user } = response;
-      
+
       localStorage.setItem('salya_token', token);
+      localStorage.setItem('token', token);
+      localStorage.setItem('salya_user', JSON.stringify(user));
       setIsAuthenticated(true);
       setUser(user);
-      
+
       const hasEmpresa = await fetchGlobalData();
       navigate(hasEmpresa ? '/dashboard' : '/configuracoes');
     } catch (error: any) {
@@ -120,7 +132,11 @@ const Login: React.FC = () => {
     setErrorString('');
     try {
       await api.post('/auth/forgot-password', { email });
-      setMessage({ title: 'Sucesso', type: 'success', text: 'Email de recuperação enviado (caso exista conta).' });
+      setMessage({ 
+        title: 'Sucesso', 
+        text: 'Email de recuperação enviado (caso exista conta).', 
+        type: 'success' 
+      });
     } catch (error: any) {
       setErrorString(error.message || 'Erro ao recuperar password');
     }
@@ -169,26 +185,26 @@ const Login: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email</label>
-                <input 
-                  type="email" 
-                  value={email} 
+                <input
+                  type="email"
+                  value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium" 
-                  required 
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
+                  required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Palavra-passe</label>
                 <div className="relative">
-                  <input 
+                  <input
                     type={showPassword ? 'text' : 'password'}
-                    value={password} 
+                    value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 pr-12 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium" 
-                    required 
+                    className="w-full px-4 py-3 pr-12 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
+                    required
                   />
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
@@ -198,7 +214,7 @@ const Login: React.FC = () => {
                 </div>
               </div>
 
-              <button 
+              <button
                 type="submit"
                 className="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-colors"
               >
@@ -206,7 +222,7 @@ const Login: React.FC = () => {
               </button>
 
               <div className="text-center space-y-2">
-                <button 
+                <button
                   type="button"
                   onClick={() => switchMode('forgot')}
                   className="text-sm text-primary hover:text-primary/80 font-medium"
@@ -215,7 +231,7 @@ const Login: React.FC = () => {
                 </button>
                 <div>
                   <span className="text-slate-500 dark:text-slate-400 text-sm">Não tem conta? </span>
-                  <button 
+                  <button
                     type="button"
                     onClick={() => switchMode('register')}
                     className="text-sm text-primary hover:text-primary/80 font-medium"
@@ -251,49 +267,49 @@ const Login: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Nome</label>
-                <input 
-                  type="text" 
-                  value={name} 
+                <input
+                  type="text"
+                  value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium" 
-                  required 
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
+                  required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email</label>
-                <input 
-                  type="email" 
-                  value={email} 
+                <input
+                  type="email"
+                  value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium" 
-                  required 
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
+                  required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Palavra-passe</label>
-                <input 
-                  type="password" 
-                  value={password} 
+                <input
+                  type="password"
+                  value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium" 
-                  required 
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
+                  required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Confirmar Palavra-passe</label>
-                <input 
-                  type="password" 
-                  value={confirmPassword} 
+                <input
+                  type="password"
+                  value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium" 
-                  required 
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
+                  required
                 />
               </div>
 
-              <button 
+              <button
                 type="submit"
                 className="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-colors"
               >
@@ -302,7 +318,7 @@ const Login: React.FC = () => {
 
               <div className="text-center">
                 <span className="text-slate-500 dark:text-slate-400 text-sm">Já tem conta? </span>
-                <button 
+                <button
                   type="button"
                   onClick={() => switchMode('login')}
                   className="text-sm text-primary hover:text-primary/80 font-medium"
@@ -317,7 +333,7 @@ const Login: React.FC = () => {
             <form onSubmit={handleConfirm} className="space-y-6">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Confirmar Email</h2>
-                <p className="text-slate-500 dark:text-slate-400">Introduza o Email de recuperação enviado (caso exista conta).</p>
+                <p className="text-slate-500 dark:text-slate-400">Introduza o código de verificação enviado por email</p>
               </div>
 
               {errorString && (
@@ -328,16 +344,16 @@ const Login: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Código de Confirmação</label>
-                <input 
-                  type="text" 
-                  value={confirmCode} 
+                <input
+                  type="text"
+                  value={confirmCode}
                   onChange={(e) => setConfirmCode(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium text-center tracking-widest" 
-                  required 
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium text-center tracking-widest"
+                  required
                 />
               </div>
 
-              <button 
+              <button
                 type="submit"
                 className="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-colors"
               >
@@ -345,7 +361,7 @@ const Login: React.FC = () => {
               </button>
 
               <div className="text-center">
-                <button 
+                <button
                   type="button"
                   onClick={() => switchMode('login')}
                   className="text-sm text-primary hover:text-primary/80 font-medium"
@@ -371,16 +387,16 @@ const Login: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email</label>
-                <input 
-                  type="email" 
-                  value={email} 
+                <input
+                  type="email"
+                  value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium" 
-                  required 
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
+                  required
                 />
               </div>
 
-              <button 
+              <button
                 type="submit"
                 className="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-colors"
               >
@@ -388,7 +404,7 @@ const Login: React.FC = () => {
               </button>
 
               <div className="text-center">
-                <button 
+                <button
                   type="button"
                   onClick={() => switchMode('login')}
                   className="text-sm text-primary hover:text-primary/80 font-medium"
@@ -405,4 +421,3 @@ const Login: React.FC = () => {
 };
 
 export default Login;
-

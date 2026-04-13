@@ -57,8 +57,10 @@ const Colaboradores: React.FC = () => {
       setDocFile(null);
       setShowDocForm(false);
       setMessage({ title: 'Sucesso', text: 'Documento adicionado.', type: 'success' });
-    } catch { setMessage({ title: 'Erro', text: 'Nao foi possivel guardar o documento.', type: 'error' }); }
-    finally { setDocLoading(false); }
+    } catch (error: any) {
+      console.error('Erro ao adicionar documento:', error);
+      setMessage({ title: 'Erro', text: error?.message || 'Não foi possível guardar o documento.', type: 'error' });
+    } finally { setDocLoading(false); }
   };
 
   const handleDeleteDocumento = async (docId: number) => {
@@ -82,18 +84,31 @@ const Colaboradores: React.FC = () => {
     dataAdmissao: new Date().toISOString().split('T')[0]
   });
 
+  const normalizeList = (data: any, key?: string) => {
+    if (Array.isArray(data)) return data;
+    return key ? data?._embedded?.[key] || [] : [];
+  };
+
   const refreshColaboradores = async () => {
     try {
       const data = await api.get('/trabalhadores?size=1000');
-      setColaboradores(data._embedded?.colaboradores || []);
+      setColaboradores(normalizeList(data, 'colaboradores'));
     } catch (error) {
       console.error('Error refreshing colaboradores:', error);
     }
   };
 
+  // Carregar colaboradores quando o componente montar
+  useEffect(() => {
+    refreshColaboradores();
+  }, []);
+
   const filteredColaboradores = colaboradores.filter(c => {
-    const isFromCompany = !empresaId || c.empresaId === empresaId || (c as any).empresa?.id === empresaId;
-    const matchesSearch = c.nome.toLowerCase().includes(searchTerm.toLowerCase()) || (c.nif && c.nif.includes(searchTerm)) || (c.cargo && c.cargo.toLowerCase().includes(searchTerm.toLowerCase()));
+    // Se não há empresa selecionada, mostrar todos os colaboradores
+    const isFromCompany = !empresaId || !c.empresaId || c.empresaId === empresaId;
+    const matchesSearch = c.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         (c.nif && c.nif.includes(searchTerm)) || 
+                         (c.cargo && c.cargo.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesFilter = filter === 'All' ? true : c.status === filter;
     return isFromCompany && matchesSearch && matchesFilter;
   });
@@ -145,8 +160,9 @@ const Colaboradores: React.FC = () => {
       
       refreshColaboradores();
       setIsModalOpen(false);
-    } catch (error) {
-      setMessage({ title: 'Erro', text: 'Não foi possível salvar os dados.', type: 'error' });
+    } catch (error: any) {
+      console.error('Erro ao salvar colaborador:', error);
+      setMessage({ title: 'Erro', text: error?.message || 'Não foi possível salvar os dados.', type: 'error' });
     }
   };
 
@@ -162,8 +178,9 @@ const Colaboradores: React.FC = () => {
           await api.delete(`/trabalhadores/${id}`);
           setMessage({ title: 'Remover', text: 'Colaborador removido com sucesso!', type: 'success' });
           refreshColaboradores();
-        } catch (error) {
-          setMessage({ title: 'Erro', text: 'Não foi possível remover o colaborador.', type: 'error' });
+        } catch (error: any) {
+          console.error('Erro ao remover colaborador:', error);
+          setMessage({ title: 'Erro', text: error?.message || 'Não foi possível remover o colaborador.', type: 'error' });
         }
       }
     });
