@@ -29,7 +29,7 @@ const Landing: React.FC = () => {
             Sistema de Gestão de Recibo Salarial
           </h2>
           <p className="text-xl text-slate-500 mb-10 max-w-2xl mx-auto">
-            Calcule salários, gere recibos e manage colaboradores.
+            Calcule salários, gere recibos e gerencie dados dos colaboradores.
           </p>
           <button 
             onClick={() => navigate('/login')}
