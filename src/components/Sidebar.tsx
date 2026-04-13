@@ -40,7 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('salya_token');
     setIsAuthenticated(false);
     setUser(null);
     setIsConfigured(false);
@@ -54,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
     setError('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('salya_token');
       const response = await fetch('http://localhost:8081/api/empresas', {
         method: 'POST',
         headers: {

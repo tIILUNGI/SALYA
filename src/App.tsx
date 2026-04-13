@@ -75,7 +75,7 @@ function App() {
 
   const refreshData = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('salya_token');
       if (!token) return;
 
       // Fetch Empresas
@@ -241,8 +241,11 @@ function MainLayout() {
         <Header />
         <main className="flex-1 p-0">
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/" element={<Navigate to={hasEmpresa ? "/dashboard" : "/configuracoes"} replace />} />
+            <Route 
+              path="/dashboard" 
+              element={hasEmpresa ? <Dashboard /> : <Navigate to="/configuracoes" replace />} 
+            />
             
             {/* Rotas que exigem empresa configurada */}
             <Route 

@@ -32,15 +32,14 @@ const Login: React.FC = () => {
         setEmpresa(empresasList[0]);
         setEmpresaId(empresasList[0].id);
         setIsConfigured(true);
+        return true;
       } else {
         setIsConfigured(false);
+        return false;
       }
-
-      // Fetch Colaboradores
-      const colaboradoresData = await api.get('/trabalhadores?size=1000');
-      setColaboradores(colaboradoresData._embedded?.colaboradores || []);
     } catch (error) {
       console.error('Error fetching global data:', error);
+      return false;
     }
   };
 
@@ -55,8 +54,8 @@ const Login: React.FC = () => {
       setIsAuthenticated(true);
       setUser(user);
       
-      await fetchGlobalData();
-      navigate('/dashboard');
+      const hasEmpresa = await fetchGlobalData();
+      navigate(hasEmpresa ? '/dashboard' : '/configuracoes');
     } catch (error: any) {
       setErrorString(error.message || 'Erro ao realizar login');
     }
@@ -72,14 +71,27 @@ const Login: React.FC = () => {
     
     try {
       const response = await api.post('/auth/register', { name, email, password });
+      
+      if (response.requiresVerification) {
+        setMessage({ 
+          title: 'Verificação Necessária', 
+          type: 'info', 
+          text: response.message || 'Verifique o seu email para ativar a conta.' 
+        });
+        setMode('confirm');
+        return;
+      }
+      
       const { token, user } = response;
       
-      localStorage.setItem('salya_token', token);
-      setIsAuthenticated(true);
-      setUser(user);
-      
-      await fetchGlobalData();
-      navigate('/dashboard');
+      if (token) {
+        localStorage.setItem('salya_token', token);
+        setIsAuthenticated(true);
+        setUser(user);
+        
+        const hasEmpresa = await fetchGlobalData();
+        navigate(hasEmpresa ? '/dashboard' : '/configuracoes');
+      }
     } catch (error: any) {
       setErrorString(error.message || 'Erro ao registar');
     }
@@ -89,15 +101,15 @@ const Login: React.FC = () => {
     e.preventDefault();
     setErrorString('');
     try {
-      const response = await api.post('/auth/confirm', { email, code: confirmCode });
+      const response = await api.post('/auth/verify-email', { email, code: confirmCode });
       const { token, user } = response;
       
       localStorage.setItem('salya_token', token);
       setIsAuthenticated(true);
       setUser(user);
       
-      await fetchGlobalData();
-      navigate('/dashboard');
+      const hasEmpresa = await fetchGlobalData();
+      navigate(hasEmpresa ? '/dashboard' : '/configuracoes');
     } catch (error: any) {
       setErrorString(error.message || 'Erro ao confirmar');
     }
