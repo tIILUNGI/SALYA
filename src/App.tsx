@@ -73,14 +73,19 @@ function App() {
   const [message, setMessage] = useState<{ title: string; text: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
   const [confirmData, setConfirmData] = useState<{ title: string; text: string; onConfirm: () => void } | null>(null);
 
+  const normalizeList = (data: any, key?: string) => {
+    if (Array.isArray(data)) return data;
+    return key ? data?._embedded?.[key] || [] : [];
+  };
+
   const refreshData = async () => {
     try {
-      const token = localStorage.getItem('salya_token');
+      const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
       if (!token) return;
 
       // Fetch Empresas
-      const empresasData = await api.get('/empresas?size=1000');
-      const empresasList = empresasData._embedded?.empresas || [];
+      const empresasData = await api.get('/api/empresas?size=1000');
+      const empresasList = normalizeList(empresasData, 'empresas');
       setEmpresas(empresasList);
       
       if (empresasList.length > 0) {
@@ -95,11 +100,26 @@ function App() {
 
       // Fetch Colaboradores
       const colaboradoresData = await api.get('/trabalhadores?size=1000');
-      setColaboradores(colaboradoresData._embedded?.colaboradores || []);
+      setColaboradores(normalizeList(colaboradoresData, 'colaboradores'));
     } catch (error) {
       console.error('Error fetching global data:', error);
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
+    const userData = localStorage.getItem('salya_user');
+    if (token) {
+      setIsAuthenticated(true);
+      if (userData) {
+        try {
+          setUser(JSON.parse(userData));
+        } catch {
+          console.warn('Não foi possível ler usuário do localStorage.');
+        }
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {

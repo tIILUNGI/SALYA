@@ -54,8 +54,10 @@ const Processamento: React.FC = () => {
       setMovForm({ descricao: '', tipo: 'Combustível', valor: 0, colaboradorId: '' });
       fetchMovimentos();
       setMessage({ title: 'Sucesso', text: 'Movimento registado com sucesso.', type: 'success' });
-    } catch { setMessage({ title: 'Erro', text: 'Não foi possível registar o movimento.', type: 'error' }); }
-    finally { setMovLoading(false); }
+    } catch (error: any) {
+      console.error('Erro ao registar movimento:', error);
+      setMessage({ title: 'Erro', text: error?.message || 'Não foi possível registar o movimento.', type: 'error' });
+    } finally { setMovLoading(false); }
   };
 
   const handleDeleteMovimento = async (id: number) => {
@@ -170,8 +172,9 @@ const Processamento: React.FC = () => {
 
       setShowFormModal(false);
       setShowReceiptModal(true);
-    } catch (error) {
-      setMessage({ title: 'Erro', text: 'Não foi possível processar o salário.', type: 'error' });
+    } catch (error: any) {
+      console.error('Erro ao processar salário:', error);
+      setMessage({ title: 'Erro', text: error?.message || 'Não foi possível processar o salário.', type: 'error' });
     }
   };
 

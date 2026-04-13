@@ -130,62 +130,78 @@ const Configuracoes: React.FC = () => {
     setActiveTab('empresa');
   };
 
-  const handleSave = async () => {
-    if (!config.nome || !config.nif) {
+ const handleSave = async () => {
+  console.group('💾 SAVING COMPANY');
+  console.log('Config atual:', config);
+  console.log('isCreatingNew:', isCreatingNew);
+  console.log('empresa?.id:', empresa?.id);
+  
+  if (!config.nome || !config.nif) {
+    console.warn('❌ Nome ou NIF vazio');
+    setMessage({
+      title: 'ERRO!',
+      text: 'Por favor, preencha o Nome e o NIF antes de salvar.',
+      type: 'error'
+    });
+    console.groupEnd();
+    return;
+  }
+
+  try {
+    let savedEmpresa;
+    const dataToSave = { ...config };
+    
+    console.log('Data to save:', dataToSave);
+    
+    if (!isCreatingNew && empresa?.id) {
+      console.log('Atualizando empresa existente ID:', empresa.id);
+      savedEmpresa = await api.patch(`/api/empresas/${empresa.id}`, dataToSave);
+    } else {
+      // Excluir ID para o backend gerar e evitar erro 409 Conflict
+      const { id, ...postData } = dataToSave;
+      console.log('Criando nova empresa com dados:', postData);
+      savedEmpresa = await api.post('/api/empresas', postData);
+    }
+    
+    console.log('Resposta do servidor:', savedEmpresa);
+    
+    await refreshData();
+    
+    setSaved(true);
+    setIsCreatingNew(false);
+    
+    setMessage({
+      title: 'SUCESSO!',
+      text: isCreatingNew ? 'Empresa criada com sucesso!' : 'Configurações salvas com sucesso!',
+      type: 'success'
+    });
+    
+    setTimeout(() => {
+      setSaved(false);
+      if (!isConfigured) {
+        navigate('/processamento');
+      }
+    }, 1500);
+  } catch (error: any) {
+    console.error('❌ Erro ao salvar:', error);
+    console.error('Detalhes do erro:', error.message);
+    
+    if (error.message?.toLowerCase().includes('conflict') || error.message?.includes('409')) {
       setMessage({
         title: 'ERRO!',
-        text: 'Por favor, preencha o Nome e o NIF antes de salvar.',
+        text: 'Já existe um negócio registrado com este NIF. Por favor, introduza um NIF diferente.',
         type: 'error'
       });
-      return;
-    }
-
-    try {
-      let savedEmpresa;
-      const dataToSave = { ...config };
-      
-      if (!isCreatingNew && empresa?.id) {
-        savedEmpresa = await api.patch(`/empresas/${empresa.id}`, dataToSave);
-      } else {
-        // Excluir ID para o backend gerar e evitar erro 409 Conflict
-        const { id, ...postData } = dataToSave;
-        savedEmpresa = await api.post('/empresas', postData);
-      }
-      
-      await refreshData();
-      
-      setSaved(true);
-      setIsCreatingNew(false);
-      
+    } else {
       setMessage({
-        title: 'SUCESSO!',
-        text: isCreatingNew ? 'Empresa criada com sucesso!' : 'Configurações salvas com sucesso!',
-        type: 'success'
+        title: 'ERRO!',
+        text: `Erro ao criar/salvar as configurações: ${error.message}`,
+        type: 'error'
       });
-      
-      setTimeout(() => {
-        setSaved(false);
-        if (!isConfigured) {
-          navigate('/processamento');
-        }
-      }, 1500);
-    } catch (error: any) {
-      console.error('Error saving configurations:', error);
-      if (error.message?.toLowerCase().includes('conflict') || error.message?.includes('409')) {
-        setMessage({
-          title: 'ERRO!',
-          text: 'Já existe um negócio registrado com este NIF. Por favor, introduza um NIF diferente.',
-          type: 'error'
-        });
-      } else {
-        setMessage({
-          title: 'ERRO!',
-          text: 'Erro ao criar/salvar as configurações. Verifique a sua conexão com o servidor.',
-          type: 'error'
-        });
-      }
     }
-  };
+  }
+  console.groupEnd();
+};
 
   const handleSelectBusiness = (bus: any) => {
     setEmpresa(bus);
@@ -206,7 +222,7 @@ const Configuracoes: React.FC = () => {
       text: `Tem a certeza que deseja eliminar "${busToDelete.nome}"? Todos os dados associados serão perdidos permanentemente.`,
       onConfirm: async () => {
         try {
-          await api.delete(`/empresas/${id}`);
+          await api.delete(`/api/empresas/${id}`);
           await refreshData();
 
           if (empresaId === id) {
