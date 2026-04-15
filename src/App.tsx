@@ -14,6 +14,8 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import { Colaborador,Empresa  } from './types';
 import { api } from './services/api';
+import { notify } from './utils/notifications';
+
 
 interface User {
   email: string;
@@ -36,11 +38,11 @@ interface AppContextType {
   setEmpresaId: (value: number | null) => void;
   colaboradores: Colaborador[];
   setColaboradores: (value: Colaborador[]) => void;
-  message: { title: string; text: string; type: 'success' | 'error' | 'info' | 'warning' } | null;
   setMessage: (msg: { title: string; text: string; type: 'success' | 'error' | 'info' | 'warning' } | null) => void;
   showConfirm: (config: { title: string; text: string; onConfirm: () => void }) => void;
   refreshData: () => Promise<void>;
 }
+
 
 export const AppContext = React.createContext<AppContextType>({
   user: null,
@@ -57,11 +59,11 @@ export const AppContext = React.createContext<AppContextType>({
   setEmpresaId: () => {},
   colaboradores: [],
   setColaboradores: () => {},
-  message: null,
   setMessage: () => {},
   showConfirm: () => {},
   refreshData: async () => {},
 });
+
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -71,8 +73,7 @@ function App() {
   const [empresa, setEmpresa] = useState<Empresa | null>(null);
   const [empresaId, setEmpresaId] = useState<number | null>(null);
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
-  const [message, setMessage] = useState<{ title: string; text: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
-  const [confirmData, setConfirmData] = useState<{ title: string; text: string; onConfirm: () => void } | null>(null);
+
 
   const normalizeList = (data: any, key?: string) => {
     if (Array.isArray(data)) return data;
@@ -132,15 +133,25 @@ function App() {
     }
   }, [empresaId]);
 
-  const showConfirm = (config: { title: string; text: string; onConfirm: () => void }) => {
-    setConfirmData(config);
+  const showConfirm = async (config: { title: string; text: string; onConfirm: () => void }) => {
+    const isConfirmed = await notify.modal.confirm(config.title, config.text);
+    if (isConfirmed) {
+      config.onConfirm();
+    }
   };
+
+  const setAppMessage = (msg: { title: string; text: string; type: 'success' | 'error' | 'info' | 'warning' } | null) => {
+    if (!msg) return;
+    notify[msg.type](msg.title, msg.text);
+  };
+
 
   return (
     <AppContext.Provider value={{ 
       user, setUser, isAuthenticated, setIsAuthenticated, isConfigured, setIsConfigured, 
       empresas, setEmpresas, empresa, setEmpresa, empresaId, setEmpresaId, 
-      colaboradores, setColaboradores, message, setMessage, showConfirm, refreshData
+      colaboradores, setColaboradores, 
+      setMessage: setAppMessage, showConfirm, refreshData
     }}>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
@@ -148,85 +159,10 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="*" element={isAuthenticated ? <MainLayout /> : <Navigate to="/" replace />} />
         </Routes>
-
-        {/* Global Notification Modal */}
-        {message && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40">
-             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
-                <div className={`h-2 w-full ${
-                  message.type === 'success' ? 'bg-emerald-500' : 
-                  message.type === 'error' ? 'bg-red-500' : 
-                  message.type === 'warning' ? 'bg-amber-500' : 'bg-primary'
-                }`} />
-                <div className="p-8 text-center text-slate-900 border-none">
-                   <div className={`size-16 mx-auto rounded-full flex items-center justify-center mb-4 ${
-                     message.type === 'success' ? 'bg-emerald-50' : 
-                     message.type === 'error' ? 'bg-red-50' : 
-                     message.type === 'warning' ? 'bg-amber-50' : 'bg-blue-50'
-                   }`}>
-                      <span className={`material-symbols-outlined text-3xl ${
-                        message.type === 'success' ? 'text-emerald-500' : 
-                        message.type === 'error' ? 'text-red-500' : 
-                        message.type === 'warning' ? 'text-amber-500' : 'text-primary'
-                      }`}>
-                         {message.type === 'success' ? 'check_circle' : 
-                          message.type === 'error' ? 'error' : 
-                          message.type === 'warning' ? 'warning' : 'info'}
-                      </span>
-                   </div>
-                   <h3 className="text-xl font-black mb-2 dark:text-white">{message.title}</h3>
-                   <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{message.text}</p>
-                   <button 
-                     onClick={() => setMessage(null)}
-                     className={`mt-6 w-full py-3 rounded-xl font-black text-white shadow-lg transition-transform active:scale-95 ${
-                        message.type === 'success' ? 'bg-emerald-500 shadow-emerald-200' : 
-                        message.type === 'error' ? 'bg-red-500 shadow-red-200' : 
-                        message.type === 'warning' ? 'bg-amber-500 shadow-amber-200' : 'bg-primary shadow-primary/20'
-                     }`}
-                   >
-                     Entendido
-                   </button>
-                </div>
-             </div>
-          </div>
-        )}
-
-        {/* Global Confirmation Modal */}
-        {confirmData && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60">
-             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
-                <div className="h-2 w-full bg-red-500" />
-                <div className="p-8 text-center">
-                   <div className="size-16 mx-auto rounded-full bg-red-50 flex items-center justify-center mb-6">
-                      <span className="material-symbols-outlined text-3xl text-red-500">warning</span>
-                   </div>
-                   <h3 className="text-xl font-black mb-2 dark:text-white uppercase tracking-tight">{confirmData.title}</h3>
-                   <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{confirmData.text}</p>
-                   
-                   <div className="grid grid-cols-2 gap-3 mt-8">
-                     <button 
-                       onClick={() => setConfirmData(null)}
-                       className="py-3 rounded-xl font-black text-slate-400 hover:text-slate-600 transition-colors uppercase text-xs tracking-widest border border-slate-100 dark:border-slate-800"
-                     >
-                       Cancelar
-                     </button>
-                     <button 
-                       onClick={() => {
-                         confirmData.onConfirm();
-                         setConfirmData(null);
-                       }}
-                       className="py-3 rounded-xl font-black text-white bg-red-500 shadow-lg shadow-red-200 uppercase text-xs tracking-widest transition-transform active:scale-95"
-                     >
-                       Confirmar
-                     </button>
-                   </div>
-                </div>
-             </div>
-          </div>
-        )}
       </Router>
     </AppContext.Provider>
   );
+
 }
 
 function MainLayout() {

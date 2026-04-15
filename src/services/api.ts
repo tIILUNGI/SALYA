@@ -1,13 +1,11 @@
+import { notify } from '../utils/notifications';
+
 // api.ts
-export const API_BASE_URL = 'http://localhost:8081';
+export const API_BASE_URL = 'http://localhost:8081/api';
+
 
 const getToken = () => {
   const token = localStorage.getItem('token') || localStorage.getItem('salya_token');
-  console.group('🔑 TOKEN DEBUG');
-  console.log('Token encontrado:', token ? `${token.substring(0, 30)}...` : 'NENHUM');
-  console.log('Chave token:', localStorage.getItem('token') ? '✅ token' : '❌ token');
-  console.log('Chave salya_token:', localStorage.getItem('salya_token') ? '✅ salya_token' : '❌ salya_token');
-  console.groupEnd();
   return token;
 };
 
@@ -17,7 +15,6 @@ const getHeaders = () => {
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  console.log('📋 Headers:', headers);
   return headers;
 };
 
@@ -27,7 +24,6 @@ const getFormHeaders = () => {
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  console.log('📋 Form Headers:', headers);
   return headers;
 };
 
@@ -37,6 +33,41 @@ const parseJsonSafe = (text: string) => {
   } catch {
     return null;
   }
+};
+
+/**
+ * Converte mensagens técnicas em algo amigável para o usuário final
+ */
+const humanizeMessage = (error: any): string => {
+  const message = error.message || (typeof error === 'string' ? error : '');
+  const status = error.status;
+
+  // Dicionário de humanização
+  const mappings: Record<string, string> = {
+    'Failed to fetch': 'Não foi possível conectar ao servidor. Verifique sua internet.',
+    'Network Error': 'Erro de rede. O servidor pode estar fora do ar.',
+    'Unauthorized': 'Sua sessão expirou. Por favor, faça login novamente.',
+    'Forbidden': 'Você não tem permissão para realizar esta ação.',
+    'Internal Server Error': 'Ocorreu um erro interno no servidor. Tente novamente mais tarde.',
+    'Bad Request': 'Os dados informados parecem estar incorretos.',
+    'Not Found': 'O recurso solicitado não foi encontrado.',
+    'User already exists': 'Este usuário já está cadastrado no sistema.',
+    'Invalid credentials': 'Email ou senha incorretos. Verifique seus dados.',
+    'Email is already in use': 'Este email já está sendo utilizado por outra conta.',
+  };
+
+  // Busca por correspondência exata ou parcial
+  for (const [key, value] of Object.entries(mappings)) {
+    if (message.includes(key)) return value;
+  }
+
+  // Tratamento por status HTTP
+  if (status === 401) return mappings['Unauthorized'];
+  if (status === 403) return mappings['Forbidden'];
+  if (status === 404) return mappings['Not Found'];
+  if (status >= 500) return mappings['Internal Server Error'];
+
+  return message || 'Ocorreu um erro inesperado. Por favor, tente novamente.';
 };
 
 const buildErrorFromResponse = (response: Response, responseText: string) => {
@@ -82,159 +113,148 @@ const readResponse = async (response: Response) => {
 };
 
 export const getApiErrorMessage = (error: any) => {
-  if (!error) return 'Erro desconhecido';
-  if (typeof error === 'string') return error;
-  if (error.message) return error.message;
-  if (error.body?.message) return error.body.message;
-  if (error.body?.error) return error.body.error;
-  return 'Erro desconhecido';
+  return humanizeMessage(error);
 };
 
 export const api = {
-  async get(endpoint: string) {
-    console.group(`📡 GET ${endpoint}`);
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: getHeaders(),
-    });
+  async get(endpoint: string, silentError = false) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: getHeaders(),
+      });
 
-    console.log('Response status:', response.status);
-    ensureAuthOrRedirect(response);
+      ensureAuthOrRedirect(response);
 
-    const { responseText, responseData } = await readResponse(response);
-    if (!response.ok) {
-      console.error('❌ Erro:', responseText);
-      console.groupEnd();
-      throw buildErrorFromResponse(response, responseText);
+      const { responseText, responseData } = await readResponse(response);
+      if (!response.ok) {
+        throw buildErrorFromResponse(response, responseText);
+      }
+
+      return responseData;
+    } catch (error: any) {
+      if (!silentError && error.message !== 'Sessão expirada') {
+        notify.error('Ops!', humanizeMessage(error));
+      }
+      throw error;
     }
-
-    console.log('✅ Sucesso:', responseData);
-    console.groupEnd();
-    return responseData;
   },
 
-  async post(endpoint: string, data: any) {
-    console.group(`📡 POST ${endpoint}`);
-    console.log('📦 Dados enviados:', JSON.stringify(data, null, 2));
+  async post(endpoint: string, data: any, silentError = false) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
+      ensureAuthOrRedirect(response);
 
-    console.log('Response status:', response.status);
-    ensureAuthOrRedirect(response);
+      const { responseText, responseData } = await readResponse(response);
+      if (!response.ok) {
+        throw buildErrorFromResponse(response, responseText);
+      }
 
-    const { responseText, responseData } = await readResponse(response);
-    console.log('📨 Response body:', responseText);
-
-    if (!response.ok) {
-      console.groupEnd();
-      throw buildErrorFromResponse(response, responseText);
+      return responseData;
+    } catch (error: any) {
+      if (!silentError && error.message !== 'Sessão expirada') {
+        notify.error('Ops!', humanizeMessage(error));
+      }
+      throw error;
     }
-
-    console.log('✅ Sucesso:', responseData);
-    console.groupEnd();
-    return responseData;
   },
 
-  async postForm(endpoint: string, formData: FormData) {
-    console.group(`📡 POST FORM ${endpoint}`);
-    console.log('📦 FormData entries:');
-    
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers: getFormHeaders(),
-      body: formData,
-    });
+  async postForm(endpoint: string, formData: FormData, silentError = false) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: getFormHeaders(),
+        body: formData,
+      });
 
-    console.log('Response status:', response.status);
-    ensureAuthOrRedirect(response);
+      ensureAuthOrRedirect(response);
 
-    const { responseText, responseData } = await readResponse(response);
-    console.log('📨 Response body:', responseText);
+      const { responseText, responseData } = await readResponse(response);
+      if (!response.ok) {
+        throw buildErrorFromResponse(response, responseText);
+      }
 
-    if (!response.ok) {
-      console.groupEnd();
-      throw buildErrorFromResponse(response, responseText);
+      return responseData;
+    } catch (error: any) {
+      if (!silentError && error.message !== 'Sessão expirada') {
+        notify.error('Ops!', humanizeMessage(error));
+      }
+      throw error;
     }
-
-    console.log('✅ Sucesso:', responseData);
-    console.groupEnd();
-    return responseData;
   },
 
-  async put(endpoint: string, data: any) {
-    console.group(`📡 PUT ${endpoint}`);
-    console.log('📦 Dados enviados:', JSON.stringify(data, null, 2));
+  async put(endpoint: string, data: any, silentError = false) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
+      ensureAuthOrRedirect(response);
 
-    console.log('Response status:', response.status);
-    ensureAuthOrRedirect(response);
+      const { responseText, responseData } = await readResponse(response);
+      if (!response.ok) {
+        throw buildErrorFromResponse(response, responseText);
+      }
 
-    const { responseText, responseData } = await readResponse(response);
-    console.log('📨 Response body:', responseText);
-
-    if (!response.ok) {
-      console.groupEnd();
-      throw buildErrorFromResponse(response, responseText);
+      return responseData;
+    } catch (error: any) {
+      if (!silentError && error.message !== 'Sessão expirada') {
+        notify.error('Ops!', humanizeMessage(error));
+      }
+      throw error;
     }
-
-    console.log('✅ Sucesso:', responseData);
-    console.groupEnd();
-    return responseData;
   },
 
-  async patch(endpoint: string, data: any) {
-    console.group(`📡 PATCH ${endpoint}`);
-    console.log('📦 Dados enviados:', JSON.stringify(data, null, 2));
+  async patch(endpoint: string, data: any, silentError = false) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'PATCH',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
+      ensureAuthOrRedirect(response);
 
-    console.log('Response status:', response.status);
-    ensureAuthOrRedirect(response);
+      const { responseText, responseData } = await readResponse(response);
+      if (!response.ok) {
+        throw buildErrorFromResponse(response, responseText);
+      }
 
-    const { responseText, responseData } = await readResponse(response);
-    console.log('📨 Response body:', responseText);
-
-    if (!response.ok) {
-      console.groupEnd();
-      throw buildErrorFromResponse(response, responseText);
+      return responseData;
+    } catch (error: any) {
+      if (!silentError && error.message !== 'Sessão expirada') {
+        notify.error('Ops!', humanizeMessage(error));
+      }
+      throw error;
     }
-
-    console.log('✅ Sucesso:', responseData);
-    console.groupEnd();
-    return responseData;
   },
 
-  async delete(endpoint: string) {
-    console.group(`📡 DELETE ${endpoint}`);
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    });
+  async delete(endpoint: string, silentError = false) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
 
-    console.log('Response status:', response.status);
-    ensureAuthOrRedirect(response);
+      ensureAuthOrRedirect(response);
 
-    if (!response.ok) {
-      const responseText = await response.text();
-      console.error('❌ Erro:', responseText);
-      console.groupEnd();
-      throw buildErrorFromResponse(response, responseText);
+      if (!response.ok) {
+        const responseText = await response.text();
+        throw buildErrorFromResponse(response, responseText);
+      }
+
+      return true;
+    } catch (error: any) {
+      if (!silentError && error.message !== 'Sessão expirada') {
+        notify.error('Ops!', humanizeMessage(error));
+      }
+      throw error;
     }
-
-    console.log('✅ Sucesso: Deletado');
-    console.groupEnd();
-    return response.ok;
   }
-};
+};

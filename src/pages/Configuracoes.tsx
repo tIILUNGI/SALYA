@@ -152,11 +152,13 @@ const Configuracoes: React.FC = () => {
       const dataToSave = { ...config };
       
       if (!isCreatingNew && empresa?.id) {
-        savedEmpresa = await api.patch(`/api/empresas/${empresa.id}`, dataToSave);
+        savedEmpresa = await api.patch(`/empresas/${empresa.id}`, dataToSave);
+
       } else {
         // Excluir ID para o backend gerar e evitar erro 409 Conflict
         const { id, ...postData } = dataToSave;
-        savedEmpresa = await api.post('/api/empresas', postData);
+        savedEmpresa = await api.post('/empresas', postData);
+
       }
       
       await refreshData();
@@ -213,7 +215,8 @@ const Configuracoes: React.FC = () => {
       text: `Tem a certeza que deseja eliminar "${busToDelete.nome}"? Todos os dados associados serão perdidos permanentemente.`,
       onConfirm: async () => {
         try {
-          await api.delete(`/api/empresas/${id}`);
+          await api.delete(`/empresas/${id}`);
+
           await refreshData();
 
           if (empresaId === id) {

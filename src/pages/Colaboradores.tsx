@@ -59,8 +59,9 @@ const Colaboradores: React.FC = () => {
       setMessage({ title: 'Sucesso', text: 'Documento adicionado.', type: 'success' });
     } catch (error: any) {
       console.error('Erro ao adicionar documento:', error);
-      setMessage({ title: 'Erro', text: error?.message || 'Não foi possível guardar o documento.', type: 'error' });
+      // O erro já foi notificado pelo api.ts ou pode ser tratado aqui se necessário
     } finally { setDocLoading(false); }
+
   };
 
   const handleDeleteDocumento = async (docId: number) => {
@@ -163,8 +164,8 @@ const Colaboradores: React.FC = () => {
       setIsModalOpen(false);
     } catch (error: any) {
       console.error('Erro ao salvar colaborador:', error);
-      setMessage({ title: 'Erro', text: error?.message || 'Não foi possível salvar os dados.', type: 'error' });
     }
+
   };
 
   const handleDelete = (id: number) => {
@@ -181,8 +182,8 @@ const Colaboradores: React.FC = () => {
           refreshColaboradores();
         } catch (error: any) {
           console.error('Erro ao remover colaborador:', error);
-          setMessage({ title: 'Erro', text: error?.message || 'Não foi possível remover o colaborador.', type: 'error' });
         }
+
       }
     });
   };

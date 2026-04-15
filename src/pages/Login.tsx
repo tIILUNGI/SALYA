@@ -1,7 +1,8 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
-import { api } from '../services/api';
+import { api, getApiErrorMessage } from '../services/api';
+
 
 type ViewMode = 'login' | 'register' | 'confirm' | 'forgot';
 
@@ -28,7 +29,8 @@ const Login: React.FC = () => {
 
   const fetchGlobalData = async () => {
     try {
-      const empresasData = await api.get('/api/empresas?size=1000');
+      const empresasData = await api.get('/empresas?size=1000');
+
       const empresasList = normalizeList(empresasData, 'empresas');
       setEmpresas(empresasList);
 
@@ -51,7 +53,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     setErrorString('');
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/auth/login', { email, password }, true);
       const { token, user } = response;
 
       if (token) {
@@ -65,8 +67,9 @@ const Login: React.FC = () => {
       const hasEmpresa = await fetchGlobalData();
       navigate(hasEmpresa ? '/dashboard' : '/configuracoes');
     } catch (error: any) {
-      setErrorString(error.message || 'Erro ao realizar login');
+      setErrorString(getApiErrorMessage(error));
     }
+
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -78,7 +81,7 @@ const Login: React.FC = () => {
     }
 
     try {
-      const response = await api.post('/auth/register', { name, email, password });
+      const response = await api.post('/auth/register', { name, email, password }, true);
 
       if (response.requiresVerification) {
         setMessage({
@@ -103,15 +106,16 @@ const Login: React.FC = () => {
         navigate(hasEmpresa ? '/dashboard' : '/configuracoes');
       }
     } catch (error: any) {
-      setErrorString(error.message || 'Erro ao registar');
+      setErrorString(getApiErrorMessage(error));
     }
+
   };
 
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorString('');
     try {
-      const response = await api.post('/auth/verify-email', { email, code: confirmCode });
+      const response = await api.post('/auth/verify-email', { email, code: confirmCode }, true);
       const { token, user } = response;
 
       localStorage.setItem('salya_token', token);
@@ -123,8 +127,9 @@ const Login: React.FC = () => {
       const hasEmpresa = await fetchGlobalData();
       navigate(hasEmpresa ? '/dashboard' : '/configuracoes');
     } catch (error: any) {
-      setErrorString(error.message || 'Erro ao confirmar');
+      setErrorString(getApiErrorMessage(error));
     }
+
   };
 
   const handleResendCode = async () => {

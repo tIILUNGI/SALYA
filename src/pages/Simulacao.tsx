@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { api } from '../services/api';
+import { api, getApiErrorMessage } from '../services/api';
+
 import { AppContext } from '../App';
 
 interface SimResult {
@@ -46,11 +47,12 @@ const Simulacao: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/simulacao/calcular', { colaboradorId: selectedId, novoSalario });
+      const res = await api.post('/simulacao/calcular', { colaboradorId: selectedId, novoSalario }, true);
       setResult(res);
     } catch (e: any) {
-      setError(e.message || 'Erro ao calcular simulação.');
+      setError(getApiErrorMessage(e));
     } finally {
+
       setLoading(false);
     }
   };
