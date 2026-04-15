@@ -1,0 +1,80 @@
+{
+  "auth_login": { "token": "mock-jwt-token-123", "user": { "id": 1, "name": "Admin Mock" } },
+  "auth_register": { "message": "Success" },
+  "auth_verify_email": { "message": "Email verified" },
+  "auth_resend_code": { "message": "Code sent" },
+  "auth_forgot_password": { "message": "Instructions sent" },
+  "empresas": [
+    {
+      "id": 1,
+      "nome": "Empresa Mock Limitada",
+      "nif": "5000000000",
+      "categoria": "Empresa",
+      "regimeFiscal": "Geral",
+      "tipoEntidade": "Privada",
+      "endereco": "Luanda",
+      "municipio": "Luanda",
+      "provincia": "Luanda",
+      "processamentoAutomatico": false,
+      "envioAutomaticoContracheques": false,
+      "diaProcessamento": 25,
+      "taxaINSS": 3.0,
+      "taxaINSSPatronal": 8.0,
+      "taxaAGT": 2.0
+    }
+  ],
+  "alertas_resumo": {
+    "documentosExpirando": 1,
+    "salariosPendentes": 5,
+    "contratosExpirando": 0
+  },
+  "trabalhadores": [
+    {
+      "id": 1,
+      "empresaId": 1,
+      "nome": "João Mock",
+      "email": "joao@mock.com",
+      "telefone": "900000000",
+      "cargo": "Desenvolvedor",
+      "departamento": "TI",
+      "dataAdmissao": "2023-01-01",
+      "salarioBase": 300000,
+      "tipoContrato": "Tempo Indeterminado",
+      "status": "Ativo"
+    }
+  ],
+  "processamentos_processar-salario": {
+    "id": 1,
+    "status": "Concluído",
+    "totalLiquido": 250000
+  },
+  "movimentos": [],
+  "notificacoes": [
+    {
+      "id": 1,
+      "titulo": "Bem-vindo ao Servidor Mock",
+      "mensagem": "Este é um teste local via JSON Server.",
+      "tipo": "INFORMACAO",
+      "lido": false,
+      "createdAt": "2023-10-01T10:00:00"
+    }
+  ],
+  "taxas_irt": [
+    { "escalao": 1, "limiteInferior": 0, "limiteSuperior": 100000, "taxa": 0, "parcelaFixa": 0 },
+    { "escalao": 2, "limiteInferior": 100001, "limiteSuperior": 200000, "taxa": 0.1, "parcelaFixa": 0 }
+  ],
+  "simulacao_calcular": {
+    "salarioBase": 500000,
+    "totalDescontos": 50000,
+    "salarioLiquido": 450000,
+    "detalhesIRT": 35000,
+    "detalhesINSS": 15000
+  },
+  "documentos": [],
+  "dashboard_stats": {
+    "totalColaboradores": 1,
+    "processamentosConcluidos": 0,
+    "alertasAtivos": 1,
+    "totalSalariosMes": 300000
+  }
+}

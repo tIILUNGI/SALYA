@@ -1,0 +1,17 @@
+{
+  "/api/auth/login": "/auth_login",
+  "/api/auth/register": "/auth_register",
+  "/api/auth/verify-email": "/auth_verify_email",
+  "/api/auth/resend-code": "/auth_resend_code",
+  "/api/auth/forgot-password": "/auth_forgot_password",
+  "/api/empresas*": "/empresas$1",
+  "/api/alertas/resumo*": "/alertas_resumo",
+  "/api/trabalhadores*": "/trabalhadores$1",
+  "/api/processamentos/*": "/processamentos_$1",
+  "/api/movimentos*": "/movimentos$1",
+  "/api/notificacoes*": "/notificacoes$1",
+  "/api/taxas/irt": "/taxas_irt",
+  "/api/simulacao/calcular": "/simulacao_calcular",
+  "/api/documentos*": "/documentos$1",
+  "/api/dashboard/stats*": "/dashboard_stats"
+}

@@ -6,14 +6,12 @@ const Header: React.FC = () => {
   const { empresa, setEmpresa, empresaId, setEmpresaId, empresas } = useContext(AppContext);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [loadingNotifs, setLoadingNotifs] = useState(false);
-
   // Fetch real notifications from backend
   useEffect(() => {
     const fetchNotifications = async () => {
       if (!empresaId) return;
-      setLoadingNotifs(true);
       try {
+
         const data = await api.get(`/notificacoes?empresaId=${empresaId}`);
         const notifList = data || [];
         // Transform backend data to frontend format
@@ -31,11 +29,10 @@ const Header: React.FC = () => {
         console.error('Error fetching notifications:', error);
         // Keep empty on error - no fake notifications
         setNotifications([]);
-      } finally {
-        setLoadingNotifs(false);
       }
     };
     fetchNotifications();
+
   }, [empresaId]);
 
   const formatTimeAgo = (dateString: string) => {

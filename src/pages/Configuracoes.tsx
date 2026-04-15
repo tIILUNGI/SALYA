@@ -160,10 +160,11 @@ const Configuracoes: React.FC = () => {
       } else {
         // Excluir ID para o backend gerar e evitar erro 409 Conflict
         const { id, ...postData } = dataToSave;
-        await api.post('/empresas', postData);
-
-
+        const newEmpresa = await api.post('/empresas', postData);
+        setEmpresa(newEmpresa);
+        setEmpresaId(newEmpresa.id);
       }
+
       
       await refreshData();
       

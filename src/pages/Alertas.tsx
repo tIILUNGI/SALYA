@@ -20,7 +20,8 @@ const severidadeBadge: Record<string, string> = {
 };
 
 const Alertas: React.FC = () => {
-  const { colaboradores } = useContext(AppContext);
+  const { colaboradores, empresaId } = useContext(AppContext);
+
   const [alertas, setAlertas] = useState<AlertaItem[]>([]);
   const [activeTab, setActiveTab] = useState<'Pendente' | 'Resolvido'>('Pendente');
   const [loading, setLoading] = useState(true);
@@ -65,33 +66,39 @@ const Alertas: React.FC = () => {
 
       // Alertas de documentos via API
       try {
-        const resumo = await api.get('/alertas/resumo');
-        if (resumo.documentosExpirando > 0) {
-          lista.push({
-            id: idCounter++,
-            tipo: 'Documento',
-            mensagem: `${resumo.documentosExpirando} documento(s) com validade a expirar nos próximos 30 dias`,
-            severidade: 'Alta',
-            status: 'Pendente',
-          });
+        if (empresaId) {
+          const resumo = await api.get(`/alertas/resumo?empresaId=${empresaId}`);
+          
+          if (resumo.documentosExpirando > 0) {
+            lista.push({
+              id: idCounter++,
+              tipo: 'Documento',
+              mensagem: `${resumo.documentosExpirando} documento(s) com validade a expirar nos próximos 30 dias`,
+              severidade: 'Alta',
+              status: 'Pendente',
+            });
+          }
+          if (resumo.salariosPendentes > 0) {
+            lista.push({
+              id: idCounter++,
+              tipo: 'Salário',
+              mensagem: `${resumo.salariosPendentes} processamento(s) salarial(ais) pendente(s) este mês`,
+              severidade: 'Média',
+              status: 'Pendente',
+            });
+          }
         }
-        if (resumo.salariosPendentes > 0) {
-          lista.push({
-            id: idCounter++,
-            tipo: 'Salário',
-            mensagem: `${resumo.salariosPendentes} processamento(s) salarial(ais) pendente(s) este mês`,
-            severidade: 'Média',
-            status: 'Pendente',
-          });
-        }
-      } catch { /* silent fail */ }
+      } catch (error) { 
+        console.error("Erro ao carregar dados do alerta", error);
+      }
 
       setAlertas(lista);
       setLoading(false);
     };
 
     buildAlertas();
-  }, [colaboradores]);
+  }, [colaboradores, empresaId]);
+
 
   const handleResolver = (id: number) => {
     Swal.fire({

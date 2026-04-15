@@ -12,7 +12,8 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompanyCreated }) => {
   const navigate = useNavigate();
-  const { user, setUser, setIsAuthenticated, empresa, setEmpresa, setIsConfigured, refreshData, setMessage } = useContext(AppContext);
+  const { user, setUser, setIsAuthenticated, empresa, setEmpresa, setEmpresaId, setEmpresas, empresas, setIsConfigured, refreshData, setMessage } = useContext(AppContext);
+
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [newCompany, setNewCompany] = useState({
     nome: '',
@@ -70,8 +71,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
       const empresaCriada = await api.post('/empresas', newCompany);
       if (empresaCriada) {
         setEmpresa(empresaCriada);
+        setEmpresaId(empresaCriada.id);
+        setEmpresas([...empresas, empresaCriada]);
         setIsConfigured(true);
         setShowCompanyModal(false);
+
         
         // Reset form
         setNewCompany({
