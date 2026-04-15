@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
 import { api, API_BASE_URL } from '../services/api';
+import Swal from 'sweetalert2';
 
 interface Documento {
   id: number;
@@ -12,7 +13,7 @@ interface Documento {
 }
 
 const Colaboradores: React.FC = () => {
-  const { colaboradores, setColaboradores, empresaId, showConfirm, setMessage } = useContext(AppContext);
+  const { colaboradores, setColaboradores, empresaId, setMessage } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'All' | 'Ativo' | 'Inativo'>('All');
   
@@ -64,10 +65,29 @@ const Colaboradores: React.FC = () => {
   };
 
   const handleDeleteDocumento = async (docId: number) => {
-    try {
-      await api.delete(`/documentos/${docId}`);
-      setDocumentos(prev => prev.filter(d => d.id !== docId));
-    } catch { /**/ }
+    Swal.fire({
+      title: 'Eliminar Documento',
+      text: 'Tem a certeza que deseja eliminar este documento?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await api.delete(`/documentos/${docId}`);
+          setDocumentos(prev => prev.filter(d => d.id !== docId));
+          Swal.fire({
+            title: 'Eliminado',
+            text: 'Documento removido com sucesso!',
+            icon: 'success',
+            confirmButtonColor: '#22c55e',
+          });
+        } catch { /**/ }
+      }
+    });
   };
   
   const [formData, setFormData] = useState<Partial<Colaborador>>({
@@ -171,17 +191,34 @@ const Colaboradores: React.FC = () => {
     const colab = colaboradores.find(c => c.id === id);
     if (!colab) return;
 
-    showConfirm({
+    Swal.fire({
       title: 'Remover Colaborador',
       text: `Tem a certeza que deseja eliminar o colaborador "${colab.nome}"? Esta acção removerá todos os registros associados.`,
-      onConfirm: async () => {
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
         try {
           await api.delete(`/trabalhadores/${id}`);
-          setMessage({ title: 'Remover', text: 'Colaborador removido com sucesso!', type: 'success' });
+          Swal.fire({
+            title: 'Removido',
+            text: 'Colaborador removido com sucesso!',
+            icon: 'success',
+            confirmButtonColor: '#22c55e',
+          });
           refreshColaboradores();
         } catch (error: any) {
           console.error('Erro ao remover colaborador:', error);
-          setMessage({ title: 'Erro', text: error?.message || 'Não foi possível remover o colaborador.', type: 'error' });
+          Swal.fire({
+            title: 'Erro',
+            text: error?.message || 'Não foi possível remover o colaborador.',
+            icon: 'error',
+            confirmButtonColor: '#e11d48',
+          });
         }
       }
     });

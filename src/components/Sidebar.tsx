@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api } from '../services/api';
+import Swal from 'sweetalert2';
 
 interface SidebarProps {
   currentPage: string;
@@ -39,12 +40,25 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('salya_token');
-    setIsAuthenticated(false);
-    setUser(null);
-    setIsConfigured(false);
-    setEmpresa(null);
-    navigate('/login');
+    Swal.fire({
+      title: 'Terminar Sessão',
+      text: 'Tem a certeza que deseja sair do sistema?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, sair',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem('salya_token');
+        setIsAuthenticated(false);
+        setUser(null);
+        setIsConfigured(false);
+        setEmpresa(null);
+        navigate('/login');
+      }
+    });
   };
 
   const handleCreateCompany = async (e: React.FormEvent) => {

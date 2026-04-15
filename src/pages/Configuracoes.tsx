@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api } from '../services/api';
+import Swal from 'sweetalert2';
 
 interface ConfiguracaoEmpresa {
   id: number;
@@ -58,7 +59,7 @@ const mapEmpresaToConfig = (emp: any): ConfiguracaoEmpresa => ({
 });
 
 const Configuracoes: React.FC = () => {
-  const { empresa, setEmpresa, isConfigured, setIsConfigured, empresas, setEmpresas, empresaId, setEmpresaId, showConfirm, refreshData, setMessage } = useContext(AppContext);
+  const { empresa, setEmpresa, isConfigured, setIsConfigured, empresas, setEmpresas, empresaId, setEmpresaId, refreshData, setMessage } = useContext(AppContext);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(empresas && empresas.length > 1 ? 'gestao' : 'empresa');
   
@@ -208,10 +209,17 @@ const Configuracoes: React.FC = () => {
     const busToDelete = empresas.find(e => e.id === id);
     if (!busToDelete) return;
 
-    showConfirm({
+    Swal.fire({
       title: 'Eliminar Entidade',
       text: `Tem a certeza que deseja eliminar "${busToDelete.nome}"? Todos os dados associados serão perdidos permanentemente.`,
-      onConfirm: async () => {
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
         try {
           await api.delete(`/api/empresas/${id}`);
           await refreshData();
@@ -232,17 +240,19 @@ const Configuracoes: React.FC = () => {
             }
           }
           
-          setMessage({
+          Swal.fire({
             title: 'SUCESSO!',
             text: 'Entidade eliminada com sucesso!',
-            type: 'success'
+            icon: 'success',
+            confirmButtonColor: '#22c55e',
           });
         } catch (error) {
           console.error('Erro ao eliminar a empresa:', error);
-          setMessage({
+          Swal.fire({
             title: 'ERRO!',
             text: 'Houve um erro ao tentar excluir a empresa. Tente novamente.',
-            type: 'error'
+            icon: 'error',
+            confirmButtonColor: '#e11d48',
           });
         }
       }

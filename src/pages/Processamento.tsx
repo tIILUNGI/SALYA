@@ -3,6 +3,7 @@ import { AppContext } from '../App';
 import { Colaborador } from '../types';
 import { api } from '../services/api';
 import html2pdf from 'html2pdf.js';
+import Swal from 'sweetalert2';
 
 interface Movimento {
   id: number;
@@ -108,10 +109,29 @@ const Processamento: React.FC = () => {
   };
 
   const handleDeleteMovimento = async (id: number) => {
-    try {
-      await api.delete(`/movimentos/${id}`);
-      setMovimentos(prev => prev.filter(m => m.id !== id));
-    } catch { /**/ }
+    Swal.fire({
+      title: 'Eliminar Movimento',
+      text: 'Tem a certeza que deseja eliminar este movimento?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await api.delete(`/movimentos/${id}`);
+          setMovimentos(prev => prev.filter(m => m.id !== id));
+          Swal.fire({
+            title: 'Eliminado',
+            text: 'Movimento removido com sucesso!',
+            icon: 'success',
+            confirmButtonColor: '#22c55e',
+          });
+        } catch { /**/ }
+      }
+    });
   };
 
   const [showFormModal, setShowFormModal] = useState(false);
