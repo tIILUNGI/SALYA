@@ -15,7 +15,7 @@ const Header: React.FC = () => {
       setLoadingNotifs(true);
       try {
         const data = await api.get(`/notificacoes?empresaId=${empresaId}`);
-        const notifList = data._embedded?.notificacoes || [];
+        const notifList = data || [];
         // Transform backend data to frontend format
         const transformed = notifList.map((n: any) => ({
           id: n.id,
@@ -25,6 +25,7 @@ const Header: React.FC = () => {
           read: n.lido,
           tipo: n.tipo
         }));
+
         setNotifications(transformed);
       } catch (error) {
         console.error('Error fetching notifications:', error);

@@ -90,7 +90,7 @@ const buildErrorFromResponse = (response: Response, responseText: string) => {
 
 const ensureAuthOrRedirect = (response: Response) => {
   if (response.status === 401) {
-    console.warn('⚠️ Token expirado! Redirecionando para login...');
+    //console.warn('⚠️ Token expirado! Redirecionando para login...');
     localStorage.removeItem('token');
     localStorage.removeItem('salya_token');
     window.location.href = '/login';
@@ -117,11 +117,12 @@ export const getApiErrorMessage = (error: any) => {
 };
 
 export const api = {
-  async get(endpoint: string) {
-    console.group(`📡 GET ${endpoint}`);
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: getHeaders(),
-    });
+  async get(endpoint: string, silentError = false) {
+    //console.group(`📡 GET ${endpoint}`);
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: getHeaders(),
+      });
 
       ensureAuthOrRedirect(response);
 
@@ -130,8 +131,10 @@ export const api = {
         throw buildErrorFromResponse(response, responseText);
       }
 
+      //console.groupEnd();
       return responseData;
     } catch (error: any) {
+      //console.groupEnd();
       if (!silentError && error.message !== 'Sessão expirada') {
         notify.error('Ops!', humanizeMessage(error));
       }
@@ -139,15 +142,16 @@ export const api = {
     }
   },
 
-  async post(endpoint: string, data: any) {
-    console.group(`📡 POST ${endpoint}`);
-    console.log('📦 Dados enviados:', JSON.stringify(data, null, 2));
+  async post(endpoint: string, data: any, silentError = false) {
+    //console.group(`📡 POST ${endpoint}`);
+    //console.log('📦 Dados enviados:', JSON.stringify(data, null, 2));
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
 
       ensureAuthOrRedirect(response);
 
@@ -156,8 +160,10 @@ export const api = {
         throw buildErrorFromResponse(response, responseText);
       }
 
+      //console.groupEnd();
       return responseData;
     } catch (error: any) {
+      //console.groupEnd();
       if (!silentError && error.message !== 'Sessão expirada') {
         notify.error('Ops!', humanizeMessage(error));
       }

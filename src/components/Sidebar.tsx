@@ -67,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
     setError('');
 
     try {
-      const empresaCriada = await api.post('/api/empresas', newCompany);
+      const empresaCriada = await api.post('/empresas', newCompany);
       if (empresaCriada) {
         setEmpresa(empresaCriada);
         setIsConfigured(true);

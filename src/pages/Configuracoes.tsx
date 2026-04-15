@@ -59,7 +59,8 @@ const mapEmpresaToConfig = (emp: any): ConfiguracaoEmpresa => ({
 });
 
 const Configuracoes: React.FC = () => {
-  const { empresa, setEmpresa, isConfigured, setIsConfigured, empresas, setEmpresas, empresaId, setEmpresaId, refreshData, setMessage } = useContext(AppContext);
+  const { empresa, setEmpresa, isConfigured, setIsConfigured, empresas, empresaId, setEmpresaId, refreshData, setMessage } = useContext(AppContext);
+
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(empresas && empresas.length > 1 ? 'gestao' : 'empresa');
   
@@ -149,16 +150,18 @@ const Configuracoes: React.FC = () => {
   }
 
     try {
-      let savedEmpresa;
       const dataToSave = { ...config };
+
       
       if (!isCreatingNew && empresa?.id) {
-        savedEmpresa = await api.patch(`/empresas/${empresa.id}`, dataToSave);
+        await api.put(`/empresas/${empresa.id}`, dataToSave);
+
 
       } else {
         // Excluir ID para o backend gerar e evitar erro 409 Conflict
         const { id, ...postData } = dataToSave;
-        savedEmpresa = await api.post('/empresas', postData);
+        await api.post('/empresas', postData);
+
 
       }
       

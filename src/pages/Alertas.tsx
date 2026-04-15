@@ -117,7 +117,6 @@ const Alertas: React.FC = () => {
   };
 
   const filtered = alertas.filter(a => a.status === activeTab);
-  const pendentes = alertas.filter(a => a.status === 'Pendente').length;
 
   return (
     <div className="p-8 animate-in fade-in slide-up">

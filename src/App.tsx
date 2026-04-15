@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -78,13 +79,13 @@ function App() {
     return key ? data?._embedded?.[key] || [] : [];
   };
 
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     try {
       const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
       if (!token) return;
 
       // Fetch Empresas
-      const empresasData = await api.get('/api/empresas?size=1000');
+      const empresasData = await api.get('/empresas?size=1000');
       const empresasList = normalizeList(empresasData, 'empresas');
       setEmpresas(empresasList);
       
@@ -102,7 +103,8 @@ function App() {
     } catch (error) {
       console.error('Error fetching global data:', error);
     }
-  };
+  }, [empresaId]);
+
 
   useEffect(() => {
     const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
@@ -124,13 +126,15 @@ function App() {
     if (isAuthenticated) {
       refreshData();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, refreshData]);
+
 
   useEffect(() => {
     if (isAuthenticated && empresaId) {
       refreshData();
     }
-  }, [empresaId]);
+  }, [isAuthenticated, empresaId, refreshData]);
+
 
   const showConfirm = async (config: { title: string; text: string; onConfirm: () => void }) => {
     const isConfirmed = await notify.modal.confirm(config.title, config.text);
@@ -167,7 +171,8 @@ function App() {
 function MainLayout() {
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const { empresa, isConfigured, setIsConfigured, refreshData, setMessage } = React.useContext(AppContext);
+  const { empresa, isConfigured, refreshData, setMessage } = React.useContext(AppContext);
+
 
   useEffect(() => {
     const path = location.pathname.replace('/', '') || 'dashboard';

@@ -9,7 +9,7 @@ type ViewMode = 'login' | 'register' | 'confirm' | 'forgot';
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const {
-    setIsAuthenticated, setColaboradores, setEmpresa, setUser,
+    setIsAuthenticated, setEmpresa, setUser,
     setIsConfigured, setEmpresas, setEmpresaId, setMessage
   } = useContext(AppContext);
 
