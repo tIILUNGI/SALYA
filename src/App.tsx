@@ -4,8 +4,6 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Alertas from './pages/Alertas';
-import Simulacao from './pages/Simulacao';
-import Rescisoes from './pages/Rescisoes';
 import Relatorios from './pages/Relatorios';
 import Colaboradores from './pages/Colaboradores';
 import Processamento from './pages/Processamento';
@@ -109,6 +107,7 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
     const userData = localStorage.getItem('salya_user');
+    
     if (token) {
       setIsAuthenticated(true);
       if (userData) {
@@ -221,14 +220,6 @@ function MainLayout() {
             <Route 
               path="/processamento" 
               element={hasEmpresa ? <Processamento /> : <Navigate to="/configuracoes" replace />} 
-            />
-            <Route 
-              path="/simulacao" 
-              element={hasEmpresa ? <Simulacao /> : <Navigate to="/configuracoes" replace />} 
-            />
-            <Route 
-              path="/rescisoes" 
-              element={hasEmpresa ? <Rescisoes /> : <Navigate to="/configuracoes" replace />} 
             />
             <Route 
               path="/relatorios" 

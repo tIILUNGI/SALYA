@@ -72,7 +72,7 @@ const Dashboard: React.FC = () => {
           <div className="glass-card p-6 border-l-4 border-l-primary-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Empresas Geridas</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Entidades Geridas</p>
                 <h3 className="text-3xl font-black text-slate-800 dark:text-white">{stats.totalEmpresas}</h3>
               </div>
               <div className="size-12 rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center">

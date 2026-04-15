@@ -117,11 +117,11 @@ export const getApiErrorMessage = (error: any) => {
 };
 
 export const api = {
-  async get(endpoint: string, silentError = false) {
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        headers: getHeaders(),
-      });
+  async get(endpoint: string) {
+    console.group(`📡 GET ${endpoint}`);
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      headers: getHeaders(),
+    });
 
       ensureAuthOrRedirect(response);
 
@@ -139,13 +139,15 @@ export const api = {
     }
   },
 
-  async post(endpoint: string, data: any, silentError = false) {
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(data),
-      });
+  async post(endpoint: string, data: any) {
+    console.group(`📡 POST ${endpoint}`);
+    console.log('📦 Dados enviados:', JSON.stringify(data, null, 2));
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
 
       ensureAuthOrRedirect(response);
 
@@ -257,4 +259,4 @@ export const api = {
       throw error;
     }
   }
-};
+};

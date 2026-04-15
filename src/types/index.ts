@@ -53,6 +53,10 @@ export interface Colaborador {
   municipio?: string;
   provincia?: string;
   empresaId?: number;
+  morada?: string;
+  modalidade?: 'Tempo Inteiro' | 'Tempo Parcial' | 'Prestação de Serviços';
+  subsudioFerias?: number;
+  subsudioNatal?: number;
 }
 
 export interface Ferias {

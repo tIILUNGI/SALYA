@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { api } from '../services/api';
 import { AppContext } from '../App';
+import Swal from 'sweetalert2';
 
 interface AlertaItem {
   id: number;
@@ -93,7 +94,26 @@ const Alertas: React.FC = () => {
   }, [colaboradores]);
 
   const handleResolver = (id: number) => {
-    setAlertas(prev => prev.map(a => a.id === id ? { ...a, status: 'Resolvido' } : a));
+    Swal.fire({
+      title: 'Resolver Alerta',
+      text: 'Tem a certeza que deseja marcar este alerta como resolvido?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, resolver',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#22c55e',
+      cancelButtonColor: '#64748b',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setAlertas(prev => prev.map(a => a.id === id ? { ...a, status: 'Resolvido' } : a));
+        Swal.fire({
+          title: 'Resolvido',
+          text: 'Alerta marcado como resolvido!',
+          icon: 'success',
+          confirmButtonColor: '#22c55e',
+        });
+      }
+    });
   };
 
   const filtered = alertas.filter(a => a.status === activeTab);

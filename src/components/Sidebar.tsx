@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api } from '../services/api';
+import Swal from 'sweetalert2';
 
 interface SidebarProps {
   currentPage: string;
@@ -30,8 +31,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
     { id: 'alertas', label: 'Alertas', icon: 'notifications_active' },
     { id: 'colaboradores', label: 'Funcionários', icon: 'group' },
     { id: 'processamento', label: 'Processamento', icon: 'account_balance_wallet' },
-    { id: 'simulacao', label: 'Simulações', icon: 'calculate' },
-    { id: 'rescisoes', label: 'Rescisões', icon: 'person_remove' },
     { id: 'configuracoes', label: 'Configurações', icon: 'settings' },
   ];
 
@@ -41,12 +40,25 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('salya_token');
-    setIsAuthenticated(false);
-    setUser(null);
-    setIsConfigured(false);
-    setEmpresa(null);
-    navigate('/login');
+    Swal.fire({
+      title: 'Terminar Sessão',
+      text: 'Tem a certeza que deseja sair do sistema?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, sair',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem('salya_token');
+        setIsAuthenticated(false);
+        setUser(null);
+        setIsConfigured(false);
+        setEmpresa(null);
+        navigate('/login');
+      }
+    });
   };
 
   const handleCreateCompany = async (e: React.FormEvent) => {
@@ -144,7 +156,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-slate-900 rounded-xl w-full max-w-lg mx-4 p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold">Criar Nova Empresa</h3>
+                <h3 className="text-xl font-semibold">Criar Nova Entidade</h3>
                 <button 
                   onClick={() => setShowCompanyModal(false)}
                   className="text-slate-400 hover:text-slate-600"
@@ -161,7 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
               
               <form onSubmit={handleCreateCompany} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Nome da Empresa *</label>
+                  <label className="block text-sm font-medium mb-1">Nome da Entidade *</label>
                   <input
                     type="text"
                     required
@@ -261,7 +273,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
                     ) : (
                       <>
                         <span className="material-symbols-outlined">check</span>
-                        Criar Empresa
+                        Criar Entidade
                       </>
                     )}
                   </button>
@@ -288,7 +300,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
       <div className="mx-4 mb-4 p-3 bg-primary/5 rounded-lg border border-primary/10">
         <div className="flex items-center gap-2 text-primary">
           <span className="material-symbols-outlined text-sm">business</span>
-          <span className="text-xs font-medium">Empresa Ativa</span>
+          <span className="text-xs font-medium">Entidade Ativa</span>
         </div>
         <p className="text-sm font-semibold mt-1 truncate">{empresa.nome}</p>
         <p className="text-xs text-slate-500">NIF: {empresa.nif}</p>
