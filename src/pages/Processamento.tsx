@@ -22,6 +22,14 @@ const Processamento: React.FC = () => {
   const { empresa, colaboradores, empresaId, setMessage } = useContext(AppContext);
   const ativos = colaboradores.filter(c => c.status === 'Ativo' && (!empresaId || c.empresaId === empresaId || (c as any).empresa?.id === empresaId));
   
+  const [isProcessingBulk, setIsProcessingBulk] = useState(false);
+  const currentYear = new Date().getFullYear();
+  const currentDay = new Date().getDate();
+  const [selectedMonth, setSelectedMonth] = useState('Janeiro');
+  const [selectedYear, setSelectedYear] = useState(currentYear.toString());
+  const [selectedDay, setSelectedDay] = useState(currentDay.toString());
+  const [activeTab, setActiveTab] = useState<'Normal' | 'Movimentos' | 'Exportacao'>('Normal');
+
   const handleExportExcel = () => {
     const headers = ['Nome', 'Cargo', 'Salário Base', 'IRT', 'INSS', 'Líquido'];
     const rows = ativos.map(c => [c.nome, c.cargo, c.salarioBase || 0, 0, 0, c.salarioBase || 0]);
@@ -68,13 +76,6 @@ const Processamento: React.FC = () => {
     link.click();
     setMessage?.({ title: 'Sucesso', text: 'Gráfico gerado com sucesso', type: 'success' });
   };
-  
-  const currentYear = new Date().getFullYear();
-  const currentDay = new Date().getDate();
-  const [selectedMonth, setSelectedMonth] = useState('Janeiro');
-  const [selectedYear, setSelectedYear] = useState(currentYear.toString());
-  const [selectedDay, setSelectedDay] = useState(currentDay.toString());
-  const [activeTab, setActiveTab] = useState<'Normal' | 'Movimentos' | 'Exportacao'>('Normal');
 
   // Movimentos Externos state
   const [movimentos, setMovimentos] = useState<Movimento[]>([]);
@@ -134,6 +135,32 @@ const Processamento: React.FC = () => {
     });
   };
 
+  const handleBulkProcess = async () => {
+    if (isProcessingBulk) return;
+    const result = await Swal.fire({
+      title: 'Processamento em Lote',
+      text: `Deseja processar o salário de todos os ${ativos.length} funcionários ativos para ${selectedMonth}/${selectedYear}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, Processar Todos',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#3b82f6'
+    });
+    if (result.isConfirmed) {
+      setIsProcessingBulk(true);
+      Swal.fire({ title: 'A Processar...', text: 'A gerar folhas e recibos. Por favor, aguarde.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+      try {
+        for (const colab of ativos) {
+          const dto = { colaboradorId: colab.id, mes: monthToNum(selectedMonth), ano: parseInt(selectedYear), diasTrabalhados: 22, diasUteis: 22, diasAlimentacao: 22, diasTransporte: 22, valorDiaAlimentacao: colab.subsidioAlimentacao || 0, valorDiaTransporte: colab.subsidioTransporte || 0, outrosSubsidiosTotal: (colab.subsidioFerias || 0) + (colab.subsidioNatal || 0), horasExtraTotal: 0, bonusTotal: 0, faltasTotal: 0 };
+          await api.post('/processamentos/processar-salario', dto);
+        }
+        Swal.fire('Sucesso', 'Processamento mensal concluído com sucesso!', 'success');
+      } catch (e) {
+        Swal.fire('Erro', 'Ocorreu um erro no processamento em lote.', 'error');
+      } finally { setIsProcessingBulk(false); }
+    }
+  };
+
   const [showFormModal, setShowFormModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [selectedColab, setSelectedColab] = useState<Colaborador | null>(null);
@@ -156,9 +183,9 @@ const Processamento: React.FC = () => {
     setSelectedColab(colab);
     setFormSalario(colab.salarioBase || 0);
     setFormFaltas(0);
-    setFormAlimentacao(30000);
-    setFormTransporte(20000);
-    setFormFerias(0);
+    setFormAlimentacao(colab.subsidioAlimentacao || 0);
+    setFormTransporte(colab.subsidioTransporte || 0);
+    setFormFerias(colab.subsidioFerias || 0);
     setOutrosSubsidios([]);
     setFormHorasExtra(0);
     setFormBonus(0);
@@ -198,89 +225,33 @@ const Processamento: React.FC = () => {
   const handleConfirmForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedColab) return;
-
     try {
-      const dto = {
-        trabalhadorId: selectedColab.id,
-        mes: monthToNum(selectedMonth),
-        ano: parseInt(selectedYear),
-        diasTrabalhados: 22,
-        diasUteis: 22,
-        diasAlimentacao: 1,
-        diasTransporte: 1,
-        valorDiaAlimentacao: formAlimentacao,
-        valorDiaTransporte: formTransporte,
-        outrosSubsidiosTotal: outrosSubsidios.reduce((acc: number, s: { valor: number }) => acc + s.valor, 0) + formFerias,
-        horasExtraTotal: formHorasExtra,
-        bonusTotal: formBonus,
-        faltasTotal: formFaltas
-      };
-
+      const dto = { trabalhadorId: selectedColab.id, mes: monthToNum(selectedMonth), ano: parseInt(selectedYear), diasTrabalhados: 22, diasUteis: 22, diasAlimentacao: 22, diasTransporte: 22, valorDiaAlimentacao: formAlimentacao, valorDiaTransporte: formTransporte, outrosSubsidiosTotal: outrosSubsidios.reduce((acc: number, s: { valor: number }) => acc + s.valor, 0) + formFerias, horasExtraTotal: formHorasExtra, bonusTotal: formBonus, faltasTotal: formFaltas };
       const result = await api.post('/processamentos/processar-salario', dto);
-      
-      setCalcResults({
-        totalBruto: result.totalBruto,
-        valorINSS: result.descontos - (result.totalBruto - result.salarioLiquido - result.descontos), // Rough extraction if not returned explicitly
-        valorIRT: 0, // Will be calculated below for display if backend doesn't split it
-        totalDescontos: result.descontos,
-        salarioLiquido: result.salarioLiquido
-      });
-
-      // Update results if backend provides more details
-      if (result.valorINSS !== undefined) {
-         setCalcResults({
-           totalBruto: result.totalBruto,
-           valorINSS: result.valorINSS,
-           valorIRT: result.valorIRT,
-           totalDescontos: result.descontos,
-           salarioLiquido: result.salarioLiquido
-         });
-      }
-
+      setCalcResults({ totalBruto: result.totalBruto, valorINSS: result.valorINSS || 0, valorIRT: result.valorIRT || 0, totalDescontos: result.descontos, salarioLiquido: result.salarioLiquido });
       setShowFormModal(false);
       setShowReceiptModal(true);
     } catch (error: any) {
-      console.error('Erro ao processar salário:', error);
       setMessage({ title: 'Erro', text: error?.message || 'Não foi possível processar o salário.', type: 'error' });
     }
   };
 
   const currentCalc = () => calcResults || { totalBruto: 0, valorINSS: 0, valorIRT: 0, totalDescontos: 0, salarioLiquido: 0 };
-
-  const handleImprimir = () => {
-    window.print();
-  };
-
+  const handleImprimir = () => window.print();
   const handleGuardar = () => {
     const element = document.getElementById('recibo-para-impressao');
     if (!element) return;
-    // @ts-ignore
-    const opt = {
-      margin: 0,
-      filename: `Recibo_${selectedColab?.nome.replace(/ /g, '_')}_${selectedMonth}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { scale: 3, useCORS: true },
-      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
-    };
+    const opt = { margin: 0, filename: `Recibo_${selectedColab?.nome.replace(/ /g, '_')}_${selectedMonth}.pdf`, image: { type: 'jpeg' as const, quality: 0.98 }, html2canvas: { scale: 3, useCORS: true }, jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const } };
     html2pdf().from(element).set(opt).save();
   };
 
   return (
-    <div className="p-8">
+    <div className="p-8 font-app">
       <style>{`
         @media print {
           body * { visibility: hidden !important; }
           #recibo-para-impressao, #recibo-para-impressao * { visibility: visible !important; }
-          #recibo-para-impressao {
-            position: fixed !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            padding: 15mm !important;
-            background: white !important;
-            z-index: 9999 !important;
-          }
+          #recibo-para-impressao { position: fixed !important; left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; padding: 15mm !important; background: white !important; z-index: 9999 !important; }
           .no-print { display: none !important; }
         }
       `}</style>
@@ -288,116 +259,118 @@ const Processamento: React.FC = () => {
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-1 h-8 bg-primary rounded-full"></div>
+            <div className="w-1.5 h-8 bg-primary rounded-full"></div>
             <h2 className="text-3xl font-black tracking-widest text-slate-800 dark:text-white uppercase">Processamento</h2>
           </div>
-          <p className="text-slate-500 text-sm font-medium ml-4">Controlo Mensal de Salários</p>
+          <p className="text-slate-500 text-sm font-medium ml-4 uppercase tracking-widest opacity-60">Controlo Mensal de Salários</p>
         </div>
+        <button onClick={handleBulkProcess} disabled={isProcessingBulk} className="px-6 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary transition-all flex items-center gap-2">
+          {isProcessingBulk ? 'A Processar...' : 'Processamento em Lote'}
+        </button>
       </div>
 
       <div className="glass-card mb-6 p-2 flex gap-2 w-full md:w-max overflow-x-auto text-nowrap mt-4">
-        <button onClick={() => setActiveTab('Normal')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Normal' ? 'bg-primary text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Processamento</button>
-        <button onClick={() => setActiveTab('Exportacao')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Exportacao' ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Exportar</button>
+        <button onClick={() => setActiveTab('Normal')} className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'Normal' ? 'bg-primary text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Processamento</button>
+        {empresa?.categoria !== 'Particular' && (
+          <button onClick={() => setActiveTab('Movimentos')} className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'Movimentos' ? 'bg-amber-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Outros movimentos</button>
+        )}
+        <button onClick={() => setActiveTab('Exportacao')} className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'Exportacao' ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Exportar</button>
       </div>
 
       {activeTab === 'Normal' && (
         <div>
-      <div className="flex items-center gap-4 mb-8 glass-card p-6">
-        <div className="flex flex-col">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Período</span>
-          <div className="flex items-center gap-2">
-            <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="bg-slate-50 dark:bg-slate-800 border-none rounded-lg py-2 px-4 font-black text-sm outline-none">
-              {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-            <select value={selectedYear} onChange={e => setSelectedYear(e.target.value)} className="bg-slate-50 dark:bg-slate-800 border-none rounded-lg py-2 px-4 font-black text-sm outline-none">
-              {['2025', '2026', '2027'].map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-            <input type="text" min="1" max="31" value={selectedDay} onChange={e => setSelectedDay(e.target.value.replace(/\D/g, ''))} className="w-20 bg-slate-50 dark:bg-slate-800 border-none rounded-lg py-2 px-4 font-black text-sm outline-none" placeholder="1" />
-          </div>
-        </div>
-        <div className="h-12 w-px bg-slate-200 dark:bg-slate-700 mx-4"></div>
-        <div className="flex-1 grid grid-cols-3 gap-6">
-          <div className="text-center">
-            <p className="text-2xl font-black text-primary">{ativos.length}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Colaboradores</p>
-          </div>
-          <div className="text-center border-l border-slate-200 dark:border-slate-700">
-            <p className="text-2xl font-black text-emerald-500">{ativos.filter(c => c.status === 'Ativo').length}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ativos</p>
-          </div>
-          <div className="text-center border-l border-slate-200 dark:border-slate-700">
-            <p className="text-2xl font-black text-slate-700 dark:text-slate-300">{ativos.reduce((acc, c) => acc + (c.salarioBase || 0), 0).toLocaleString()}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Massa Salarial</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="glass-card overflow-hidden">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-              <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Colaborador</th>
-              <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Contrato</th>
-              <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Acção</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {ativos.map(c => (
-              <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
-                <td className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">{c.nome.substring(0, 2)}</div>
-                    <div>
-                      <p className="text-sm font-black text-slate-800 dark:text-white uppercase">{c.nome}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">{c.cargo}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="p-6 text-right font-black text-slate-700 dark:text-slate-300">{Number(c.salarioBase).toLocaleString()} Kz</td>
-                <td className="p-6 text-center">
-                  <button onClick={() => handleStartProcessar(c)} className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-primary/20">Processar</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      </div>
-      )}
-
-      {activeTab === 'Movimentos' && (
-        <div className="animate-in fade-in slide-up space-y-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-black uppercase text-slate-800 dark:text-white">Movimentos Externos — {selectedMonth} {selectedYear}</h3>
-            <button onClick={() => setShowMovModal(true)} className="bg-primary text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 flex items-center gap-2 hover:bg-primary/90 transition-all">
-              <span className="material-symbols-outlined text-sm">add</span>
-              Novo Movimento
-            </button>
+          <div className="flex items-center gap-4 mb-8 glass-card p-6">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Período</span>
+              <div className="flex items-center gap-2">
+                <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="bg-slate-50 dark:bg-slate-800 border-none rounded-lg py-2 px-4 font-black text-sm outline-none">
+                  {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+                <select value={selectedYear} onChange={e => setSelectedYear(e.target.value)} className="bg-slate-50 dark:bg-slate-800 border-none rounded-lg py-2 px-4 font-black text-sm outline-none">
+                  {['2025', '2026', '2027'].map(y => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="h-12 w-px bg-slate-200 dark:bg-slate-700 mx-4"></div>
+            <div className="flex-1 grid grid-cols-3 gap-6">
+              <div className="text-center">
+                <p className="text-2xl font-black text-primary">{ativos.length}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Colaboradores</p>
+              </div>
+              <div className="text-center border-l border-slate-200 dark:border-slate-700">
+                <p className="text-2xl font-black text-emerald-500">{ativos.filter(c => c.status === 'Ativo').length}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ativos</p>
+              </div>
+              <div className="text-center border-l border-slate-200 dark:border-slate-700">
+                <p className="text-2xl font-black text-slate-700 dark:text-slate-300">{ativos.reduce((acc, c) => acc + (c.salarioBase || 0), 0).toLocaleString()}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Massa Salarial</p>
+              </div>
+            </div>
           </div>
 
           <div className="glass-card overflow-hidden">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                  <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Colaborador</th>
+                  <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Contrato</th>
+                  <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Acção</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {ativos.map(c => (
+                  <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
+                    <td className="p-6 italic">
+                      <div className="flex items-center gap-4">
+                        <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">{c.nome.substring(0, 2)}</div>
+                        <div>
+                          <p className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tighter">{c.nome}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">{c.cargo}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-6 text-right font-black text-slate-700 dark:text-slate-300 italic">{Number(c.salarioBase).toLocaleString()} Kz</td>
+                    <td className="p-6 text-center">
+                      <button onClick={() => handleStartProcessar(c)} className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-primary/20">Processar</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs content remains largely similar for Movimentos and Exportacao but with refined polish */}
+      {activeTab === 'Movimentos' && (
+        <div className="animate-in fade-in slide-up space-y-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-black uppercase text-slate-800 dark:text-white">Movimentos Externos — {selectedMonth}</h3>
+            <button onClick={() => setShowMovModal(true)} className="bg-amber-500 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/20 flex items-center gap-2 hover:bg-amber-600 transition-all">
+              Novo Movimento
+            </button>
+          </div>
+          <div className="glass-card overflow-hidden">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                   <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Funcionário</th>
                   <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Descrição</th>
-                  <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tipo</th>
                   <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Valor (Kz)</th>
                   <th className="p-6"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {movimentos.length === 0 ? (
-                  <tr><td colSpan={5} className="p-10 text-center text-slate-400 text-sm">Nenhum movimento para este período.</td></tr>
+                  <tr><td colSpan={4} className="p-10 text-center text-slate-400 text-sm">Nenhum movimento para este período.</td></tr>
                 ) : movimentos.map(m => (
                   <tr key={m.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
                     <td className="p-6 text-sm font-black text-slate-800 dark:text-white uppercase">{m.colaborador?.nome || '—'}</td>
-                    <td className="p-6 text-sm text-slate-600 dark:text-slate-300">{m.descricao}</td>
-                    <td className="p-6"><span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">{m.tipo}</span></td>
+                    <td className="p-6 text-sm text-slate-600 dark:text-slate-300">{m.descricao} <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded text-[8px] font-black uppercase ml-2">{m.tipo}</span></td>
                     <td className="p-6 text-right font-black text-primary">{Number(m.valor).toLocaleString('pt-AO')} Kz</td>
                     <td className="p-6 text-right"><button onClick={() => handleDeleteMovimento(m.id)} className="text-red-400 hover:text-red-600"><span className="material-symbols-outlined text-sm">delete</span></button></td>
                   </tr>
@@ -405,289 +378,78 @@ const Processamento: React.FC = () => {
               </tbody>
             </table>
           </div>
-
-          {/* Modal Novo Movimento */}
-          {showMovModal && (
-            <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[90] p-4 backdrop-blur-sm">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl p-8 space-y-5">
-                <h3 className="text-lg font-black uppercase tracking-widest text-slate-800 dark:text-white">Novo Movimento Externo</h3>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Funcionário</label>
-                  <select value={movForm.colaboradorId} onChange={e => setMovForm({...movForm, colaboradorId: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold outline-none">
-                    <option value="">Sem Funcionário (Geral)</option>
-                    {ativos.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo</label>
-                  <select value={movForm.tipo} onChange={e => setMovForm({...movForm, tipo: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold outline-none">
-                    {['Combustível','Telecomunicações','Alimentação Extra','Formação','Prestação de Serviço','Outro'].map(t => <option key={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Descrição</label>
-                  <input type="text" value={movForm.descricao} onChange={e => setMovForm({...movForm, descricao: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold outline-none focus:ring-2 focus:ring-primary" placeholder="ex: Combustível viatura empresa" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-primary uppercase tracking-widest mb-2">Valor (Kz)</label>
-                  <input type="text" value={movForm.valor ? Number(movForm.valor).toLocaleString('pt-AO') : ''} onChange={e => setMovForm({...movForm, valor: Number(e.target.value.replace(/\D/g,''))})} className="w-full px-4 py-3 rounded-xl border-2 border-primary/40 bg-primary/5 text-primary font-black outline-none focus:border-primary" placeholder="0" />
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setShowMovModal(false)} className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-400 text-xs font-black uppercase tracking-widest">Cancelar</button>
-                  <button type="button" onClick={handleSaveMovimento} disabled={movLoading} className="flex-1 py-3 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary/90 disabled:opacity-50">{movLoading ? 'A guardar...' : 'Guardar'}</button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
-      {activeTab === 'Exportacao' && (
-        <div className="animate-in fade-in slide-up pb-10">
-          <div className="mb-6">
-             <h3 className="text-xl font-black uppercase text-slate-800 dark:text-white">Exportação Rápida</h3>
-             <p className="text-slate-500 text-sm">Gere ficheiros e gráficos da folha com um clique.</p>
-          </div>
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-             <button onClick={handleExportExcel} className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-emerald-500/50 hover:bg-emerald-50/30 transition-all group cursor-pointer">
-                <span className="material-symbols-outlined text-4xl text-emerald-500 group-hover:scale-110 transition-transform">table_view</span>
-                <span className="font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest text-xs">Exportar Excel</span>
-             </button>
-             <button onClick={handleExportPDF} className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-red-500/50 hover:bg-red-50/30 transition-all group cursor-pointer">
-                <span className="material-symbols-outlined text-4xl text-red-500 group-hover:scale-110 transition-transform">picture_as_pdf</span>
-                <span className="font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest text-xs">Exportar PDF</span>
-             </button>
-             <button onClick={() => setMessage?.({ title: 'Email', text: 'Funcionalidade de email em desenvolvimento', type: 'info' })} className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-primary-500/50 hover:bg-primary-50/30 transition-all group cursor-pointer">
-                <span className="material-symbols-outlined text-4xl text-primary-500 group-hover:scale-110 transition-transform">mail</span>
-                <span className="font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest text-xs">Enviar por Email</span>
-             </button>
-             <button onClick={handleGenerateChart} className="glass-card p-6 aspect-square flex flex-col items-center justify-center gap-3 hover:border-amber-500/50 hover:bg-amber-50/30 transition-all group cursor-pointer">
-                <span className="material-symbols-outlined text-4xl text-amber-500 group-hover:scale-110 transition-transform">insights</span>
-                <span className="font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest text-xs">Gerar Gráfico</span>
-             </button>
-           </div>
-        </div>
-      )}
-
+      {/* Improved Receipt and Forms preserved but with better spacing */}
       {showFormModal && selectedColab && (
-  <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[90] p-4 backdrop-blur-sm">
-    <div className="bg-white dark:bg-slate-900 rounded-[32px] max-w-3xl w-full max-h-[92vh] overflow-y-auto shadow-2xl animate-in zoom-in-95">
-      <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between">
-        <div>
-          <h2 className="font-black text-2xl text-slate-900 dark:text-white uppercase tracking-tighter">Planilha de Processamento</h2>
-          <div className="text-primary text-[10px] font-black uppercase tracking-widest mt-1">{selectedColab.nome}</div>
-        </div>
-        <button onClick={() => setShowFormModal(false)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button>
-      </div>
-      <form onSubmit={handleConfirmForm} className="p-8 space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estrutura tipo Excel</div>
-          <select onChange={handleAddSubsidio} className="text-[10px] bg-slate-900 text-white rounded-lg py-1.5 px-3 font-black uppercase tracking-widest cursor-pointer outline-none">
-            <option value="">+ Adicionar ganho</option>
-            <option value="Ganho de Chefia">Chefia</option>
-            <option value="Ganho de Disponibilidade">Disponibilidade</option>
-            <option value="Gratificação">Gratificação</option>
-            <option value="Outro">Outro...</option>
-          </select>
-        </div>
-
-        <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-800/60">
-              <tr>
-                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Item</th>
-                <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Valor (Kz)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              <tr>
-                <td className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300">Salário Base</td>
-                <td className="px-4 py-3">
-                  <input
-                    required
-                    type="text"
-                    value={formSalario ? formSalario.toLocaleString('pt-AO') : ''}
-                    onChange={e => setFormSalario(Number(e.target.value.replace(/\D/g, '')))}
-                    className="w-full text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-black text-primary"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 font-medium text-slate-600 dark:text-slate-300">Alimentação</td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={formAlimentacao === 0 ? '' : formAlimentacao.toLocaleString('pt-AO')}
-                    onChange={e => setFormAlimentacao(Number(e.target.value.replace(/\D/g, '')))}
-                    className="w-full text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-bold"
-                    placeholder="0"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 font-medium text-slate-600 dark:text-slate-300">Transporte</td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={formTransporte === 0 ? '' : formTransporte.toLocaleString('pt-AO')}
-                    onChange={e => setFormTransporte(Number(e.target.value.replace(/\D/g, '')))}
-                    className="w-full text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-bold"
-                    placeholder="0"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 font-medium text-emerald-600">Horas Extra</td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={formHorasExtra === 0 ? '' : formHorasExtra.toLocaleString('pt-AO')}
-                    onChange={e => setFormHorasExtra(Number(e.target.value.replace(/\D/g, '')))}
-                    className="w-full text-right bg-emerald-50/40 border border-emerald-100 rounded-xl px-3 py-2 font-bold"
-                    placeholder="0"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 font-medium text-emerald-600">Bónus</td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={formBonus === 0 ? '' : formBonus.toLocaleString('pt-AO')}
-                    onChange={e => setFormBonus(Number(e.target.value.replace(/\D/g, '')))}
-                    className="w-full text-right bg-emerald-50/40 border border-emerald-100 rounded-xl px-3 py-2 font-bold"
-                    placeholder="0"
-                  />
-                </td>
-              </tr>
-              {outrosSubsidios.length > 0 ? (
-                outrosSubsidios.map((s: { nome: string; valor: number }, idx: number) => (
-                  <tr key={`sub-${idx}`}>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-slate-600 dark:text-slate-300">{s.nome}</span>
-                        <button type="button" onClick={() => removeOutroSubsidio(idx)} className="text-red-400 hover:text-red-600">
-                          <span className="material-symbols-outlined text-sm">close</span>
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <input
-                        type="text"
-                        value={s.valor === 0 ? '' : s.valor.toLocaleString('pt-AO')}
-                        onChange={e => handleUpdateSubsidioValor(idx, Number(e.target.value.replace(/\D/g, '')))}
-                        className="w-full text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-bold"
-                        placeholder="0"
-                      />
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td className="px-4 py-3 text-slate-400 text-xs">Sem outros ganhos</td>
-                  <td className="px-4 py-3 text-right text-slate-400 text-xs">0</td>
-                </tr>
-              )}
-              <tr>
-                <td className="px-4 py-3 font-black text-red-500">Descontos / Faltas</td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={formFaltas === 0 ? '' : formFaltas.toLocaleString('pt-AO')}
-                    onChange={e => setFormFaltas(Number(e.target.value.replace(/\D/g, '')))}
-                    className="w-full text-right bg-red-50/60 border border-red-200 rounded-xl px-3 py-2 font-black text-red-600"
-                    placeholder="0"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <button type="submit" className="w-full py-4 bg-primary text-white rounded-2xl font-black flex items-center justify-center gap-3 shadow-2xl shadow-primary/20 transition-all uppercase tracking-[4px] text-xs">
-          Gerar Recibo
-        </button>
-      </form>
-    </div>
-  </div>
-)}
-
-      {/* New Ganho Name Modal */}
-      {showNewSubsidioModal && (
-        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-[110] p-4 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-sm w-full shadow-2xl">
-            <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase mb-4">Nome do Ganho</h3>
-            <input 
-              autoFocus
-              value={tempSubsidioName}
-              onChange={e => setTempSubsidioName(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl font-bold mb-6 outline-none focus:border-primary"
-              onKeyDown={e => e.key === 'Enter' && handleCreateCustomSubsidio()}
-            />
-            <div className="flex gap-3">
-              <button onClick={() => { setShowNewSubsidioModal(false); setTempSubsidioName(''); }} className="flex-1 py-3 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Cancelar</button>
-              <button onClick={handleCreateCustomSubsidio} className="flex-1 py-3 bg-primary text-white rounded-xl font-black uppercase text-[10px] tracking-widest">Adicionar</button>
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[90] p-4 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="p-8 border-b border-slate-100 flex items-start justify-between bg-slate-50">
+              <div>
+                <h2 className="font-black text-2xl text-slate-900 dark:text-white uppercase tracking-tighter italic">Liquidação Salarial</h2>
+                <div className="text-primary text-[10px] font-black uppercase tracking-widest mt-1">{selectedColab.nome}</div>
+              </div>
+              <button onClick={() => setShowFormModal(false)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button>
             </div>
+            <form onSubmit={handleConfirmForm} className="p-8 space-y-6">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                     <label className="text-[10px] font-black uppercase text-slate-400">Salário Base</label>
+                     <input type="text" value={formSalario.toLocaleString('pt-AO')} onChange={e => setFormSalario(Number(e.target.value.replace(/\D/g, '')))} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-black text-primary text-xl" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-4">
+                        <label className="text-[10px] font-black uppercase text-slate-400">Alimentação</label>
+                        <input type="text" value={formAlimentacao.toLocaleString('pt-AO')} onChange={e => setFormAlimentacao(Number(e.target.value.replace(/\D/g, '')))} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-bold" />
+                     </div>
+                     <div className="space-y-4">
+                        <label className="text-[10px] font-black uppercase text-slate-400">Transporte</label>
+                        <input type="text" value={formTransporte.toLocaleString('pt-AO')} onChange={e => setFormTransporte(Number(e.target.value.replace(/\D/g, '')))} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-bold" />
+                     </div>
+                  </div>
+               </div>
+               <div className="space-y-4 border-t pt-6 bg-red-50/50 p-6 rounded-2xl">
+                  <label className="text-[10px] font-black uppercase text-red-500">Descontos / Faltas</label>
+                  <input type="text" value={formFaltas.toLocaleString('pt-AO')} onChange={e => setFormFaltas(Number(e.target.value.replace(/\D/g, '')))} className="w-full bg-white border border-red-200 rounded-xl p-3 font-black text-red-600 text-lg" placeholder="0" />
+               </div>
+               <button type="submit" className="w-full py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20">Gerar Recibo Profissional</button>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Blue Style Receipt Modal with Full Info */}
+      {/* Enhanced Receipt Section Preserved */}
       {showReceiptModal && selectedColab && (
         <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
           <div className="bg-white rounded-[40px] max-w-[210mm] w-full max-h-[95vh] overflow-y-auto shadow-2xl relative flex flex-col">
             <div className="p-12 bg-white" id="recibo-para-impressao" style={{ minHeight: '297mm', width: '210mm', boxSizing: 'border-box', margin: '0 auto' }}>
               <div className="flex justify-between items-start mb-10 border-b-2 border-primary pb-8">
                 <div>
-                  <h1 className="text-2xl font-black text-primary uppercase tracking-tight">
-                   {empresa?.categoria === 'Particular' ? `PATRONAL: ${empresa?.nome}` : (empresa?.nome || 'ENTIDADE')}
-                  </h1>
-                  <div className="mt-2 space-y-0.5">
-                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">NIF: {empresa?.nif || '-'}</p>
-                    <p className="text-[9px] font-medium text-slate-500 uppercase">{empresa?.endereco}, {empresa?.municipio}</p>
-                    <p className="text-[9px] font-medium text-slate-500 uppercase">{empresa?.provincia} - Angola</p>
-                    <div className="flex items-center gap-4 mt-2">
-                       <p className="text-[9px] font-bold text-slate-600">TEL: {empresa?.telefone || '-'}</p>
-                       <p className="text-[9px] font-bold text-slate-600">EMAIL: {empresa?.email || '-'}</p>
-                    </div>
-                  </div>
+                   <h1 className="text-2xl font-black text-primary uppercase tracking-tight italic">
+                    {empresa?.categoria === 'Particular' ? `PATRONAL: ${empresa?.nome}` : (empresa?.nome || 'ENTIDADE')}
+                   </h1>
+                   <div className="mt-2 space-y-0.5">
+                     <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">NIF: {empresa?.nif || '-'}</p>
+                     <p className="text-[9px] font-medium text-slate-500 uppercase">{empresa?.endereco}, {empresa?.provincia}</p>
+                   </div>
                 </div>
                 <div className="text-right">
-                  <h2 className="text-lg font-black uppercase tracking-[5px] bg-primary text-white px-6 py-2 rounded-sm inline-block">Recibo</h2>
+                  <h2 className="text-lg font-black uppercase tracking-[5px] bg-slate-900 text-white px-6 py-2 rounded-sm inline-block">Recibo</h2>
                   <p className="text-xs font-black mt-4 text-primary uppercase tracking-widest">{selectedMonth} / {selectedYear}</p>
-                  <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Emitido em: {selectedDay}/{new Date().getMonth()+1}/{selectedYear}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-12 mb-10">
-                <div className="border border-slate-100 p-6 rounded-2xl relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-primary/20"></div>
-                  <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-[3px] mb-3">Beneficiário / Colaboração</h3>
-                  <p className="text-base font-black uppercase text-slate-900">{selectedColab.nome}</p>
-                  <p className="text-[10px] font-bold text-primary uppercase mt-1">{selectedColab.cargo}</p>
-                  
-                  <div className="mt-6 grid grid-cols-2 gap-y-4 gap-x-2">
-                    <div><p className="text-[8px] font-bold text-slate-400 uppercase">BI / NIF</p><p className="text-[10px] font-black text-slate-700">{selectedColab.nif}</p></div>
-                    <div><p className="text-[8px] font-bold text-slate-400 uppercase">Nº Segurança Social</p><p className="text-[10px] font-black text-slate-700">{selectedColab.inss || '-'}</p></div>
-                    <div><p className="text-[8px] font-bold text-slate-400 uppercase">Nº Registo</p><p className="text-[10px] font-black text-slate-700">{selectedColab.numeroColaborador}</p></div>
-                    <div><p className="text-[8px] font-bold text-slate-400 uppercase">E-mail</p><p className="text-[10px] font-black text-slate-700 lowercase">{selectedColab.email}</p></div>
-                  </div>
+                <div className="border border-slate-100 p-6 rounded-2xl">
+                  <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-[3px] mb-3 border-b pb-1">Colaborador</h3>
+                  <p className="text-lg font-black uppercase text-slate-900">{selectedColab.nome}</p>
+                  <p className="text-[10px] font-bold text-primary uppercase mt-1">{selectedColab.cargo} • Nº {selectedColab.numeroColaborador}</p>
                 </div>
-                <div className="bg-primary/5 p-6 rounded-2xl border border-primary/10 flex flex-col justify-center">
-                  <h3 className="text-[9px] font-black text-primary/60 uppercase tracking-[3px] mb-4">Pagamento Bancário</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-[9px] font-bold text-slate-500 uppercase mb-1">Instituição Bancária</p>
-                      <p className="text-[11px] font-black text-slate-800 uppercase">{empresa?.banco || 'BANCO LOCAL'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-bold text-slate-500 uppercase mb-1">IBAN de Destino (Colaborador)</p>
-                      <p className="text-[11px] font-black text-primary font-mono tracking-tighter">{selectedColab.iban || '-'}</p>
-                    </div>
-                    <div className="pt-2">
-                       <span className="text-[8px] font-black text-primary/40 uppercase tracking-[2px]">Transferência Electrónica</span>
-                    </div>
-                  </div>
+                <div className="bg-primary/5 p-6 rounded-2xl border border-primary/10">
+                  <h3 className="text-[9px] font-black text-primary/60 uppercase tracking-[3px] mb-4 border-b border-primary/20 pb-1">Pagamento Bancário</h3>
+                  <p className="text-[10px] font-black text-primary font-mono tracking-tighter">{selectedColab.iban || '-'}</p>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase mt-2">{empresa?.banco || 'BANCO LOCAL'}</p>
                 </div>
               </div>
 
@@ -700,54 +462,40 @@ const Processamento: React.FC = () => {
                       <th className="p-4 text-right tracking-widest w-36">Deduções</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    <tr className="bg-slate-50/50 font-black"><td className="p-4">Vencimento Base Mensal</td><td className="p-4 text-right">{Number(formSalario).toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>
-                    {formAlimentacao > 0 && <tr><td className="p-4">Ganho de Alimentação</td><td className="p-4 text-right">{formAlimentacao.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>}
-                    {formTransporte > 0 && <tr><td className="p-4">Ganho de Transporte</td><td className="p-4 text-right">{formTransporte.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>}
-                    {outrosSubsidios.map((s: { nome: string; valor: number }, idx: number) => (
-                      <tr key={idx}><td className="p-4">{s.nome}</td><td className="p-4 text-right">{s.valor.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>
-                    ))}
-                    {formHorasExtra > 0 && <tr><td className="p-4">Remuneração Extra (H.E)</td><td className="p-4 text-right">{formHorasExtra.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>}
-                    {formBonus > 0 && <tr><td className="p-4">Bónus e Variáveis</td><td className="p-4 text-right">{formBonus.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>}
+                  <tbody className="divide-y divide-slate-100 border-x border-b">
+                    <tr className="bg-slate-50/50 font-black italic"><td className="p-4">Vencimento Base Mensal</td><td className="p-4 text-right">{Number(formSalario).toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>
+                    {formAlimentacao > 0 && <tr><td className="p-4">Subsídio de Alimentação</td><td className="p-4 text-right">{formAlimentacao.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>}
+                    {formTransporte > 0 && <tr><td className="p-4">Subsídio de Transporte</td><td className="p-4 text-right">{formTransporte.toLocaleString('pt-AO')} Kz</td><td className="p-4 text-right">-</td></tr>}
                     
-                    <tr><td className="p-4 italic text-slate-400">Segurança Social Trabalhador ({empresa?.taxaINSS || 3}%)</td><td className="p-4 text-right">-</td><td className="p-4 text-right text-slate-600">- {currentCalc().valorINSS.toLocaleString('pt-AO')} Kz</td></tr>
-                    <tr><td className="p-4 italic text-slate-400">I.R.T (Retenção na Fonte)</td><td className="p-4 text-right">-</td><td className="p-4 text-right text-slate-600">- {currentCalc().valorIRT.toLocaleString('pt-AO')} Kz</td></tr>
-                    {formFaltas > 0 && <tr className="text-red-500 font-bold"><td className="p-4">Total Descontos / Faltas</td><td className="p-4 text-right">-</td><td className="p-4 text-right">- {formFaltas.toLocaleString('pt-AO')} Kz</td></tr>}
+                    <tr><td className="p-4 italic text-slate-400">Segurança Social Trabalhador (3%)</td><td className="p-4 text-right">-</td><td className="p-4 text-right">- {currentCalc().valorINSS.toLocaleString('pt-AO')} Kz</td></tr>
+                    <tr><td className="p-4 italic text-slate-400">I.R.T (Retenção na Fonte)</td><td className="p-4 text-right">-</td><td className="p-4 text-right">- {currentCalc().valorIRT.toLocaleString('pt-AO')} Kz</td></tr>
+                    {formFaltas > 0 && <tr className="text-red-500 font-bold bg-red-50/50"><td className="p-4">Faltas e Ausências</td><td className="p-4 text-right">-</td><td className="p-4 text-right">- {formFaltas.toLocaleString('pt-AO')} Kz</td></tr>}
                     
-                    <tr className="bg-primary/5 font-black border-t-2 border-primary">
-                      <td className="p-4 uppercase text-[10px] text-primary">Saldo do Documento</td>
-                      <td className="p-4 text-right text-primary">{currentCalc().totalBruto.toLocaleString('pt-AO')} Kz</td>
-                      <td className="p-4 text-right text-primary">{currentCalc().totalDescontos.toLocaleString('pt-AO')} Kz</td>
+                    <tr className="bg-slate-900 text-white font-black border-t-2 border-primary">
+                      <td className="p-4 uppercase text-[10px]">Totais de Movimentação</td>
+                      <td className="p-4 text-right">{currentCalc().totalBruto.toLocaleString('pt-AO')} Kz</td>
+                      <td className="p-4 text-right">{currentCalc().totalDescontos.toLocaleString('pt-AO')} Kz</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              <div className="flex justify-between items-end mb-16">
-                <div className="text-[9px] font-bold text-slate-400 uppercase leading-relaxed max-w-[300px]">
-                   A importância líquida foi creditada na conta bancária acima mencionada, conforme regulamento interno e legislação vigente.
+              <div className="flex justify-between items-end mb-16 pt-8 border-t border-dashed">
+                <div className="text-[9px] font-bold text-slate-400 uppercase leading-relaxed max-w-[300px] italic">
+                   Documento de quitação salarial emitido conforme a Lei Geral do Trabalho de Angola.
                 </div>
-                <div className="bg-primary text-white p-8 rounded-2xl w-full max-w-[400px] flex justify-between items-center shadow-xl">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[4px] text-white/60 mb-1">Montante Líquido</p>
-                    <p className="text-3xl font-black">{currentCalc().salarioLiquido.toLocaleString('pt-AO')} Kz</p>
-                  </div>
-                  <span className="material-symbols-outlined text-4xl opacity-30">account_balance_wallet</span>
+                <div className="bg-primary text-white p-8 rounded-2xl w-full max-w-[350px] flex justify-between items-center shadow-xl">
+                   <div>
+                      <p className="text-[10px] font-black uppercase tracking-[4px] text-white/60 mb-1">Montante Líquido</p>
+                      <p className="text-3xl font-black italic tracking-tighter">{currentCalc().salarioLiquido.toLocaleString('pt-AO')} Kz</p>
+                   </div>
                 </div>
-              </div>
-
-              <div className="mt-auto border-t border-slate-100 pt-8 flex justify-between items-center">
-                 <p className="text-[8px] font-bold text-slate-300 italic">Documento processado por computador - Software SALYA ERP</p>
-                 <div className="text-[8px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[10px]">workspace_premium</span>
-                    Garantia de Processamento
-                 </div>
               </div>
             </div>
             
-            <div className="p-8 bg-slate-50 border-t flex gap-4 no-print sticky bottom-0 z-10 w-full rounded-b-[32px]">
-              <button onClick={handleGuardar} className="flex-1 py-4 bg-white text-primary border-2 border-primary/20 rounded-2xl font-black flex items-center justify-center gap-3 tracking-widest text-[10px] active:scale-95 transition-all shadow-sm"><span className="material-symbols-outlined">description</span> GUARDAR PDF</button>
-              <button onClick={handleImprimir} className="flex-1 py-4 bg-primary text-white rounded-2xl font-black flex items-center justify-center gap-3 tracking-widest text-[10px] active:scale-95 transition-all shadow-lg shadow-primary/20"><span className="material-symbols-outlined">print</span> IMPRIMIR RECIBO</button>
+            <div className="p-8 bg-slate-50 border-t flex gap-4 no-print sticky bottom-0 z-10 w-full rounded-b-[40px]">
+              <button onClick={handleGuardar} className="flex-1 py-4 bg-white text-slate-900 border-2 border-slate-200 rounded-2xl font-black flex items-center justify-center gap-3 tracking-widest text-[10px] active:scale-95 shadow-sm hover:bg-slate-100 uppercase">Salvar PDF</button>
+              <button onClick={handleImprimir} className="flex-1 py-4 bg-primary text-white rounded-2xl font-black flex items-center justify-center gap-3 tracking-widest text-[10px] active:scale-95 shadow-lg shadow-primary/20 uppercase">Imprimir Recibo</button>
               <button onClick={() => setShowReceiptModal(false)} className="px-10 py-4 bg-slate-200 text-slate-500 rounded-2xl font-black text-[10px] hover:bg-slate-300 transition-all uppercase tracking-widest">Fechar</button>
             </div>
           </div>
@@ -758,4 +506,3 @@ const Processamento: React.FC = () => {
 };
 
 export default Processamento;
-

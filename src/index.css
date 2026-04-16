@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 /* Hide number input spinners */
 input[type="number"]::-webkit-outer-spin-button,
@@ -18,6 +19,10 @@ input[type="number"] {
 body {
   font-family: 'Inter', sans-serif;
   @apply text-slate-800 dark:text-slate-200 antialiased selection:bg-primary-500 selection:text-white;
+}
+
+h1, h2, h3, h4, .font-app {
+  font-family: 'Outfit', sans-serif;
 }
 
 .material-symbols-outlined {
@@ -44,26 +49,7 @@ body {
 
 /* Glassmorphism utilities */
 .glass {
-  @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-800/50 shadow-glass;
-}
-/* Card component styles */
-@layer components {
-  .card {
-    @apply bg-white rounded-xl border border-slate-200 shadow-sm;
-  }
-  
-  .card-header {
-    @apply px-6 py-4 border-b border-slate-100;
-  }
-  
-  .card-body {
-    @apply p-6;
-  }
-}
-/* Page transitions */
-.page-enter {
-  opacity: 0;
-  transform: translateY(10px);
+  @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-800/50 shadow-xl;
 }
 
 .glass-card {
@@ -87,13 +73,11 @@ body {
     color: black !important;
   }
   
-  /* Esconder elementos que não são o recibo */
   .no-print, 
   .no-print * {
     display: none !important;
   }
   
-  /* Mostrar apenas o recibo */
   #recibo-para-impressao {
     display: block !important;
     position: absolute;
@@ -106,25 +90,17 @@ body {
     font-size: 11pt;
     line-height: 1.4;
   }
-  
-  /* Esconder o modal-overlay quando imprimir */
-  .fixed {
-    position: relative !important;
-    display: block !important;
-    background: white !important;
-  }
-  
-  .backdrop-blur-sm {
-    backdrop-filter: none !important;
-    background: white !important;
-  }
-  
-  /* Esconder sidebar e header na impressão */
-  .sidebar, 
-  header, 
-  .header,
-  nav,
-  .nav {
-    display: none !important;
-  }
+}
+
+/* Premium Enhancements - Simplified */
+:root {
+  --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --dark-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.bg-premium-dark { background: var(--dark-gradient); }
+.bg-premium-blue { background: var(--primary-gradient); }
+
+.text-gradient-blue {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-indigo-600;
 }

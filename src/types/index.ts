@@ -55,8 +55,17 @@ export interface Colaborador {
   empresaId?: number;
   morada?: string;
   modalidade?: 'Tempo Inteiro' | 'Tempo Parcial' | 'Prestação de Serviços';
-  subsudioFerias?: number;
-  subsudioNatal?: number;
+  
+  // Primavera HR fields
+  estadoCivil?: string;
+  dataNascimento?: string;
+  regimeFiscal?: string;
+  subsidioAlimentacao?: number;
+  subsidioTransporte?: number;
+  subsidioFerias?: number;
+  subsidioNatal?: number;
+  regimeSegurancaSocial?: string;
+  centroCusto?: string;
 }
 
 export interface Ferias {
