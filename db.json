@@ -32,7 +32,7 @@
     {
       "id": 1,
       "empresaId": 1,
-      "nome": "João Mock",
+      "nome": "Joao Mock",
       "email": "joao@mock.com",
       "telefone": "900000000",
       "cargo": "Desenvolvedor",
@@ -45,23 +45,41 @@
   ],
   "processamentos_processar-salario": {
     "id": 1,
-    "status": "Concluído",
-    "totalLiquido": 250000
+    "status": "Concluido",
+    "totalBruto": 340000,
+    "valorINSS": 9000,
+    "valorIRT": 18500,
+    "descontos": 27500,
+    "salarioLiquido": 312500
   },
+  "processamentos_historico": [
+    {
+      "id": 1,
+      "colaboradorId": 1,
+      "colaboradorNome": "Joao Mock",
+      "cargo": "Desenvolvedor",
+      "mes": 1,
+      "ano": 2026,
+      "totalBruto": 340000,
+      "descontos": 27500,
+      "salarioLiquido": 312500,
+      "createdAt": "2026-01-25T09:30:00"
+    }
+  ],
   "movimentos": [],
   "notificacoes": [
     {
       "id": 1,
       "titulo": "Bem-vindo ao Servidor Mock",
-      "mensagem": "Este é um teste local via JSON Server.",
+      "mensagem": "Este e um teste local via JSON Server.",
       "tipo": "INFORMACAO",
       "lido": false,
       "createdAt": "2023-10-01T10:00:00"
     }
   ],
   "taxas_irt": [
-    { "escalao": 1, "limiteInferior": 0, "limiteSuperior": 100000, "taxa": 0, "parcelaFixa": 0 },
-    { "escalao": 2, "limiteInferior": 100001, "limiteSuperior": 200000, "taxa": 0.1, "parcelaFixa": 0 }
+    { "faixa": "Escalao 1", "minimo": 0, "maximo": 100000, "taxa": 0, "parcelaAbt": 0 },
+    { "faixa": "Escalao 2", "minimo": 100001, "maximo": 200000, "taxa": 10, "parcelaAbt": 0 }
   ],
   "simulacao_calcular": {
     "salarioBase": 500000,
