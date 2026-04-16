@@ -125,7 +125,6 @@ function App() {
         setColaboradores(normalizeList(colaboradoresData, 'colaboradores'));
       }
     } catch (error) {
-      console.error('Error fetching global data:', error);
     } finally {
       setIsLoadingData(false);
     }
@@ -145,7 +144,6 @@ function App() {
           try {
             setUser(JSON.parse(userData));
           } catch {
-            console.warn('Não foi possível ler usuário do localStorage.');
           }
         }
       }
@@ -157,7 +155,6 @@ function App() {
         try {
           setEmpresa(JSON.parse(savedEmpresa));
         } catch {
-          console.warn('Não foi possível ler empresa do localStorage.');
         }
       }
 

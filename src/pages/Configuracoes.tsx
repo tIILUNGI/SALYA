@@ -133,19 +133,12 @@ const Configuracoes: React.FC = () => {
   };
 
  const handleSave = async () => {
-  console.group('💾 SAVING COMPANY');
-  console.log('Config atual:', config);
-  console.log('isCreatingNew:', isCreatingNew);
-  console.log('empresa?.id:', empresa?.id);
-  
   if (!config.nome || !config.nif) {
-    console.warn('❌ Nome ou NIF vazio');
     setMessage({
       title: 'ERRO!',
       text: 'Por favor, preencha o Nome e o NIF antes de salvar.',
       type: 'error'
     });
-    console.groupEnd();
     return;
   }
 
@@ -184,7 +177,6 @@ const Configuracoes: React.FC = () => {
         }
       }, 1500);
     } catch (error: any) {
-      console.error('Error saving configurations:', error);
       if (error.message?.toLowerCase().includes('conflict') || error.message?.includes('409')) {
         setMessage({
           title: 'ERRO!',
@@ -254,7 +246,6 @@ const Configuracoes: React.FC = () => {
             confirmButtonColor: '#22c55e',
           });
         } catch (error) {
-          console.error('Erro ao eliminar a empresa:', error);
           Swal.fire({
             title: 'ERRO!',
             text: 'Houve um erro ao tentar excluir a empresa. Tente novamente.',

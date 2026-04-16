@@ -89,7 +89,6 @@ const Alertas: React.FC = () => {
           }
         }
       } catch (error) { 
-        console.error("Erro ao carregar dados do alerta", error);
       }
 
       setAlertas(lista);

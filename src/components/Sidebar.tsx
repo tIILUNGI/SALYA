@@ -108,7 +108,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
         navigate('/dashboard');
       }
     } catch (err: any) {
-      console.error('Erro ao criar empresa:', err);
       setError(err?.message || 'Erro de conexão com o servidor');
     } finally {
       setIsCreating(false);

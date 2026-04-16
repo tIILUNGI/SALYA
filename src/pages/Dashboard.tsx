@@ -32,7 +32,6 @@ const Dashboard: React.FC = () => {
           const alertasData = await api.get(`/alertas/resumo?empresaId=${empresaId}`);
           setAlertas(alertasData);
         } catch (e) {
-          console.error('Error fetching alerts', e);
         }
 
         try {
@@ -40,12 +39,10 @@ const Dashboard: React.FC = () => {
           setChartProcessamento(charts.processamentoMensal || []);
           setChartAbsentismo(charts.absentismoDepartamento || []);
         } catch (e) {
-          console.error('Error fetching charts', e);
           setChartProcessamento([]);
           setChartAbsentismo([]);
         }
       } catch (error) {
-        console.error('Error fetching dashboard stats', error);
       } finally {
         setLoading(false);
       }

@@ -70,8 +70,6 @@ const Colaboradores: React.FC = () => {
       setDocFile(null);
       setShowDocForm(false);
       setMessage({ title: 'Sucesso', text: 'Documento adicionado.', type: 'success' });
-    } catch (error: any) {
-      console.error('Erro ao adicionar documento:', error);
     } finally { setDocLoading(false); }
   };
 
@@ -112,7 +110,7 @@ const Colaboradores: React.FC = () => {
     try {
       const data = await api.get(`/trabalhadores?empresaId=${empresaId}&size=1000`);
       setColaboradores(normalizeList(data, 'colaboradores'));
-    } catch (error) { console.error('Error refreshing colaboradores:', error); }
+    } catch (error) { }
   }, [empresaId, setColaboradores]);
 
   useEffect(() => { refreshColaboradores(); }, [empresaId, refreshColaboradores]);
@@ -177,7 +175,7 @@ const Colaboradores: React.FC = () => {
       }
       refreshColaboradores();
       setIsModalOpen(false);
-    } catch (error: any) { console.error('Erro ao salvar colaborador:', error); }
+    } catch (error: any) { }
   };
 
   const handleDelete = (id: number) => {
@@ -190,7 +188,7 @@ const Colaboradores: React.FC = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await api.delete(`/trabalhadores/${id}`);
+          await api.delete(`/trabalhadores/${id}?empresaId=${empresaId}`);
           Swal.fire({ title: 'Removido', text: 'Colaborador removido com sucesso!', icon: 'success', confirmButtonColor: '#22c55e' });
           refreshColaboradores();
         } catch { /**/ }
