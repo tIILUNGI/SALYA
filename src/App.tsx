@@ -69,6 +69,7 @@ export const AppContext = React.createContext<AppContextType>({
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isConfigured, setIsConfigured] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -132,19 +133,24 @@ function App() {
 
 
   useEffect(() => {
-    const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
-    const userData = localStorage.getItem('salya_user');
-    
-    if (token) {
-      setIsAuthenticated(true);
-      if (userData) {
-        try {
-          setUser(JSON.parse(userData));
-        } catch {
-          console.warn('Não foi possível ler usuário do localStorage.');
+    const checkAuth = () => {
+      const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
+      const userData = localStorage.getItem('salya_user');
+      
+      if (token) {
+        setIsAuthenticated(true);
+        if (userData) {
+          try {
+            setUser(JSON.parse(userData));
+          } catch {
+            console.warn('Não foi possível ler usuário do localStorage.');
+          }
         }
       }
-    }
+      setIsAuthChecking(false);
+    };
+
+    checkAuth();
   }, []);
 
   useEffect(() => {
@@ -166,6 +172,17 @@ function App() {
     notify[msg.type](msg.title, msg.text);
   };
 
+
+  if (isAuthChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background-light dark:bg-background-dark">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">A verificar sessão...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AppContext.Provider value={{ 

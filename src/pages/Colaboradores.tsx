@@ -12,13 +12,25 @@ interface Documento {
   arquivoUrl?: string;
 }
 
+const TABS = [
+  { id: 'Identificacao', label: 'Identificação' },
+  { id: 'Documentos', label: 'Documentos' },
+  { id: 'Dados Fiscais', label: 'Dados Fiscais' },
+  { id: 'SubsidiosFerias', label: 'Subsídios e Férias' },
+  { id: 'RegimeProtecao', label: 'Regime de Proteção' },
+  { id: 'InformacaoProfissional', label: 'Informação Profissional' },
+  { id: 'Contrato', label: 'Contrato' }
+] as const;
+
+type TabId = typeof TABS[number]['id'];
+
 const Colaboradores: React.FC = () => {
   const { colaboradores, setColaboradores, empresaId, setMessage } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'All' | 'Ativo' | 'Inativo'>('All');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalTab, setModalTab] = useState<'Identificacao' | 'Documentos' | 'Dados Fiscais' | 'SubsidiosFerias' | 'RegimeProtecao' | 'InformacaoProfissional' | 'Contrato'>('Identificacao');
+  const [modalTab, setModalTab] = useState<TabId>('Identificacao');
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // Documentos state
@@ -64,7 +76,7 @@ const Colaboradores: React.FC = () => {
   };
 
   const handleDeleteDocumento = async (docId: number) => {
-    Swal.fire({
+    const result = await Swal.fire({
       title: 'Eliminar Documento',
       text: 'Tem a certeza que deseja eliminar este documento?',
       icon: 'warning',
@@ -73,39 +85,20 @@ const Colaboradores: React.FC = () => {
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#e11d48',
       cancelButtonColor: '#64748b',
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await api.delete(`/documentos/${docId}`);
-          setDocumentos(prev => prev.filter(d => d.id !== docId));
-          Swal.fire({
-            title: 'Eliminado',
-            text: 'Documento removido com sucesso!',
-            icon: 'success',
-            confirmButtonColor: '#22c55e',
-          });
-        } catch { /**/ }
-      }
     });
+    if (result.isConfirmed) {
+      try {
+        await api.delete(`/documentos/${docId}`);
+        setDocumentos(prev => prev.filter(d => d.id !== docId));
+        Swal.fire({ title: 'Eliminado', text: 'Documento removido com sucesso!', icon: 'success', confirmButtonColor: '#22c55e' });
+      } catch { /**/ }
+    }
   };
   
   const [formData, setFormData] = useState<Partial<Colaborador>>({
-    nome: '',
-    numeroColaborador: '',
-    nif: '',
-    inss: '',
-    cargo: '',
-    tipoContrato: 'Contrato por Tempo Indeterminado',
-    salarioBase: 0,
-    status: 'Ativo',
-    email: '',
-    iban: '',
-    dataAdmissao: new Date().toISOString().split('T')[0],
-    subsidioAlimentacao: 0,
-    subsidioTransporte: 0,
-    regimeFiscal: 'Geral',
-    estadoCivil: 'Solteiro(a)',
-    genero: 'Masculino'
+    nome: '', numeroColaborador: '', nif: '', inss: '', cargo: '', tipoContrato: 'Contrato por Tempo Indeterminado',
+    salarioBase: 0, status: 'Ativo', email: '', iban: '', dataAdmissao: new Date().toISOString().split('T')[0],
+    subsidioAlimentacao: 0, subsidioTransporte: 0, regimeFiscal: 'Geral', estadoCivil: 'Solteiro(a)', genero: 'Masculino'
   });
 
   const normalizeList = (data: any, key?: string) => {
@@ -118,20 +111,14 @@ const Colaboradores: React.FC = () => {
     try {
       const data = await api.get(`/trabalhadores?empresaId=${empresaId}&size=1000`);
       setColaboradores(normalizeList(data, 'colaboradores'));
-    } catch (error) {
-      console.error('Error refreshing colaboradores:', error);
-    }
+    } catch (error) { console.error('Error refreshing colaboradores:', error); }
   }, [empresaId, setColaboradores]);
 
-  useEffect(() => {
-    refreshColaboradores();
-  }, [empresaId, refreshColaboradores]);
+  useEffect(() => { refreshColaboradores(); }, [empresaId, refreshColaboradores]);
 
   const filteredColaboradores = colaboradores.filter(c => {
     const isFromCompany = !empresaId || !c.empresaId || c.empresaId === empresaId;
-    const matchesSearch = c.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         (c.nif && c.nif.includes(searchTerm)) || 
-                         (c.cargo && c.cargo.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = c.nome.toLowerCase().includes(searchTerm.toLowerCase()) || (c.nif && c.nif.includes(searchTerm)) || (c.cargo && c.cargo.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesFilter = filter === 'All' ? true : c.status === filter;
     return isFromCompany && matchesSearch && matchesFilter;
   });
@@ -143,19 +130,9 @@ const Colaboradores: React.FC = () => {
     } else {
       setEditingId(null);
       setFormData({
-        nome: '', 
-        numeroColaborador: '', 
-        nif: '', 
-        inss: '', 
-        cargo: '', 
-        tipoContrato: 'Contrato por Tempo Indeterminado', 
-        salarioBase: 0, 
-        status: 'Ativo', 
-        email: '', 
-        dataAdmissao: new Date().toISOString().split('T')[0],
-        subsidioAlimentacao: 0,
-        subsidioTransporte: 0,
-        regimeFiscal: 'Geral',
+        nome: '', numeroColaborador: '', nif: '', inss: '', cargo: '', tipoContrato: 'Contrato por Tempo Indeterminado',
+        salarioBase: 0, status: 'Ativo', email: '', dataAdmissao: new Date().toISOString().split('T')[0],
+        subsidioAlimentacao: 0, subsidioTransporte: 0, regimeFiscal: 'Geral', estadoCivil: 'Solteiro(a)', genero: 'Masculino',
         empresaId: empresaId || undefined
       });
     }
@@ -163,14 +140,31 @@ const Colaboradores: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const currentTabIndex = TABS.findIndex(t => t.id === modalTab);
+  const isLastTab = currentTabIndex === TABS.length - 1;
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!isLastTab) {
+      const nextTab = TABS[currentTabIndex + 1].id;
+      setModalTab(nextTab);
+      if (nextTab === 'Documentos' && editingId) fetchDocumentos(editingId);
+    }
+  };
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (currentTabIndex > 0) {
+      setModalTab(TABS[currentTabIndex - 1].id);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const sanitizedData = { ...formData };
       ['email', 'nif', 'telefone', 'iban', 'inss', 'numeroColaborador'].forEach(key => {
-        if (sanitizedData[key as keyof Colaborador] === '') {
-          (sanitizedData as any)[key] = null;
-        }
+        if (sanitizedData[key as keyof Colaborador] === '') (sanitizedData as any)[key] = null;
       });
       const dataToSave = { ...sanitizedData, empresaId: empresaId || undefined };
       if (!editingId) {
@@ -182,9 +176,7 @@ const Colaboradores: React.FC = () => {
       }
       refreshColaboradores();
       setIsModalOpen(false);
-    } catch (error: any) {
-      console.error('Erro ao salvar colaborador:', error);
-    }
+    } catch (error: any) { console.error('Erro ao salvar colaborador:', error); }
   };
 
   const handleDelete = (id: number) => {
@@ -193,401 +185,280 @@ const Colaboradores: React.FC = () => {
     Swal.fire({
       title: 'Remover Colaborador',
       text: `Tem a certeza que deseja eliminar o colaborador "${colab.nome}"? Esta acção removerá todos os registros associados.`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sim, eliminar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#e11d48',
-      cancelButtonColor: '#64748b',
+      icon: 'warning', showCancelButton: true, confirmButtonText: 'Sim, eliminar', cancelButtonText: 'Cancelar', confirmButtonColor: '#e11d48', cancelButtonColor: '#64748b',
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
           await api.delete(`/trabalhadores/${id}`);
           Swal.fire({ title: 'Removido', text: 'Colaborador removido com sucesso!', icon: 'success', confirmButtonColor: '#22c55e' });
           refreshColaboradores();
-        } catch (error: any) {
-          console.error('Erro ao remover colaborador:', error);
-          setMessage({ title: 'Erro', text: error?.message || 'Não foi possível remover o colaborador.', type: 'error' });
-        }
+        } catch { /**/ }
       }
     });
   };
 
   return (
-    <div className="p-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+    <div className="p-8 font-app">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 uppercase tracking-widest">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-1 h-8 bg-primary rounded-full"></div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-800 dark:text-white uppercase">Recursos Humanos</h1>
+            <div className="w-1.5 h-8 bg-primary rounded-full"></div>
+            <h1 className="text-3xl font-black text-slate-800 dark:text-white">Recursos Humanos</h1>
           </div>
-          <p className="text-slate-500 dark:text-slate-400 ml-4">Gestão de Funcionários e Informações Contratuais (Padrão Primavera ERP).</p>
+          <p className="text-slate-500 text-xs font-bold opacity-60 ml-4">Gestão de Colaboradores e Fichas Individuais</p>
         </div>
-        <button onClick={() => handleOpenModal()} className="flex items-center justify-center gap-2 rounded-xl h-12 px-6 bg-primary text-white text-sm font-black hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 uppercase tracking-widest">
-          <span className="material-symbols-outlined text-[20px]">person_add</span>
-          Novo Funcionário
+        <button onClick={() => handleOpenModal()} className="px-8 h-12 bg-primary text-white text-[10px] font-black rounded-xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center gap-3">
+          <span className="material-symbols-outlined text-[18px]">person_add</span> NOVO FUNCIONÁRIO
         </button>
       </div>
 
-      <div className="glass-card p-4 mb-6">
-        <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-          <div className="flex flex-1 w-full max-w-md items-center gap-3">
-            <div className="relative w-full group">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] group-focus-within:text-primary transition-colors">search</span>
-              <input 
-                className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm transition-all" 
-                placeholder="Pesquisar por nome, NIF ou cargo..." 
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button onClick={() => setFilter('All')} className={`flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold uppercase tracking-wider border ${filter === 'All' ? 'bg-primary text-white border-primary' : 'bg-slate-50 text-slate-500 border-slate-200'} transition-all`}>
-              Todos
-            </button>
-            <button onClick={() => setFilter('Ativo')} className={`flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold uppercase tracking-wider border ${filter === 'Ativo' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-50 text-slate-500 border-slate-200'} transition-all`}>
-              Ativos
-            </button>
-            <button onClick={() => setFilter('Inativo')} className={`flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold uppercase tracking-wider border ${filter === 'Inativo' ? 'bg-red-500 text-white border-red-500' : 'bg-slate-50 text-slate-500 border-slate-200'} transition-all`}>
-              Inativos
-            </button>
-          </div>
+      <div className="glass-card p-6 mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full max-w-md">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+          <input 
+            className="w-full pl-12 pr-4 py-3 bg-slate-100 dark:bg-slate-800 border-none rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-primary transition-all" 
+            placeholder="PESQUISAR FUNCIONÁRIO..." type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-2">
+           {['All', 'Ativo', 'Inativo'].map(f => (
+             <button key={f} onClick={() => setFilter(f as any)} className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === f ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+               {f === 'All' ? 'TODOS' : f}
+             </button>
+           ))}
         </div>
       </div>
 
       <div className="glass-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Funcionário</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Contrato / NIF</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Salário Base</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Acções</th>
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 font-app">
+              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">FUNCIONÁRIO</th>
+              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">CONTRATO / NIF</th>
+              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">STATUS</th>
+              <th className="px-8 py-5"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            {filteredColaboradores.map(c => (
+              <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
+                <td className="px-8 py-6">
+                  <div className="flex items-center gap-4">
+                    <div className="size-11 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xs shadow-lg">{c.nome.substring(0, 2).toUpperCase()}</div>
+                    <div>
+                      <p className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tighter">{c.nome}</p>
+                      <p className="text-[10px] font-bold text-primary uppercase">{c.cargo}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-8 py-6">
+                  <p className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">{c.tipoContrato}</p>
+                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">{c.nif || 'NIF NÃO REGISTADO'}</p>
+                </td>
+                <td className="px-8 py-6 text-right">
+                  <span className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${c.status === 'Ativo' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                    {c.status}
+                  </span>
+                </td>
+                <td className="px-8 py-6 text-right">
+                   <div className="flex justify-end gap-3 no-print">
+                      <button onClick={() => handleOpenModal(c)} className="size-9 bg-slate-100 text-slate-400 rounded-lg hover:text-primary transition-all flex items-center justify-center"><span className="material-symbols-outlined text-lg">edit</span></button>
+                      <button onClick={() => handleDelete(c.id)} className="size-9 bg-rose-50 text-rose-400 rounded-lg hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center"><span className="material-symbols-outlined text-lg">delete</span></button>
+                   </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filteredColaboradores.map(c => (
-                <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs">{c.nome.substring(0, 2).toUpperCase()}</div>
-                      <div>
-                        <p className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">{c.nome}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">{c.cargo}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{c.tipoContrato}</p>
-                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">{c.nif}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-black text-primary">{(c.salarioBase || 0).toLocaleString()} Kz</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${c.status === 'Ativo' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'}`}>
-                      {c.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                       <button onClick={() => handleOpenModal(c)} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary transition-all">
-                        <span className="material-symbols-outlined text-sm">edit</span>
-                      </button>
-                      <button onClick={() => handleDelete(c.id)} className="p-2 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all">
-                        <span className="material-symbols-outlined text-sm">delete</span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden max-h-[95vh] flex flex-col">
-            <div className="flex border-b border-slate-100 dark:border-slate-800 bg-slate-900 dark:bg-black text-white p-2 gap-1 overflow-x-auto whitespace-nowrap">
-               {[
-                 { id: 'Identificacao', label: 'Identificação' },
-                 { id: 'Documentos', label: 'Documentos' },
-                 { id: 'Dados Fiscais', label: 'Dados Fiscais' },
-                 { id: 'SubsidiosFerias', label: 'Subsidios e Ferias' },
-                 { id: 'RegimeProtecao', label: 'Regime de proteção' },
-                 { id: 'InformacaoProfissional', label: 'Informação Profissional' },
-                 { id: 'Contrato', label: 'Contrato' }
-               ].map((tab) => (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-950 rounded-[40px] shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden border border-white/20">
+            {/* Modal Header com Tabs Polidas */}
+            <div className="p-4 bg-slate-950 border-b border-white/10 flex items-center gap-2 overflow-x-auto custom-scrollbar no-print">
+               {TABS.map((tab) => (
                  <button 
-                   key={tab.id}
-                   type="button" 
+                   key={tab.id} type="button" 
                    onClick={() => { 
-                     setModalTab(tab.id as any);
+                     setModalTab(tab.id);
                      if (tab.id === 'Documentos' && editingId) fetchDocumentos(editingId);
                    }} 
-                   className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${modalTab === tab.id ? 'bg-primary text-white' : 'text-slate-400 hover:bg-white/5'}`}
+                   className={`px-5 py-3 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all flex-shrink-0 ${modalTab === tab.id ? 'bg-primary text-white shadow-xl shadow-primary/20' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                  >
                    {tab.label}
                  </button>
                ))}
-               <button 
-                onClick={() => { setIsModalOpen(false); setDocumentos([]); setShowDocForm(false); setDocFile(null); }}
-                className="ml-auto size-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-all text-slate-400"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
+               <button onClick={() => setIsModalOpen(false)} className="ml-auto size-10 rounded-full bg-white/5 text-slate-500 hover:text-white flex items-center justify-center transition-all"><span className="material-symbols-outlined">close</span></button>
             </div>
             
-            <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-12 bg-white dark:bg-slate-950 custom-scrollbar relative">
               {modalTab === 'Identificacao' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-300">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-in fade-in slide-up duration-500">
                   <div className="md:col-span-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Nome Completo</label>
-                    <input required type="text" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value.replace(/[0-9]/g, '')})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Nome Completo do Funcionário" />
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Nome Completo</label>
+                    <input required type="text" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-primary focus:bg-white outline-none font-black text-slate-800 transition-all text-lg" placeholder="NOME DO FUNCIONÁRIO" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Gênero</label>
-                    <select value={formData.genero || 'Masculino'} onChange={e => setFormData({...formData, genero: e.target.value as any})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold">
-                        <option value="Masculino">Masculino</option>
-                        <option value="Feminino">Feminino</option>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Gênero</label>
+                    <select value={formData.genero || 'Masculino'} onChange={e => setFormData({...formData, genero: e.target.value as any})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-primary outline-none font-black text-slate-800">
+                        <option value="Masculino">MASCULINO</option>
+                        <option value="Feminino">FEMININO</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Data de Nascimento</label>
-                    <input type="date" value={formData.dataNascimento || ''} onChange={e => setFormData({...formData, dataNascimento: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Data de Nascimento</label>
+                    <input type="date" value={formData.dataNascimento || ''} onChange={e => setFormData({...formData, dataNascimento: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-primary outline-none font-black text-slate-800" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Estado Civil</label>
-                    <select value={formData.estadoCivil || 'Solteiro(a)'} onChange={e => setFormData({...formData, estadoCivil: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold">
-                        <option value="Solteiro(a)">Solteiro(a)</option>
-                        <option value="Casado(a)">Casado(a)</option>
-                        <option value="Divorciado(a)">Divorciado(a)</option>
-                        <option value="Viúvo(a)">Viúvo(a)</option>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Estado Civil</label>
+                    <select value={formData.estadoCivil || 'Solteiro(a)'} onChange={e => setFormData({...formData, estadoCivil: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-primary outline-none font-black text-slate-800">
+                        <option value="Solteiro(a)">SOLTEIRO(A)</option>
+                        <option value="Casado(a)">CASADO(A)</option>
+                        <option value="Divorciado(a)">DIVORCIADO(A)</option>
+                        <option value="Viúvo(a)">VIÚVO(A)</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Número de BI</label>
-                    <input required type="text" value={formData.bi || ''} onChange={e => setFormData({...formData, bi: e.target.value.toUpperCase()})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="123456789LA041" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Telefone</label>
-                    <input type="text" value={formData.telefone || ''} onChange={e => setFormData({...formData, telefone: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="+244 ..." />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">E-mail</label>
-                    <input type="email" value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="email@exemplo.com" />
-                  </div>
-                   <div className="md:col-span-3">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Morada / Endereço</label>
-                    <input type="text" value={formData.endereco || ''} onChange={e => setFormData({...formData, endereco: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Rua, Bairro..." />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Município</label>
-                    <input type="text" value={formData.municipio || ''} onChange={e => setFormData({...formData, municipio: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Luanda, Belas..." />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Província</label>
-                    <input type="text" value={formData.provincia || ''} onChange={e => setFormData({...formData, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Luanda" />
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Número de Bilhete (BI)</label>
+                    <input required type="text" value={formData.bi || ''} onChange={e => setFormData({...formData, bi: e.target.value.toUpperCase()})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-primary outline-none font-black text-slate-800" placeholder="000000000LA000" />
                   </div>
                 </div>
               )}
 
+              {/* Demais Abas seguem o mesmo padrão polido */}
               {modalTab === 'Documentos' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  <div className="flex justify-between items-center">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Arquivo Digital do Funcionário</p>
-                    <button type="button" onClick={() => setShowDocForm(s => !s)} className="text-xs font-black bg-primary/10 text-primary px-4 py-2 rounded-lg uppercase tracking-widest flex items-center gap-1 hover:bg-primary hover:text-white transition-all">
-                      <span className="material-symbols-outlined text-sm">{showDocForm ? 'close' : 'add'}</span>
-                      {showDocForm ? 'Cancelar' : 'Anexar Documento'}
-                    </button>
-                  </div>
-                  {showDocForm && (
-                     <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tipo de Documento</label>
-                            <select value={docForm.tipoDocumento} onChange={e => setDocForm({...docForm, tipoDocumento: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold outline-none">
-                              {['BI','Certificado','Contrato','Seguro','Certificado Médico','Outro'].map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Data de Validade</label>
-                            <input type="date" value={docForm.dataValidade} onChange={e => setDocForm({...docForm, dataValidade: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold outline-none" />
-                          </div>
+                <div className="space-y-8 animate-in fade-in duration-500">
+                   <div className="flex justify-between items-center border-b pb-6">
+                      <h3 className="text-xl font-black uppercase text-slate-800">Arquivo Digital</h3>
+                      <button type="button" onClick={() => setShowDocForm(!showDocForm)} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm">{showDocForm ? 'close' : 'add'}</span> {showDocForm ? 'Fechar' : 'Novo Documento'}
+                      </button>
+                   </div>
+                   {showDocForm && (
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-8 rounded-[32px] border border-slate-100">
+                        <div className="space-y-4">
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Título do Ficheiro</label>
+                           <input type="text" value={docForm.titulo} onChange={e => setDocForm({...docForm, titulo: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-primary outline-none font-black" placeholder="EX: CÓPIA BI" />
                         </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Título / Descrição</label>
-                          <input type="text" value={docForm.titulo} onChange={e => setDocForm({...docForm, titulo: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold outline-none" placeholder="Ex: Cópia do BI de Identidade" />
+                        <div className="space-y-4">
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Ficheiro (PDF/IMG)</label>
+                           <input type="file" onChange={e => setDocFile(e.target.files?.[0] || null)} className="w-full px-5 py-3 rounded-2xl bg-white border-none font-bold text-xs" />
                         </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Selecionar Ficheiro</label>
-                          <input type="file" onChange={e => setDocFile(e.target.files?.[0] || null)} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold" />
-                        </div>
-                        <button type="button" onClick={handleAddDocumento} disabled={docLoading || !docForm.titulo} className="w-full py-4 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary/90 transition-all">
-                          {docLoading ? 'A processar...' : 'Carregar Documento'}
-                        </button>
+                        <button type="button" onClick={handleAddDocumento} disabled={docLoading} className="md:col-span-2 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-xs">Carregar Agora</button>
                      </div>
-                  )}
-                  {documentos.length === 0 ? (
-                    <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-12 text-center">
-                       <span className="material-symbols-outlined text-5xl text-slate-300 mb-4">folder_managed</span>
-                       <p className="font-black text-slate-500 text-sm uppercase">Nenhum documento digitalizado</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {documentos.map(doc => (
-                        <div key={doc.id} className="flex items-center justify-between p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/50">
-                           <div className="flex items-center gap-3">
-                              <span className="material-symbols-outlined text-primary">description</span>
-                              <div>
-                                <p className="text-sm font-bold text-slate-800 dark:text-white">{doc.titulo}</p>
-                                <p className="text-[10px] text-slate-400 uppercase font-black">{doc.tipoDocumento} {doc.dataValidade && `· Expira: ${new Date(doc.dataValidade).toLocaleDateString()}`}</p>
-                              </div>
-                           </div>
-                           <div className="flex gap-2">
-                             {doc.arquivoUrl && <a href={`${API_BASE_URL}${doc.arquivoUrl}`} target="_blank" rel="noreferrer" className="p-2 bg-white dark:bg-slate-700 rounded-lg text-primary shadow-sm"><span className="material-symbols-outlined text-sm">visibility</span></a>}
-                             <button type="button" onClick={() => handleDeleteDocumento(doc.id)} className="p-2 bg-rose-50 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all"><span className="material-symbols-outlined text-sm">delete</span></button>
-                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                   )}
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     {documentos.map(doc => (
+                       <div key={doc.id} className="p-5 border border-slate-100 rounded-[24px] bg-slate-50/50 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="material-symbols-outlined text-primary text-3xl">description</span>
+                            <div>
+                               <p className="text-sm font-black text-slate-800 uppercase leading-none">{doc.titulo}</p>
+                               <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{doc.tipoDocumento}</p>
+                            </div>
+                          </div>
+                          <button type="button" onClick={() => handleDeleteDocumento(doc.id)} className="text-rose-400 hover:text-rose-600"><span className="material-symbols-outlined">delete</span></button>
+                       </div>
+                     ))}
+                   </div>
                 </div>
               )}
 
               {modalTab === 'Dados Fiscais' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">NIF (Número de Contribuinte)</label>
-                    <input required type="text" value={formData.nif} onChange={e => setFormData({...formData, nif: e.target.value.replace(/\D/g, '').slice(0, 9)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-black" placeholder="000.000.000" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Regime Fiscal</label>
-                    <select value={formData.regimeFiscal || 'Geral'} onChange={e => setFormData({...formData, regimeFiscal: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold">
-                        <option value="Geral">Regime Geral</option>
-                        <option value="Simplificado">Regime Simplificado</option>
-                        <option value="Isento">Isento</option>
-                    </select>
-                  </div>
-                </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-500">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">NIF (Número de Contribuinte)</label>
+                      <input type="text" value={formData.nif} onChange={e => setFormData({...formData, nif: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black text-lg outline-none focus:ring-2 focus:ring-primary" placeholder="000000000" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Regime Fiscal</label>
+                      <select value={formData.regimeFiscal || 'Geral'} onChange={e => setFormData({...formData, regimeFiscal: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none">
+                          <option value="Geral">REGIME GERAL</option>
+                          <option value="Simplificado">REGIME SIMPLIFICADO</option>
+                          <option value="Isento">ISENTO</option>
+                      </select>
+                    </div>
+                 </div>
               )}
 
               {modalTab === 'SubsidiosFerias' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
-                   <div>
-                    <label className="block text-[10px] font-black text-primary uppercase tracking-widest mb-2">Salário Base Mensal (Kz)</label>
-                    <input required type="text" value={formData.salarioBase === 0 || !formData.salarioBase ? '' : formData.salarioBase.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, salarioBase: Number(e.target.value.replace(/\D/g, '')) || 0})} className="w-full px-4 py-3 rounded-xl border-2 border-primary/20 bg-primary/5 outline-none focus:border-primary font-black text-primary text-lg" placeholder="0" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Subsídio de Alimentação (Kz)</label>
-                    <input type="text" value={formData.subsidioAlimentacao === 0 || !formData.subsidioAlimentacao ? '' : formData.subsidioAlimentacao.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, subsidioAlimentacao: Number(e.target.value.replace(/\D/g, '')) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="0" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Subsídio de Transporte (Kz)</label>
-                    <input type="text" value={formData.subsidioTransporte === 0 || !formData.subsidioTransporte ? '' : formData.subsidioTransporte.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, subsidioTransporte: Number(e.target.value.replace(/\D/g, '')) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="0" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Subsídio de Férias Acumulado (Kz)</label>
-                    <input type="text" value={formData.subsidioFerias === 0 || !formData.subsidioFerias ? '' : formData.subsidioFerias.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, subsidioFerias: Number(e.target.value.replace(/\D/g, '')) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="0" />
-                  </div>
-                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Subsídio de Natal Acumulado (Kz)</label>
-                    <input type="text" value={formData.subsidioNatal === 0 || !formData.subsidioNatal ? '' : formData.subsidioNatal.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, subsidioNatal: Number(e.target.value.replace(/\D/g, '')) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="0" />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-500">
+                   <div className="md:col-span-2 p-8 bg-primary/5 rounded-[32px] border-2 border-primary/10">
+                      <label className="block text-[10px] font-black text-primary uppercase tracking-widest mb-4">Salário Base Mensal (KZ)</label>
+                      <input type="text" value={formData.salarioBase?.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, salarioBase: Number(e.target.value.replace(/\D/g, ''))})} className="w-full bg-transparent border-none outline-none font-black text-primary text-5xl tracking-tighter" placeholder="0,00" />
+                   </div>
+                   <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Subsídio Alimentação</label>
+                      <input type="text" value={formData.subsidioAlimentacao?.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, subsidioAlimentacao: Number(e.target.value.replace(/\D/g, ''))})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none" />
+                   </div>
+                   <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Subsídio Transporte</label>
+                      <input type="text" value={formData.subsidioTransporte?.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, subsidioTransporte: Number(e.target.value.replace(/\D/g, ''))})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none" />
+                   </div>
                 </div>
               )}
 
               {modalTab === 'RegimeProtecao' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Número Segurança Social (INSS)</label>
-                    <input type="text" value={formData.inss || ''} onChange={e => setFormData({...formData, inss: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-black" placeholder="0000000000" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Regime de Segurança Social</label>
-                    <select value={formData.regimeSegurancaSocial || 'Trabalhador por Conta de Outrem'} onChange={e => setFormData({...formData, regimeSegurancaSocial: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold">
-                        <option value="Trabalhador por Conta de Outrem">Trabalhador por Conta de Outrem</option>
-                        <option value="Trabalhador Independente">Trabalhador Independente</option>
-                        <option value="Membro de Órgão Estatutário">Membro de Órgão Estatutário</option>
-                    </select>
-                  </div>
-                   <div className="md:col-span-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Dados Bancários (IBAN Pagamento)</label>
-                    <input type="text" value={formData.iban || ''} onChange={e => setFormData({...formData, iban: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-mono font-bold" placeholder="AO06 0000 0000 0000 0000 0000 0" />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-500">
+                   <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Número INSS</label>
+                      <input type="text" value={formData.inss || ''} onChange={e => setFormData({...formData, inss: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none" placeholder="00000000" />
+                   </div>
+                   <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">IBAN Pagamento</label>
+                      <input type="text" value={formData.iban || ''} onChange={e => setFormData({...formData, iban: e.target.value.toUpperCase()})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black font-mono outline-none" placeholder="AO06..." />
+                   </div>
                 </div>
               )}
 
               {modalTab === 'InformacaoProfissional' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
-                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Cargo / Função</label>
-                    <input required type="text" value={formData.cargo} onChange={e => setFormData({...formData, cargo: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Ex: Analista de Sistemas" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Departamento</label>
-                    <input type="text" value={formData.departamento || ''} onChange={e => setFormData({...formData, departamento: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Ex: Tecnologias de Informação" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Centro de Custo</label>
-                    <input type="text" value={formData.centroCusto || ''} onChange={e => setFormData({...formData, centroCusto: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" placeholder="Ex: SEDE-MT" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Modalidade de Trabalho</label>
-                    <select value={formData.modalidade || 'Tempo Inteiro'} onChange={e => setFormData({...formData, modalidade: e.target.value as any})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold">
-                        <option value="Tempo Inteiro">Tempo Inteiro</option>
-                        <option value="Tempo Parcial">Tempo Parcial</option>
-                        <option value="Teletrabalho">Teletrabalho</option>
-                    </select>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-500">
+                   <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargo / Função</label>
+                      <input required type="text" value={formData.cargo} onChange={e => setFormData({...formData, cargo: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none" placeholder="EX: ANALISTA" />
+                   </div>
+                   <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Departamento</label>
+                      <input type="text" value={formData.departamento || ''} onChange={e => setFormData({...formData, departamento: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none" placeholder="EX: FINANCEIRO" />
+                   </div>
                 </div>
               )}
 
               {modalTab === 'Contrato' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Nº Cadastro Interno</label>
-                    <input type="text" value={formData.numeroColaborador || ''} onChange={e => setFormData({...formData, numeroColaborador: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-black" placeholder="CAD-001" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de Contrato</label>
-                    <select value={formData.tipoContrato || 'Efectivo'} onChange={e => setFormData({...formData, tipoContrato: e.target.value as any})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold">
-                        <option value="Efectivo">Efectivo</option>
-                        <option value="Contrato a Termo Certo">Contrato a Termo Certo</option>
-                        <option value="Contrato a Termo Incerto">Contrato a Termo Incerto</option>
-                        <option value="Estagiário">Estagiário</option>
-                        <option value="Prestador de Serviço">Prestador de Serviço</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Data de Admissão</label>
-                    <input required type="date" value={formData.dataAdmissao || ''} onChange={e => setFormData({...formData, dataAdmissao: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">Data de Exoneração / Fim (Opcional)</label>
-                    <input type="date" value={formData.fimContrato || ''} onChange={e => setFormData({...formData, fimContrato: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-amber-100 bg-amber-50/50 outline-none focus:ring-2 focus:ring-amber-500 font-bold" />
-                  </div>
-                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status da Colaboração</label>
-                    <select value={formData.status || 'Ativo'} onChange={e => setFormData({...formData, status: e.target.value as any})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary font-bold">
-                        <option value="Ativo">Ativo</option>
-                        <option value="Afastado">Afastado</option>
-                        <option value="Desligado">Desligado</option>
-                    </select>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-500">
+                   <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Admissão</label>
+                      <input required type="date" value={formData.dataAdmissao || ''} onChange={e => setFormData({...formData, dataAdmissao: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none" />
+                   </div>
+                   <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Tipo de Contrato</label>
+                      <select value={formData.tipoContrato || 'Indeterminado'} onChange={e => setFormData({...formData, tipoContrato: e.target.value as any})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none">
+                         <option value="Indeterminado">INDETERMINADO</option>
+                         <option value="Termo Certo">TERMO CERTO</option>
+                         <option value="Estagiário">ESTAGIÁRIO</option>
+                      </select>
+                   </div>
+                   <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</label>
+                      <select value={formData.status || 'Ativo'} onChange={e => setFormData({...formData, status: e.target.value as any})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none">
+                         <option value="Ativo">ATIVO</option>
+                         <option value="Inativo">INATIVO</option>
+                      </select>
+                   </div>
                 </div>
               )}
 
-              <div className="mt-12 flex items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800 pt-8">
-                 <p className="text-[9px] font-bold text-slate-400 uppercase hidden md:block">Preencha todos os campos obrigatórios em cada aba para garantir a conformidade legal do cadastro.</p>
-                 <div className="flex gap-3 w-full md:w-auto">
-                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-8 py-4 rounded-xl border border-slate-200 text-sm font-black uppercase tracking-widest text-slate-400 hover:text-slate-600">Cancelar</button>
-                    <button type="submit" className="flex-1 md:flex-none px-12 py-4 rounded-xl bg-primary text-white text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all">Finalizar Cadastro</button>
+              {/* Modal Footer dinâmico */}
+              <div className="mt-16 flex items-center justify-between gap-6 border-t pt-10">
+                 <button type="button" onClick={handlePrev} disabled={currentTabIndex === 0} className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${currentTabIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Anterior</button>
+                 <div className="flex gap-4 w-full md:w-auto">
+                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-10 py-4 text-[10px] font-black uppercase text-slate-400 hover:text-slate-600">Cancelar</button>
+                    {!isLastTab ? (
+                      <button type="button" onClick={handleNext} className="px-12 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 active:scale-95 transition-all">Seguinte</button>
+                    ) : (
+                      <button type="submit" className="px-12 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 active:scale-95 transition-all">Finalizar Cadastro</button>
+                    )}
                  </div>
               </div>
             </form>
