@@ -179,8 +179,8 @@ const Configuracoes: React.FC = () => {
       
       setTimeout(() => {
         setSaved(false);
-        if (!isConfigured) {
-          navigate('/processamento');
+        if (isCreatingNew) {
+          navigate('/dashboard');
         }
       }, 1500);
     } catch (error: any) {

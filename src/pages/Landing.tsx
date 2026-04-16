@@ -76,9 +76,7 @@ const Landing: React.FC = () => {
           <h2 className="text-6xl md:text-7xl font-black text-slate-900 mb-8 tracking-tighter leading-none">
             Gestão de <br/> <span className="text-primary italic">Recibos Salariais</span>
           </h2>
-          <p className="text-lg text-slate-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
-            Automatize o cálculo salarial, impostos e gestão de colaboradores com uma plataforma segura e em conformidade total com a legislação angolana.
-          </p>
+          
           <button 
             onClick={() => navigate('/login')}
             className="px-12 py-5 bg-primary text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-2xl shadow-primary/30 hover:-translate-y-1 transition-all active:scale-95"
@@ -193,7 +191,7 @@ const Landing: React.FC = () => {
               <div className="bg-slate-900 text-white size-8 rounded-lg flex items-center justify-center"><span className="material-symbols-outlined text-sm">payments</span></div>
               <span className="text-sm font-black text-slate-900 uppercase">SALYA</span>
            </div>
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[4px]">© 2026 SALYA SOFTWARE — TODOS OS DIREITOS RESERVADOS.</p>
+       
            <div className="flex gap-6">
               <button className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Termos</button>
               <button className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Privacidade</button>
