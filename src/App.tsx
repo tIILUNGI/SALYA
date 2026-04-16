@@ -83,11 +83,22 @@ function App() {
     return key ? data?._embedded?.[key] || [] : [];
   };
 
+  const clearCompanyState = useCallback(() => {
+    setEmpresas([]);
+    setEmpresa(null);
+    setEmpresaId(null);
+    setColaboradores([]);
+    setIsConfigured(false);
+  }, []);
+
   const refreshData = useCallback(async () => {
     setIsLoadingData(true);
     try {
       const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        clearCompanyState();
+        return;
+      }
 
       // Fetch Empresas — o backend filtra automaticamente pelo utilizador autenticado
       const empresasData = await api.get('/empresas?size=1000');
@@ -116,19 +127,23 @@ function App() {
           setIsConfigured(true);
         }
       } else if (empresasList.length === 0) {
-        setIsConfigured(false);
+        clearCompanyState();
+        return;
       }
 
       // Só busca colaboradores se tiver uma empresa activa válida
       if (activeEmpresaId) {
         const colaboradoresData = await api.get(`/trabalhadores?empresaId=${activeEmpresaId}&size=1000`);
         setColaboradores(normalizeList(colaboradoresData, 'colaboradores'));
+      } else {
+        setColaboradores([]);
       }
     } catch (error) {
+      setColaboradores([]);
     } finally {
       setIsLoadingData(false);
     }
-  }, [empresaId]);
+  }, [clearCompanyState, empresaId]);
 
 
   useEffect(() => {
@@ -138,13 +153,19 @@ function App() {
       const savedEmpresaId = localStorage.getItem('salya_empresaId');
       const savedEmpresa = localStorage.getItem('salya_empresa');
 
-      if (token) {
-        setIsAuthenticated(true);
-        if (userData) {
-          try {
-            setUser(JSON.parse(userData));
-          } catch {
-          }
+      if (!token) {
+        setIsAuthenticated(false);
+        setUser(null);
+        clearCompanyState();
+        setIsAuthChecking(false);
+        return;
+      }
+
+      setIsAuthenticated(true);
+      if (userData) {
+        try {
+          setUser(JSON.parse(userData));
+        } catch {
         }
       }
 
@@ -162,7 +183,7 @@ function App() {
     };
 
     checkAuth();
-  }, []);
+  }, [clearCompanyState]);
 
   useEffect(() => {
     if (user) {

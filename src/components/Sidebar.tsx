@@ -12,7 +12,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompanyCreated }) => {
   const navigate = useNavigate();
-  const { user, setUser, setIsAuthenticated, empresa, setEmpresa, setEmpresaId, setEmpresas, empresas, setIsConfigured, refreshData, setMessage } = useContext(AppContext);
+  const { user, setUser, setIsAuthenticated, empresa, setEmpresa, setEmpresaId, setEmpresas, empresas, setIsConfigured, setColaboradores, refreshData, setMessage } = useContext(AppContext);
 
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [newCompany, setNewCompany] = useState({
@@ -59,6 +59,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
         setEmpresa(null);
         setEmpresaId(null);
         setEmpresas([]);
+        setColaboradores([]);
         navigate('/login');
       }
     });

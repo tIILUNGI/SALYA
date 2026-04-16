@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
-import { api, getApiErrorMessage, setAuthToken } from '../services/api';
+import { api, clearAuthStorage, getApiErrorMessage, setAuthToken } from '../services/api';
 
 
 type ViewMode = 'login' | 'register' | 'confirm' | 'forgot';
@@ -9,7 +9,7 @@ type ViewMode = 'login' | 'register' | 'confirm' | 'forgot';
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const {
-    setIsAuthenticated, setUser, setMessage
+    setIsAuthenticated, setUser, setMessage, setEmpresa, setEmpresaId, setEmpresas, setIsConfigured, setColaboradores
   } = useContext(AppContext);
 
   const [mode, setMode] = useState<ViewMode>('login');
@@ -29,6 +29,19 @@ const Login: React.FC = () => {
     setTimeout(() => setShake(false), 600);
   };
 
+  const startCleanSession = (token: string, user: any) => {
+    clearAuthStorage();
+    setEmpresas([]);
+    setEmpresa(null);
+    setEmpresaId(null);
+    setColaboradores([]);
+    setIsConfigured(false);
+    setAuthToken(token);
+    localStorage.setItem('salya_user', JSON.stringify(user));
+    setUser(user);
+    setIsAuthenticated(true);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
@@ -39,10 +52,7 @@ const Login: React.FC = () => {
       const { token, user } = response;
 
       if (token) {
-        setAuthToken(token);
-        localStorage.setItem('salya_user', JSON.stringify(user));
-        setUser(user);
-        setIsAuthenticated(true);
+        startCleanSession(token, user);
         navigate('/dashboard');
       }
     } catch (error: any) {
@@ -77,10 +87,7 @@ const Login: React.FC = () => {
       const { token, user } = response;
 
       if (token) {
-        setAuthToken(token);
-        localStorage.setItem('salya_user', JSON.stringify(user));
-        setUser(user);
-        setIsAuthenticated(true);
+        startCleanSession(token, user);
         navigate('/configuracoes');
       }
     } catch (error: any) {
@@ -99,10 +106,7 @@ const Login: React.FC = () => {
       const response = await api.post('/auth/verify-email', { email, code: confirmCode }, true);
       const { token, user } = response;
 
-      setAuthToken(token);
-      localStorage.setItem('salya_user', JSON.stringify(user));
-      setUser(user);
-      setIsAuthenticated(true);
+      startCleanSession(token, user);
       navigate('/dashboard');
     } catch (error: any) {
       showError(getApiErrorMessage(error));

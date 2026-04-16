@@ -15,8 +15,8 @@ interface ConfiguracaoEmpresa {
   email: string;
   banco: string;
   iban: string;
-  taxaINSS: number;
-  taxaINSSPatronal: number;
+  taxaINSS: string;
+  taxaINSSPatronal: string;
   taxaAGT: number;
   processamentoAutomatico: boolean;
   envioAutomaticoContracheques: boolean;
@@ -35,6 +35,24 @@ interface TaxaIRT {
   parcelaAbt: number;
 }
 
+const formatTaxInputValue = (value: number | null | undefined, fallback: string) => {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+
+  return String(value);
+};
+
+const parseTaxInputValue = (value: string, fallback = 0) => {
+  const normalizedValue = value.replace(',', '.').trim();
+  if (!normalizedValue) {
+    return fallback;
+  }
+
+  const parsedValue = Number(normalizedValue);
+  return Number.isFinite(parsedValue) ? parsedValue : fallback;
+};
+
 // Função para mapear empresa da API para ConfiguracaoEmpresa
 const mapEmpresaToConfig = (emp: any): ConfiguracaoEmpresa => ({
   id: emp.id || Date.now(),
@@ -47,8 +65,8 @@ const mapEmpresaToConfig = (emp: any): ConfiguracaoEmpresa => ({
   email: emp.email || '',
   banco: emp.banco || '',
   iban: emp.iban || '',
-  taxaINSS: emp.taxaINSS ?? 3,
-  taxaINSSPatronal: emp.taxaINSSPatronal ?? 8,
+  taxaINSS: formatTaxInputValue(emp.taxaINSS, '3'),
+  taxaINSSPatronal: formatTaxInputValue(emp.taxaINSSPatronal, '8'),
   taxaAGT: emp.taxaAGT ?? 2,
   processamentoAutomatico: emp.processamentoAutomatico ?? false,
   envioAutomaticoContracheques: emp.envioAutomaticoContracheques ?? false,
@@ -75,8 +93,8 @@ const Configuracoes: React.FC = () => {
     email: '',
     banco: '',
     iban: '',
-    taxaINSS: 3,
-    taxaINSSPatronal: 8,
+    taxaINSS: '3',
+    taxaINSSPatronal: '8',
     taxaAGT: 2,
     processamentoAutomatico: false,
     envioAutomaticoContracheques: false,
@@ -143,7 +161,11 @@ const Configuracoes: React.FC = () => {
   }
 
     try {
-      const dataToSave = { ...config };
+      const dataToSave = {
+        ...config,
+        taxaINSS: parseTaxInputValue(config.taxaINSS),
+        taxaINSSPatronal: parseTaxInputValue(config.taxaINSSPatronal),
+      };
 
       
       if (!isCreatingNew && empresa?.id) {
@@ -381,11 +403,11 @@ const Configuracoes: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Taxa Trabalhador (%)</label>
-                      <input type="number" value={config.taxaINSS} onChange={(e) => setConfig({...config, taxaINSS: Number(e.target.value) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                      <input type="number" min="0" step="0.01" value={config.taxaINSS} onChange={(e) => setConfig({...config, taxaINSS: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Taxa Patronal (%)</label>
-                      <input type="number" value={config.taxaINSSPatronal} onChange={(e) => setConfig({...config, taxaINSSPatronal: Number(e.target.value) || 0})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                      <input type="number" min="0" step="0.01" value={config.taxaINSSPatronal} onChange={(e) => setConfig({...config, taxaINSSPatronal: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                   </div>
                 </div>
