@@ -136,7 +136,9 @@ function App() {
     const checkAuth = () => {
       const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
       const userData = localStorage.getItem('salya_user');
-      
+      const savedEmpresaId = localStorage.getItem('salya_empresaId');
+      const savedEmpresa = localStorage.getItem('salya_empresa');
+
       if (token) {
         setIsAuthenticated(true);
         if (userData) {
@@ -147,11 +149,47 @@ function App() {
           }
         }
       }
+
+      if (savedEmpresaId) {
+        setEmpresaId(Number(savedEmpresaId));
+      }
+      if (savedEmpresa) {
+        try {
+          setEmpresa(JSON.parse(savedEmpresa));
+        } catch {
+          console.warn('Não foi possível ler empresa do localStorage.');
+        }
+      }
+
       setIsAuthChecking(false);
     };
 
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('salya_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('salya_user');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (empresaId !== null) {
+      localStorage.setItem('salya_empresaId', String(empresaId));
+    } else {
+      localStorage.removeItem('salya_empresaId');
+    }
+  }, [empresaId]);
+
+  useEffect(() => {
+    if (empresa) {
+      localStorage.setItem('salya_empresa', JSON.stringify(empresa));
+    } else {
+      localStorage.removeItem('salya_empresa');
+    }
+  }, [empresa]);
 
   useEffect(() => {
     if (isAuthenticated) {

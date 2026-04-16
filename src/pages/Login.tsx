@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
-import { api, getApiErrorMessage } from '../services/api';
+import { api, getApiErrorMessage, setAuthToken } from '../services/api';
 
 
 type ViewMode = 'login' | 'register' | 'confirm' | 'forgot';
@@ -39,11 +39,9 @@ const Login: React.FC = () => {
       const { token, user } = response;
 
       if (token) {
-        localStorage.setItem('salya_token', token);
-        localStorage.setItem('token', token);
+        setAuthToken(token);
         localStorage.setItem('salya_user', JSON.stringify(user));
         setUser(user);
-        // setIsAuthenticated dispara o refreshData no App.tsx que carrega empresas e colaboradores
         setIsAuthenticated(true);
         navigate('/dashboard');
       }
@@ -79,8 +77,7 @@ const Login: React.FC = () => {
       const { token, user } = response;
 
       if (token) {
-        localStorage.setItem('salya_token', token);
-        localStorage.setItem('token', token);
+        setAuthToken(token);
         localStorage.setItem('salya_user', JSON.stringify(user));
         setUser(user);
         setIsAuthenticated(true);
@@ -102,8 +99,7 @@ const Login: React.FC = () => {
       const response = await api.post('/auth/verify-email', { email, code: confirmCode }, true);
       const { token, user } = response;
 
-      localStorage.setItem('salya_token', token);
-      localStorage.setItem('token', token);
+      setAuthToken(token);
       localStorage.setItem('salya_user', JSON.stringify(user));
       setUser(user);
       setIsAuthenticated(true);

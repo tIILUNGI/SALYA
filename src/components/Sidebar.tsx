@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
-import { api } from '../services/api';
+import { api, clearAuthStorage } from '../services/api';
 import Swal from 'sweetalert2';
 
 interface SidebarProps {
@@ -52,11 +52,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
       cancelButtonColor: '#64748b',
     }).then((result) => {
       if (result.isConfirmed) {
-        localStorage.removeItem('salya_token');
+        clearAuthStorage();
         setIsAuthenticated(false);
         setUser(null);
         setIsConfigured(false);
         setEmpresa(null);
+        setEmpresaId(null);
+        setEmpresas([]);
         navigate('/login');
       }
     });

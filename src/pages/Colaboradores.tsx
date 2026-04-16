@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
-import { api, API_BASE_URL } from '../services/api';
+import { api } from '../services/api';
 import Swal from 'sweetalert2';
 
 interface Documento {
@@ -96,9 +96,10 @@ const Colaboradores: React.FC = () => {
   };
   
   const [formData, setFormData] = useState<Partial<Colaborador>>({
-    nome: '', numeroColaborador: '', nif: '', inss: '', cargo: '', tipoContrato: 'Contrato por Tempo Indeterminado',
-    salarioBase: 0, status: 'Ativo', email: '', iban: '', dataAdmissao: new Date().toISOString().split('T')[0],
-    subsidioAlimentacao: 0, subsidioTransporte: 0, regimeFiscal: 'Geral', estadoCivil: 'Solteiro(a)', genero: 'Masculino'
+    nome: '', numeroColaborador: '', nif: '', bi: '', cargo: '', tipoContrato: 'Contrato por Tempo Indeterminado',
+    salarioBase: 0, status: 'Ativo', email: '', telefone: '', iban: '', banco: '', dataAdmissao: new Date().toISOString().split('T')[0],
+    subsidioAlimentacao: 0, subsidioTransporte: 0, subsidioFerias: 0, subsidioNatal: 0, regimeFiscal: 'Geral', estadoCivil: 'Solteiro(a)', genero: 'Masculino',
+    dataNascimento: '', regimeSegurancaSocial: '', centroCusto: '', endereco: '', municipio: '', provincia: '', empresaId: empresaId || undefined
   });
 
   const normalizeList = (data: any, key?: string) => {
@@ -130,10 +131,10 @@ const Colaboradores: React.FC = () => {
     } else {
       setEditingId(null);
       setFormData({
-        nome: '', numeroColaborador: '', nif: '', inss: '', cargo: '', tipoContrato: 'Contrato por Tempo Indeterminado',
-        salarioBase: 0, status: 'Ativo', email: '', dataAdmissao: new Date().toISOString().split('T')[0],
-        subsidioAlimentacao: 0, subsidioTransporte: 0, regimeFiscal: 'Geral', estadoCivil: 'Solteiro(a)', genero: 'Masculino',
-        empresaId: empresaId || undefined
+        nome: '', numeroColaborador: '', nif: '', bi: '', cargo: '', tipoContrato: 'Contrato por Tempo Indeterminado',
+        salarioBase: 0, status: 'Ativo', email: '', telefone: '', iban: '', banco: '', dataAdmissao: new Date().toISOString().split('T')[0],
+        subsidioAlimentacao: 0, subsidioTransporte: 0, subsidioFerias: 0, subsidioNatal: 0, regimeFiscal: 'Geral', estadoCivil: 'Solteiro(a)', genero: 'Masculino',
+        dataNascimento: '', regimeSegurancaSocial: '', centroCusto: '', endereco: '', municipio: '', provincia: '', empresaId: empresaId || undefined
       });
     }
     setModalTab('Identificacao');
@@ -300,6 +301,10 @@ const Colaboradores: React.FC = () => {
                     <input required type="text" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-primary focus:bg-white outline-none font-black text-slate-800 transition-all text-lg" placeholder="NOME DO FUNCIONÁRIO" />
                   </div>
                   <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Número Colaborador</label>
+                    <input type="text" value={formData.numeroColaborador || ''} onChange={e => setFormData({...formData, numeroColaborador: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-primary outline-none font-black text-slate-800" placeholder="Opcional - número interno" />
+                  </div>
+                  <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Gênero</label>
                     <select value={formData.genero || 'Masculino'} onChange={e => setFormData({...formData, genero: e.target.value as any})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-primary outline-none font-black text-slate-800">
                         <option value="Masculino">MASCULINO</option>
@@ -396,6 +401,14 @@ const Colaboradores: React.FC = () => {
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Subsídio Transporte</label>
                       <input type="text" value={formData.subsidioTransporte?.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, subsidioTransporte: Number(e.target.value.replace(/\D/g, ''))})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none" />
                    </div>
+                   <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Subsídio de Férias</label>
+                      <input type="text" value={formData.subsidioFerias?.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, subsidioFerias: Number(e.target.value.replace(/\D/g, ''))})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none" />
+                   </div>
+                   <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Subsídio de Natal</label>
+                      <input type="text" value={formData.subsidioNatal?.toLocaleString('pt-AO')} onChange={e => setFormData({...formData, subsidioNatal: Number(e.target.value.replace(/\D/g, ''))})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none" />
+                   </div>
                 </div>
               )}
 
@@ -408,6 +421,14 @@ const Colaboradores: React.FC = () => {
                    <div className="space-y-4">
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">IBAN Pagamento</label>
                       <input type="text" value={formData.iban || ''} onChange={e => setFormData({...formData, iban: e.target.value.toUpperCase()})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black font-mono outline-none" placeholder="AO06..." />
+                   </div>
+                   <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Regime de Segurança Social</label>
+                      <input type="text" value={formData.regimeSegurancaSocial || ''} onChange={e => setFormData({...formData, regimeSegurancaSocial: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none" placeholder="Ex: Normal" />
+                   </div>
+                   <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Centro de Custo</label>
+                      <input type="text" value={formData.centroCusto || ''} onChange={e => setFormData({...formData, centroCusto: e.target.value})} className="w-full px-5 py-4 rounded-2xl bg-slate-50 font-black outline-none" placeholder="Ex: RH" />
                    </div>
                 </div>
               )}

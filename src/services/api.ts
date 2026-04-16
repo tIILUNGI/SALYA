@@ -1,13 +1,28 @@
 import { notify } from '../utils/notifications';
 
 // api.ts
-export const API_BASE_URL = 'http://localhost:8081/api';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8081/api';
 
+const TOKEN_STORAGE_KEYS = ['salya_token', 'token'] as const;
+const AUTH_STORAGE_KEYS = ['salya_token', 'token', 'salya_user', 'salya_empresaId', 'salya_empresa'] as const;
 
-const getToken = () => {
-  const token = localStorage.getItem('token') || localStorage.getItem('salya_token');
-  return token;
+export const getAuthToken = () => {
+  for (const key of TOKEN_STORAGE_KEYS) {
+    const token = localStorage.getItem(key);
+    if (token) return token;
+  }
+  return null;
 };
+
+export const setAuthToken = (token: string) => {
+  TOKEN_STORAGE_KEYS.forEach((key) => localStorage.setItem(key, token));
+};
+
+export const clearAuthStorage = () => {
+  AUTH_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+};
+
+const getToken = () => getAuthToken();
 
 const getHeaders = () => {
   const token = getToken();
@@ -88,11 +103,13 @@ const buildErrorFromResponse = (response: Response, responseText: string) => {
   return error;
 };
 
-const ensureAuthOrRedirect = (response: Response) => {
+const ensureAuthOrRedirect = (response: Response, endpoint: string) => {
   if (response.status === 401) {
-    //console.warn('⚠️ Token expirado! Redirecionando para login...');
-    localStorage.removeItem('token');
-    localStorage.removeItem('salya_token');
+    const isAuthEndpoint = endpoint.startsWith('/auth');
+    if (isAuthEndpoint) {
+      return;
+    }
+    clearAuthStorage();
     window.location.href = '/login';
     throw new Error('Sessão expirada');
   }
@@ -124,7 +141,7 @@ export const api = {
         headers: getHeaders(),
       });
 
-      ensureAuthOrRedirect(response);
+      ensureAuthOrRedirect(response, endpoint);
 
       const { responseText, responseData } = await readResponse(response);
       if (!response.ok) {
@@ -153,7 +170,7 @@ export const api = {
         body: JSON.stringify(data),
       });
 
-      ensureAuthOrRedirect(response);
+      ensureAuthOrRedirect(response, endpoint);
 
       const { responseText, responseData } = await readResponse(response);
       if (!response.ok) {
@@ -179,7 +196,7 @@ export const api = {
         body: formData,
       });
 
-      ensureAuthOrRedirect(response);
+      ensureAuthOrRedirect(response, endpoint);
 
       const { responseText, responseData } = await readResponse(response);
       if (!response.ok) {
@@ -203,7 +220,7 @@ export const api = {
         body: JSON.stringify(data),
       });
 
-      ensureAuthOrRedirect(response);
+      ensureAuthOrRedirect(response, endpoint);
 
       const { responseText, responseData } = await readResponse(response);
       if (!response.ok) {
@@ -227,7 +244,7 @@ export const api = {
         body: JSON.stringify(data),
       });
 
-      ensureAuthOrRedirect(response);
+      ensureAuthOrRedirect(response, endpoint);
 
       const { responseText, responseData } = await readResponse(response);
       if (!response.ok) {
@@ -250,7 +267,7 @@ export const api = {
         headers: getHeaders(),
       });
 
-      ensureAuthOrRedirect(response);
+      ensureAuthOrRedirect(response, endpoint);
 
       if (!response.ok) {
         const responseText = await response.text();
