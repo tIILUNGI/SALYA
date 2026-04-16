@@ -9,8 +9,7 @@ type ViewMode = 'login' | 'register' | 'confirm' | 'forgot';
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const {
-    setIsAuthenticated, setEmpresa, setUser,
-    setIsConfigured, setEmpresas, setEmpresaId, setMessage
+    setIsAuthenticated, setUser, setMessage
   } = useContext(AppContext);
 
   const [mode, setMode] = useState<ViewMode>('login');
@@ -21,37 +20,20 @@ const Login: React.FC = () => {
   const [confirmCode, setConfirmCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorString, setErrorString] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [shake, setShake] = useState(false);
 
-  const normalizeList = (data: any, key?: string) => {
-    if (Array.isArray(data)) return data;
-    return key ? data?._embedded?.[key] || [] : [];
-  };
-
-  const fetchGlobalData = async () => {
-    try {
-      const empresasData = await api.get('/empresas?size=1000');
-
-      const empresasList = normalizeList(empresasData, 'empresas');
-      setEmpresas(empresasList);
-
-      if (empresasList.length > 0) {
-        setEmpresa(empresasList[0]);
-        setEmpresaId(empresasList[0].id);
-        setIsConfigured(true);
-        return true;
-      } else {
-        setIsConfigured(false);
-        return false;
-      }
-    } catch (error) {
-      console.error('Error fetching global data:', error);
-      return false;
-    }
+  const showError = (msg: string) => {
+    setErrorString(msg);
+    setShake(true);
+    setTimeout(() => setShake(false), 600);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setErrorString('');
+    setIsLoading(true);
     try {
       const response = await api.post('/auth/login', { email, password }, true);
       const { token, user } = response;
@@ -60,26 +42,27 @@ const Login: React.FC = () => {
         localStorage.setItem('salya_token', token);
         localStorage.setItem('token', token);
         localStorage.setItem('salya_user', JSON.stringify(user));
-        setIsAuthenticated(true);
         setUser(user);
+        // setIsAuthenticated dispara o refreshData no App.tsx que carrega empresas e colaboradores
+        setIsAuthenticated(true);
+        navigate('/dashboard');
       }
-
-      const hasEmpresa = await fetchGlobalData();
-      navigate(hasEmpresa ? '/dashboard' : '/configuracoes');
     } catch (error: any) {
-      setErrorString(getApiErrorMessage(error));
+      showError(getApiErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
-
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setErrorString('');
     if (password !== confirmPassword) {
-      setErrorString('As palavras-passe não coincidem.');
+      showError('As palavras-passe não coincidem.');
       return;
     }
-
+    setIsLoading(true);
     try {
       const response = await api.post('/auth/register', { name, email, password }, true);
 
@@ -99,21 +82,22 @@ const Login: React.FC = () => {
         localStorage.setItem('salya_token', token);
         localStorage.setItem('token', token);
         localStorage.setItem('salya_user', JSON.stringify(user));
-        setIsAuthenticated(true);
         setUser(user);
-
-        const hasEmpresa = await fetchGlobalData();
-        navigate(hasEmpresa ? '/dashboard' : '/configuracoes');
+        setIsAuthenticated(true);
+        navigate('/configuracoes');
       }
     } catch (error: any) {
-      setErrorString(getApiErrorMessage(error));
+      showError(getApiErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
-
   };
 
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setErrorString('');
+    setIsLoading(true);
     try {
       const response = await api.post('/auth/verify-email', { email, code: confirmCode }, true);
       const { token, user } = response;
@@ -121,15 +105,14 @@ const Login: React.FC = () => {
       localStorage.setItem('salya_token', token);
       localStorage.setItem('token', token);
       localStorage.setItem('salya_user', JSON.stringify(user));
-      setIsAuthenticated(true);
       setUser(user);
-
-      const hasEmpresa = await fetchGlobalData();
-      navigate(hasEmpresa ? '/dashboard' : '/configuracoes');
+      setIsAuthenticated(true);
+      navigate('/dashboard');
     } catch (error: any) {
-      setErrorString(getApiErrorMessage(error));
+      showError(getApiErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
-
   };
 
   const handleResendCode = async () => {
@@ -197,7 +180,8 @@ const Login: React.FC = () => {
               </div>
 
               {errorString && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className={`p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3 ${shake ? 'animate-shake' : ''}`}>
+                  <span className="material-symbols-outlined text-red-500 text-lg shrink-0">error</span>
                   <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errorString}</p>
                 </div>
               )}
@@ -210,6 +194,7 @@ const Login: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
                   required
+                  disabled={isLoading}
                 />
               </div>
 
@@ -222,6 +207,7 @@ const Login: React.FC = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-3 pr-12 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
@@ -235,9 +221,12 @@ const Login: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-colors"
+                disabled={isLoading}
+                className="w-full py-3 bg-primary hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all flex items-center justify-center gap-2"
               >
-                Entrar
+                {isLoading ? (
+                  <><span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> A verificar...</>
+                ) : 'Entrar'}
               </button>
 
               <div className="text-center space-y-2">
