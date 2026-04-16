@@ -104,7 +104,13 @@ const Processamento: React.FC = () => {
   const handleGuardarPDF = () => {
     const element = document.getElementById('recibo-para-impressao');
     if (!element) return;
-    const opt = { margin: 0, filename: `Recibo_${selectedColab?.nome.replace(/ /g, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 3 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+    const opt = { 
+      margin: 0, 
+      filename: `Recibo_${selectedColab?.nome.replace(/ /g, '_')}.pdf`, 
+      image: { type: 'jpeg' as const, quality: 0.98 }, 
+      html2canvas: { scale: 3 }, 
+      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const } 
+    };
     html2pdf().from(element).set(opt).save();
   };
 
