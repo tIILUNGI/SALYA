@@ -70,6 +70,20 @@ body {
   @apply bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm rounded-2xl;
 }
 
+/* Shake animation for login errors */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-8px); }
+  30%       { transform: translateX(8px); }
+  45%       { transform: translateX(-6px); }
+  60%       { transform: translateX(6px); }
+  75%       { transform: translateX(-3px); }
+  90%       { transform: translateX(3px); }
+}
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
 /* Print Styles for A4 Receipt */
 @media print {
   @page {

@@ -29,6 +29,7 @@ interface AppContextType {
   setIsAuthenticated: (value: boolean) => void;
   isConfigured: boolean;
   setIsConfigured: (value: boolean) => void;
+  isLoadingData: boolean;
   empresas: Empresa[];
   setEmpresas: (value: Empresa[]) => void;
   empresa: Empresa | null;
@@ -50,6 +51,7 @@ export const AppContext = React.createContext<AppContextType>({
   setIsAuthenticated: () => {},
   isConfigured: false,
   setIsConfigured: () => {},
+  isLoadingData: true,
   empresas: [],
   setEmpresas: () => {},
   empresa: null,
@@ -68,6 +70,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isConfigured, setIsConfigured] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [empresa, setEmpresa] = useState<Empresa | null>(null);
   const [empresaId, setEmpresaId] = useState<number | null>(null);
@@ -80,28 +83,50 @@ function App() {
   };
 
   const refreshData = useCallback(async () => {
+    setIsLoadingData(true);
     try {
       const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
       if (!token) return;
 
-      // Fetch Empresas
+      // Fetch Empresas — o backend filtra automaticamente pelo utilizador autenticado
       const empresasData = await api.get('/empresas?size=1000');
       const empresasList = normalizeList(empresasData, 'empresas');
       setEmpresas(empresasList);
-      
-      if (empresasList.length > 0 && !empresaId) {
+
+      // Determinar a empresa activa usando o valor local (evita closure stale do estado)
+      let activeEmpresaId: number | null = empresaId;
+
+      if (empresasList.length > 0 && !activeEmpresaId) {
+        activeEmpresaId = empresasList[0].id;
         setEmpresa(empresasList[0]);
-        setEmpresaId(empresasList[0].id);
+        setEmpresaId(activeEmpresaId);
         setIsConfigured(true);
+      } else if (empresasList.length > 0 && activeEmpresaId) {
+        // Garantir que a empresa seleccionada ainda existe na lista
+        const found = empresasList.find((e: Empresa) => e.id === activeEmpresaId);
+        if (found) {
+          setEmpresa(found);
+          setIsConfigured(true);
+        } else {
+          // A empresa seleccionada já não pertence ao utilizador — reset
+          activeEmpresaId = empresasList[0].id;
+          setEmpresa(empresasList[0]);
+          setEmpresaId(activeEmpresaId);
+          setIsConfigured(true);
+        }
+      } else if (empresasList.length === 0) {
+        setIsConfigured(false);
       }
 
-      // Fetch Colaboradores only if empresaId is set
-      if (empresaId) {
-        const colaboradoresData = await api.get(`/trabalhadores?empresaId=${empresaId}&size=1000`);
+      // Só busca colaboradores se tiver uma empresa activa válida
+      if (activeEmpresaId) {
+        const colaboradoresData = await api.get(`/trabalhadores?empresaId=${activeEmpresaId}&size=1000`);
         setColaboradores(normalizeList(colaboradoresData, 'colaboradores'));
       }
     } catch (error) {
       console.error('Error fetching global data:', error);
+    } finally {
+      setIsLoadingData(false);
     }
   }, [empresaId]);
 
@@ -129,13 +154,6 @@ function App() {
   }, [isAuthenticated, refreshData]);
 
 
-  useEffect(() => {
-    if (isAuthenticated && empresaId) {
-      refreshData();
-    }
-  }, [isAuthenticated, empresaId, refreshData]);
-
-
   const showConfirm = async (config: { title: string; text: string; onConfirm: () => void }) => {
     const isConfirmed = await notify.modal.confirm(config.title, config.text);
     if (isConfirmed) {
@@ -151,7 +169,8 @@ function App() {
 
   return (
     <AppContext.Provider value={{ 
-      user, setUser, isAuthenticated, setIsAuthenticated, isConfigured, setIsConfigured, 
+      user, setUser, isAuthenticated, setIsAuthenticated, isConfigured, setIsConfigured,
+      isLoadingData,
       empresas, setEmpresas, empresa, setEmpresa, empresaId, setEmpresaId, 
       colaboradores, setColaboradores, 
       setMessage: setAppMessage, showConfirm, refreshData
@@ -171,7 +190,7 @@ function App() {
 function MainLayout() {
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const { empresa, isConfigured, refreshData, setMessage } = React.useContext(AppContext);
+  const { empresa, isConfigured, isLoadingData, refreshData, setMessage } = React.useContext(AppContext);
 
 
   useEffect(() => {
@@ -181,6 +200,18 @@ function MainLayout() {
 
   // Verificar se o usuário tem empresa configurada
   const hasEmpresa = isConfigured && empresa && empresa.id;
+
+  // Enquanto os dados carregam, não redireccionamos para evitar flash de /configuracoes
+  if (isLoadingData) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background-light dark:bg-background-dark">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">A carregar dados...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Função para atualizar após criar empresa
   const handleCompanyCreated = async () => {
