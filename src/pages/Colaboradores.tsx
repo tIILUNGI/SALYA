@@ -779,19 +779,15 @@ const Colaboradores: React.FC = () => {
             </div>
 
             <form onSubmit={handleSave} className="flex-1 overflow-y-auto bg-white dark:bg-slate-950 custom-scrollbar">
-              <div className="sticky top-0 z-10 px-8 pt-8">
-                <div className="rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm shadow-sm px-6 py-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="px-8 pt-6 mb-4">
+                <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Etapa Atual</p>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mt-2">{currentTab.label}</h3>
-                    <p className="text-sm text-slate-500 mt-1">{currentTab.description}</p>
+                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Etapa {currentTabIndex + 1} de {TABS.length}</p>
+                    <h3 className="text-base font-semibold text-slate-900 dark:text-white mt-1">{currentTab.label}</h3>
                   </div>
-                  <div className="min-w-[220px]">
-                    <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-2">
-                      <span>Progresso</span>
-                      <span>{currentTabIndex + 1}/{TABS.length}</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400">{currentTabIndex + 1}/{TABS.length}</span>
+                    <div className="w-20 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                       <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${((currentTabIndex + 1) / TABS.length) * 100}%` }} />
                     </div>
                   </div>

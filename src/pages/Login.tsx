@@ -150,39 +150,38 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background-light dark:bg-background-dark">
-      <div className="relative flex h-auto w-full max-w-[1100px] flex-col md:flex-row bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-corporate-50">
+      <div className="relative flex h-auto w-full max-w-[900px] flex-col md:flex-row bg-white rounded shadow-lg overflow-hidden">
         {/* Left Side - Branding */}
-        <div className="hidden md:flex md:w-1/2 bg-primary flex-col justify-center items-center p-12 text-white relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtOS45NDEgMC0xOCA4LjA1OS0xOCAxOHM4LjA1OSAxOCAxOCAxOCAxOC04LjA1OSAxOC0xOC04LjA1OS0xOC0xOC0xOHptMCAzMmMtNy43MzIgMC0xNC02LjI2OC0xNC0xNHM2LjI2OC0xNCAxNC0xNCAxNCA2LjI2OCAxNCAxNC02LjI2OCAxNC0xNHoiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iLjAyIi8+PC9nPjwvc3ZnPg==')] opacity-30"></div>
+        <div className="hidden md:flex md:w-1/2 bg-primary flex-col justify-center items-center p-10 text-white relative">
           <div className="relative z-10 text-center">
-            <div className="mb-8">
-              <span className="material-symbols-outlined text-8xl">payments</span>
+            <div className="mb-6">
+              <span className="material-symbols-outlined text-6xl">payments</span>
             </div>
-            <h1 className="text-4xl font-black mb-4 tracking-tight">SALYA</h1>
-            <p className="text-xl font-medium opacity-90">Sistema de Gestão de Recibo Salarial</p>
+            <h1 className="text-3xl font-semibold mb-3">SALYA</h1>
+            <p className="text-base opacity-90">Sistema de Gestão de Recibo Salarial</p>
           </div>
         </div>
 
         {/* Right Side - Forms */}
-        <div className="w-full md:w-1/2 p-8 md:p-12">
+        <div className="w-full md:w-1/2 p-8 md:p-10">
           {/* Mobile Logo */}
-          <div className="flex md:hidden items-center gap-2 mb-8">
-            <span className="material-symbols-outlined text-primary text-3xl">payments</span>
-            <h1 className="text-2xl font-black text-primary">SALYA</h1>
+          <div className="flex md:hidden items-center gap-2 mb-6">
+            <span className="material-symbols-outlined text-primary text-2xl">payments</span>
+            <h1 className="text-xl font-semibold text-primary">SALYA</h1>
           </div>
 
           {mode === 'login' && (
-            <form onSubmit={handleLogin} className="space-y-6">
+            <form onSubmit={handleLogin} className="space-y-5">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Bem-vindo</h2>
-                <p className="text-slate-500 dark:text-slate-400">Entre na sua conta para continuar</p>
+                <h2 className="text-xl font-medium text-corporate-800 mb-1">Bem-vindo</h2>
+                <p className="text-sm text-corporate-500">Entre na sua conta</p>
               </div>
 
               {errorString && (
-                <div className={`p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3 ${shake ? 'animate-shake' : ''}`}>
-                  <span className="material-symbols-outlined text-red-500 text-lg shrink-0">error</span>
-                  <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errorString}</p>
+                <div className={`p-3 bg-red-50 border border-red-200 rounded flex items-center gap-2 ${shake ? 'animate-shake' : ''}`}>
+                  <span className="material-symbols-outlined text-red-500 text-sm">error</span>
+                  <p className="text-sm text-red-600">{errorString}</p>
                 </div>
               )}
 

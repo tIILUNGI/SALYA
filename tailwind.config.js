@@ -8,7 +8,7 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#3b82f6", // Vibrant blue
+          DEFAULT: "#2563eb", // Corporate blue
           50: '#eff6ff',
           100: '#dbeafe',
           200: '#bfdbfe',
@@ -21,15 +21,32 @@ module.exports = {
           900: '#1e3a8a',
           950: '#172554',
         },
-        "background-light": "#f8fafc", // slate-50
-        "background-dark": "#0f172a", // slate-900
+        corporate: {
+          50: '#f8fafc',
+          100: '#f1f5f9',
+          200: '#e2e8f0',
+          300: '#cbd5e1',
+          400: '#94a3b8',
+          500: '#64748b',
+          600: '#475569',
+          700: '#334155',
+          800: '#1e293b',
+          900: '#0f172a',
+        },
+        "background-light": "#f8fafc",
+        "background-dark": "#0f172a",
       },
       fontFamily: {
         display: ["Inter", "sans-serif"],
         body: ["Inter", "sans-serif"],
+        app: ["Inter", "sans-serif"],
       },
       boxShadow: {
-        'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
+        'glass': '0 1px 3px rgba(0, 0, 0, 0.1)',
+        'card': '0 1px 2px rgba(0, 0, 0, 0.05)',
+      },
+      borderRadius: {
+        'default': '0.375rem',
       },
       animation: {},
       keyframes: {}

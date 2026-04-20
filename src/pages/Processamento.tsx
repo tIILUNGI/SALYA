@@ -284,21 +284,16 @@ const Processamento: React.FC = () => {
 
   const renderMainContent = () => (
     <div className="space-y-6">
-      <div className="glass-card p-6 border border-primary/10 bg-gradient-to-r from-primary/5 via-white to-white">
+      <div className="glass-card p-6 border border-slate-100">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">Politica Aplicada</p>
-            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mt-2">Ganhos com incidencia de IRT acima de 30.000 Kz por verba</h3>
-            <p className="text-sm text-slate-500 mt-2 max-w-3xl">A base salarial e processada com os ganhos definidos na ficha e com os ganhos adicionais introduzidos no processamento. O historico abaixo reflete os processamentos concluidos desta entidade.</p>
+            <h3 className="text-lg font-medium text-slate-800">Processamento Salarial</h3>
+            <p className="text-sm text-slate-500 mt-1">{selectedMonth} {selectedYear} · {ativos.length} colaborador(es) ativo(s)</p>
           </div>
-          <div className="grid grid-cols-2 gap-3 min-w-[260px]">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Funcionarios Ativos</p>
-              <p className="text-2xl font-black text-slate-900 mt-2">{ativos.length}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Periodo Selecionado</p>
-              <p className="text-sm font-black text-slate-900 mt-2">{selectedMonth} {selectedYear}</p>
+          <div className="flex gap-4">
+            <div className="rounded-lg bg-slate-50 px-4 py-2">
+              <p className="text-xs text-slate-400">Ativos</p>
+              <p className="text-lg font-medium text-slate-700">{ativos.length}</p>
             </div>
           </div>
         </div>
@@ -308,26 +303,26 @@ const Processamento: React.FC = () => {
         <table className="w-full text-left">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100">
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Colaborador</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Salario Base</th>
-              <th className="px-8 py-5 text-center"></th>
+              <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase">Colaborador</th>
+              <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase text-right">Salário Base</th>
+              <th className="px-6 py-4"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {ativos.map((colaborador) => (
-              <tr key={colaborador.id} className="hover:bg-slate-50 transition-all font-app">
-                <td className="px-8 py-6">
-                  <div className="flex items-center gap-4">
-                    <div className="size-10 rounded-full bg-primary text-white flex items-center justify-center font-black text-xs">{colaborador.nome.substring(0, 2).toUpperCase()}</div>
+              <tr key={colaborador.id} className="hover:bg-slate-50 transition-all">
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="size-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-medium">{colaborador.nome.substring(0, 2).toUpperCase()}</div>
                     <div>
-                      <p className="text-sm font-black text-slate-800 uppercase tracking-tighter">{colaborador.nome}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">{colaborador.cargo}</p>
+                      <p className="text-sm font-medium text-slate-700">{colaborador.nome}</p>
+                      <p className="text-xs text-slate-400">{colaborador.cargo}</p>
                     </div>
                   </div>
                 </td>
-                <td className="px-8 py-6 text-right font-black text-slate-700 tracking-tighter italic">{formatMoney(colaborador.salarioBase || 0)}</td>
-                <td className="px-8 py-6 text-center">
-                  <button onClick={() => handleStartProcessar(colaborador)} className="bg-primary hover:bg-primary/90 text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20 active:scale-95">
+                <td className="px-6 py-4 text-right text-sm font-medium text-slate-600">{formatMoney(colaborador.salarioBase || 0)}</td>
+                <td className="px-6 py-4 text-center">
+                  <button onClick={() => handleStartProcessar(colaborador)} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-xs font-medium transition-all">
                     Processar
                   </button>
                 </td>
@@ -342,105 +337,92 @@ const Processamento: React.FC = () => {
     if (!showFormModal || !selectedColab) return null;
 
     return (
-      <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
-        <div className="bg-white rounded-[40px] max-w-5xl w-full max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
-          <div className="p-8 md:p-10 border-b bg-slate-50 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+        <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-xl flex flex-col">
+          <div className="p-5 border-b bg-slate-50 flex items-center justify-between gap-4">
             <div>
-              <p className="text-[10px] font-black text-primary uppercase tracking-[0.25em]">Processamento Individual</p>
-              <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mt-2">Processar Salario</h3>
-              <p className="text-sm text-slate-500 mt-2">{selectedColab.nome} · {selectedColab.cargo}</p>
+              <h3 className="text-lg font-medium text-slate-700">Processar Salário</h3>
+              <p className="text-sm text-slate-400">{selectedColab?.nome} · {selectedColab?.cargo}</p>
             </div>
-            <button onClick={() => { setShowFormModal(false); resetProcessingForm(); }} className="self-start text-slate-400 hover:text-slate-600">
+            <button onClick={() => { setShowFormModal(false); resetProcessingForm(); }} className="text-slate-400 hover:text-slate-600">
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
 
-          <form onSubmit={handleConfirmForm} className="p-8 md:p-10 space-y-8 bg-white">
-            <div className="rounded-[28px] border border-primary/10 bg-primary/5 p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+<form onSubmit={handleConfirmForm} className="p-6 space-y-6 bg-white">
+            <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex items-center justify-between gap-4">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">Regra Fiscal</p>
-                <p className="text-sm font-bold text-slate-700 mt-2">O IRT incide sobre a parcela de cada ganho que exceder 30.000 Kz.</p>
-              </div>
-              <div className="rounded-2xl bg-white px-4 py-3 border border-primary/10">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Outros Ganhos</p>
-                <p className="text-lg font-black text-slate-900 mt-1">{formatMoney(totalOutrosGanhos)}</p>
+                <p className="text-xs text-slate-500">Total Outros Ganhos</p>
+                <p className="text-base font-medium text-slate-700">{formatMoney(totalOutrosGanhos)}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Salario Base de Referencia</label>
-                <input type="text" value={formatMoneyInput(formSalario)} onChange={(e) => setFormSalario(parseMoneyInput(e.target.value))} className="w-full bg-slate-50 border-none rounded-2xl p-5 font-black text-primary text-2xl outline-none focus:ring-2 focus:ring-primary" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-slate-500">Salário Base</label>
+                <input type="text" value={formatMoneyInput(formSalario)} onChange={(e) => setFormSalario(parseMoneyInput(e.target.value))} className="w-full bg-slate-50 border-none rounded-xl p-4 font-medium text-primary text-lg outline-none focus:ring-2 focus:ring-primary" />
               </div>
-              <div className="space-y-4">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Dias Trabalhados</label>
-                <input type="number" min="0" max="31" value={formDiasTrabalhados} onChange={(e) => setFormDiasTrabalhados(Number(e.target.value) || 0)} className="w-full bg-slate-50 border-none rounded-2xl p-5 font-black text-slate-800 text-2xl outline-none focus:ring-2 focus:ring-primary" />
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-slate-500">Dias Trabalhados</label>
+                <input type="number" min="0" max="31" value={formDiasTrabalhados} onChange={(e) => setFormDiasTrabalhados(Number(e.target.value) || 0)} className="w-full bg-slate-50 border-none rounded-xl p-4 font-medium text-slate-700 text-lg outline-none focus:ring-2 focus:ring-primary" />
               </div>
             </div>
 
-            <div className="p-6 bg-slate-50 rounded-[32px] space-y-6">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div>
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ganhos Fixos e Variaveis</h4>
-                  <p className="text-sm text-slate-500 mt-2">Ajuste os ganhos que fazem parte do processamento deste colaborador.</p>
+            <div className="p-5 bg-slate-50 rounded-2xl space-y-4">
+              <h4 className="text-sm font-medium text-slate-600">Ganhos</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-xs text-slate-500">Alimentação</label>
+                  <input type="text" value={formatMoneyInput(formGanhoAlimentacao)} onChange={(e) => setFormGanhoAlimentacao(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-lg p-3 font-medium border border-slate-100" />
                 </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest">Ganho Alimentacao</label>
-                  <input type="text" value={formatMoneyInput(formGanhoAlimentacao)} onChange={(e) => setFormGanhoAlimentacao(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-xl p-4 font-bold border border-slate-100" />
+                <div className="space-y-2">
+                  <label className="block text-xs text-slate-500">Transporte</label>
+                  <input type="text" value={formatMoneyInput(formGanhoTransporte)} onChange={(e) => setFormGanhoTransporte(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-lg p-3 font-medium border border-slate-100" />
                 </div>
-                <div className="space-y-3">
-                  <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest">Ganho Transporte</label>
-                  <input type="text" value={formatMoneyInput(formGanhoTransporte)} onChange={(e) => setFormGanhoTransporte(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-xl p-4 font-bold border border-slate-100" />
+                <div className="space-y-2">
+                  <label className="block text-xs text-slate-500">Férias</label>
+                  <input type="text" value={formatMoneyInput(formGanhoFerias)} onChange={(e) => setFormGanhoFerias(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-lg p-3 font-medium border border-slate-100" />
                 </div>
-                <div className="space-y-3">
-                  <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest">Ganho de Ferias</label>
-                  <input type="text" value={formatMoneyInput(formGanhoFerias)} onChange={(e) => setFormGanhoFerias(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-xl p-4 font-bold border border-slate-100" />
+                <div className="space-y-2">
+                  <label className="block text-xs text-slate-500">Natal</label>
+                  <input type="text" value={formatMoneyInput(formGanhoNatal)} onChange={(e) => setFormGanhoNatal(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-lg p-3 font-medium border border-slate-100" />
                 </div>
-                <div className="space-y-3">
-                  <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest">Ganho de Natal</label>
-                  <input type="text" value={formatMoneyInput(formGanhoNatal)} onChange={(e) => setFormGanhoNatal(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-xl p-4 font-bold border border-slate-100" />
+                <div className="space-y-2">
+                  <label className="block text-xs text-slate-500">Horas Extra</label>
+                  <input type="text" value={formatMoneyInput(formHorasExtra)} onChange={(e) => setFormHorasExtra(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-lg p-3 font-medium border border-slate-100" />
                 </div>
-                <div className="space-y-3">
-                  <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest">Horas Extra</label>
-                  <input type="text" value={formatMoneyInput(formHorasExtra)} onChange={(e) => setFormHorasExtra(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-xl p-4 font-bold border border-slate-100" />
-                </div>
-                <div className="space-y-3">
-                  <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest">Bonus / Premios</label>
-                  <input type="text" value={formatMoneyInput(formBonus)} onChange={(e) => setFormBonus(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-xl p-4 font-bold border border-slate-100" />
+                <div className="space-y-2">
+                  <label className="block text-xs text-slate-500">Bónus</label>
+                  <input type="text" value={formatMoneyInput(formBonus)} onChange={(e) => setFormBonus(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-lg p-3 font-medium border border-slate-100" />
                 </div>
               </div>
             </div>
 
-            <div className="p-6 bg-slate-50 rounded-[32px] space-y-6">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div>
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Outros Ganhos</h4>
-                  <p className="text-sm text-slate-500 mt-2">Registe ganhos adicionais com descricao propria para este processamento.</p>
-                </div>
-                <button type="button" onClick={handleAddOtherGain} className="px-5 py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 self-start lg:self-auto">
+            <div className="p-5 bg-slate-50 rounded-2xl space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <h4 className="text-sm font-medium text-slate-600">Outros Ganhos</h4>
+                <button type="button" onClick={handleAddOtherGain} className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-medium flex items-center gap-1">
                   <span className="material-symbols-outlined text-sm">add</span>
-                  Acrescentar
+                  Adicionar
                 </button>
               </div>
               {formOutrosGanhos.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-10 text-center">
-                  <p className="text-sm font-black uppercase tracking-widest text-slate-400">Sem outros ganhos registados</p>
+                <div className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center">
+                  <p className="text-xs text-slate-400">Sem outros ganhos</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {formOutrosGanhos.map((ganho) => (
-                    <div key={ganho.id} className="grid grid-cols-1 md:grid-cols-[1fr_180px_52px] gap-4 items-end bg-white border border-slate-100 rounded-2xl p-4">
-                      <div className="space-y-2">
-                        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest">Descricao</label>
-                        <input type="text" value={ganho.descricao} onChange={(e) => handleUpdateOtherGain(ganho.id, 'descricao', e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-primary" placeholder="Ex: Comissao comercial" />
+                    <div key={ganho.id} className="grid grid-cols-1 md:grid-cols-[1fr_150px_40px] gap-3 items-end bg-white border border-slate-100 rounded-xl p-3">
+                      <div className="space-y-1">
+                        <label className="block text-xs text-slate-500">Descrição</label>
+                        <input type="text" value={ganho.descricao} onChange={(e) => handleUpdateOtherGain(ganho.id, 'descricao', e.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none focus:ring-2 focus:ring-primary" />
                       </div>
-                      <div className="space-y-2">
-                        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest">Valor</label>
-                        <input type="text" value={formatMoneyInput(ganho.valor)} onChange={(e) => handleUpdateOtherGain(ganho.id, 'valor', e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-primary" />
+                      <div className="space-y-1">
+                        <label className="block text-xs text-slate-500">Valor</label>
+                        <input type="text" value={formatMoneyInput(ganho.valor)} onChange={(e) => handleUpdateOtherGain(ganho.id, 'valor', e.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none focus:ring-2 focus:ring-primary" />
                       </div>
-                      <button type="button" onClick={() => handleRemoveOtherGain(ganho.id)} className="size-11 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center">
+                      <button type="button" onClick={() => handleRemoveOtherGain(ganho.id)} className="size-9 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center">
                         <span className="material-symbols-outlined text-lg">delete</span>
                       </button>
                     </div>
@@ -450,11 +432,57 @@ const Processamento: React.FC = () => {
             </div>
 
             <div className="p-6 bg-rose-50 rounded-[32px] space-y-4">
-              <label className="block text-[10px] font-black text-rose-500 uppercase tracking-widest">Descontos / Faltas (Total em KZ)</label>
-              <input type="text" value={formatMoneyInput(formFaltas)} onChange={(e) => setFormFaltas(parseMoneyInput(e.target.value))} className="w-full bg-white border-2 border-rose-100 rounded-2xl p-5 font-black text-rose-600 text-2xl outline-none focus:border-rose-300" placeholder="0" />
+              <label className="block text-xs font-medium text-rose-500">Descontos / Faltas (KZ)</label>
+              <input type="text" value={formatMoneyInput(formFaltas)} onChange={(e) => setFormFaltas(parseMoneyInput(e.target.value))} className="w-full bg-white border-2 border-rose-100 rounded-2xl p-5 font-medium text-rose-600 text-xl outline-none focus:border-rose-300" placeholder="0" />
             </div>
 
-            <button type="submit" className="w-full py-5 bg-primary text-white rounded-[24px] font-black uppercase tracking-[3px] text-xs shadow-2xl shadow-primary/30 active:scale-95 transition-all">
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 space-y-4">
+              <h4 className="text-sm font-medium text-slate-600">Resumo em Tempo Real</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Salário Proporcional:</span>
+                  <span className="font-medium">{formatMoney(Math.round(formSalario / 22 * formDiasTrabalhados))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Alimentação:</span>
+                  <span className="font-medium">{formatMoney(formGanhoAlimentacao)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Transporte:</span>
+                  <span className="font-medium">{formatMoney(formGanhoTransporte)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Férias:</span>
+                  <span className="font-medium">{formatMoney(formGanhoFerias)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Natal:</span>
+                  <span className="font-medium">{formatMoney(formGanhoNatal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Horas Extra:</span>
+                  <span className="font-medium">{formatMoney(formHorasExtra)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Bónus:</span>
+                  <span className="font-medium">{formatMoney(formBonus)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Outros:</span>
+                  <span className="font-medium">{formatMoney(totalOutrosGanhos)}</span>
+                </div>
+              </div>
+              <div className="border-t border-primary/20 pt-4 flex justify-between text-base">
+                <span className="font-medium text-slate-700">Total Bruto Estimado:</span>
+                <span className="font-semibold text-primary">{formatMoney(
+                  Math.round(formSalario / 22 * formDiasTrabalhados) +
+                  formGanhoAlimentacao + formGanhoTransporte + formGanhoFerias +
+                  formGanhoNatal + formHorasExtra + formBonus + totalOutrosGanhos
+                )}</span>
+              </div>
+            </div>
+
+            <button type="submit" className="w-full py-4 bg-primary text-white rounded-xl font-medium shadow-lg hover:bg-primary/90 transition-all">
               Confirmar e Gerar Recibo
             </button>
           </form>
@@ -556,54 +584,53 @@ const Processamento: React.FC = () => {
 
     return (
       <div className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-[105] p-4 backdrop-blur-sm">
-        <div className="bg-white rounded-[36px] max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
-          <div className="p-8 border-b bg-slate-50 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[85vh] overflow-hidden shadow-xl flex flex-col">
+          <div className="p-5 border-b bg-slate-50 flex items-center justify-between gap-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">Consulta de Historico</p>
-              <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mt-2">Processamentos Ja Efetuados</h3>
-              <p className="text-sm text-slate-500 mt-2">Entidade ativa: {empresa?.nome || 'Nao definida'}</p>
+              <h3 className="text-base font-medium text-slate-700">Histórico de Processamentos</h3>
+              <p className="text-sm text-slate-400">{empresa?.nome || '-'}</p>
             </div>
-            <button onClick={() => setShowHistoricoModal(false)} className="self-start text-slate-400 hover:text-slate-600">
+            <button onClick={() => setShowHistoricoModal(false)} className="text-slate-400 hover:text-slate-600">
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-8">
+          <div className="flex-1 overflow-y-auto p-5">
             {historicoLoading ? (
-              <div className="py-16 text-center text-sm font-bold text-slate-400 uppercase tracking-widest">A carregar historico...</div>
+              <div className="py-12 text-center text-sm text-slate-400">A carregar...</div>
             ) : historicoError ? (
-              <div className="py-16 text-center text-sm font-bold text-rose-500">{historicoError}</div>
+              <div className="py-12 text-center text-sm text-rose-500">{historicoError}</div>
             ) : historico.length === 0 ? (
-              <div className="py-16 text-center text-sm font-bold text-slate-400 uppercase tracking-widest">Sem processamentos registados</div>
+              <div className="py-12 text-center text-sm text-slate-400">Sem processamentos registados</div>
             ) : (
-              <div className="rounded-[28px] border border-slate-200 overflow-hidden">
+              <div className="rounded-xl border border-slate-100 overflow-hidden">
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-100">
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Colaborador</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Periodo</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Bruto</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Descontos</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Liquido</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Registo</th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase">Colaborador</th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase">Período</th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Bruto</th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Desc.</th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Líquido</th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase">Data</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {historico.map((item) => (
                       <tr key={item.id} className="hover:bg-slate-50 transition-all">
-                        <td className="px-6 py-4">
-                          <p className="text-sm font-black text-slate-900 uppercase">{item.colaboradorNome}</p>
-                          <p className="text-[10px] font-bold uppercase text-slate-400 mt-1">{item.cargo || 'Sem cargo'}</p>
+                        <td className="px-4 py-3">
+                          <p className="text-sm font-medium text-slate-700">{item.colaboradorNome}</p>
+                          <p className="text-xs text-slate-400">{item.cargo || '-'}</p>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest ${item.mes === monthToNum(selectedMonth) && String(item.ano) === selectedYear ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500'}`}>
-                            {numToMonth(item.mes)} / {item.ano}
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded text-xs ${item.mes === monthToNum(selectedMonth) && String(item.ano) === selectedYear ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500'}`}>
+                            {numToMonth(item.mes)}/{item.ano}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right font-black text-slate-800">{formatMoney(item.totalBruto)}</td>
-                        <td className="px-6 py-4 text-right font-black text-slate-500">{formatMoney(item.descontos)}</td>
-                        <td className="px-6 py-4 text-right font-black text-primary">{formatMoney(item.salarioLiquido)}</td>
-                        <td className="px-6 py-4 text-xs font-bold text-slate-400">{item.createdAt ? new Date(item.createdAt).toLocaleString('pt-AO') : '-'}</td>
+                        <td className="px-4 py-3 text-right text-sm font-medium text-slate-600">{formatMoney(item.totalBruto)}</td>
+                        <td className="px-4 py-3 text-right text-sm font-medium text-slate-500">{formatMoney(item.descontos)}</td>
+                        <td className="px-4 py-3 text-right text-sm font-medium text-primary">{formatMoney(item.salarioLiquido)}</td>
+                        <td className="px-4 py-3 text-xs text-slate-400">{item.createdAt ? new Date(item.createdAt).toLocaleString('pt-AO') : '-'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -617,33 +644,29 @@ const Processamento: React.FC = () => {
   };
 
   return (
-    <div className="p-8 font-app">
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-10">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-1.5 h-8 bg-primary rounded-full"></div>
-            <h2 className="text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tighter">Processamento Salarial</h2>
-          </div>
-          <div className="flex flex-wrap items-center gap-4 mt-4">
-            <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-slate-100 border-none rounded-xl py-2 px-4 font-black text-xs uppercase tracking-widest outline-none">
-              {MONTHS.map((month) => <option key={month} value={month}>{month}</option>)}
-            </select>
-            <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="bg-slate-100 border-none rounded-xl py-2 px-4 font-black text-xs outline-none">
-              {['2025', '2026', '2027'].map((year) => <option key={year} value={year}>{year}</option>)}
-            </select>
-            <div className="px-4 py-2 rounded-xl bg-primary/5 border border-primary/10">
-              <p className="text-[10px] font-black uppercase tracking-widest text-primary">Historico do periodo</p>
-              <p className="text-sm font-black text-slate-700 mt-1">{historicoDoPeriodo.length} processamento(s)</p>
-            </div>
-          </div>
+    <div className="p-6 font-app">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-medium text-slate-700">Processamento Salarial</h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-slate-50 border-none rounded-lg py-2 px-3 text-sm font-medium outline-none">
+            {MONTHS.map((month) => <option key={month} value={month}>{month}</option>)}
+          </select>
+          <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="bg-slate-50 border-none rounded-lg py-2 px-3 text-sm font-medium outline-none">
+            {['2025', '2026', '2027'].map((year) => <option key={year} value={year}>{year}</option>)}
+          </select>
+          <span className="px-3 py-1.5 rounded-lg bg-primary/5 text-xs text-primary">
+            {historicoDoPeriodo.length} processamento(s)
+          </span>
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <button onClick={() => setShowHistoricoModal(true)} className="px-6 py-3.5 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-[2px] shadow-sm hover:bg-slate-50 transition-all">
-            Historico
+          <button onClick={() => setShowHistoricoModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-all">
+            Histórico
           </button>
-          <button onClick={handleBulkProcess} disabled={isProcessingBulk} className="px-8 py-3.5 bg-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-[2px] shadow-xl shadow-primary/20 hover:bg-primary/80 transition-all">
-            {isProcessingBulk ? 'A Processar...' : 'Liquidacao Mensal (Lote)'}
+          <button onClick={handleBulkProcess} disabled={isProcessingBulk} className="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/80 transition-all">
+            {isProcessingBulk ? 'A Processar...' : 'Liquidação Mensal'}
           </button>
         </div>
       </div>

@@ -294,58 +294,52 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
 
   // Sidebar normal quando tem empresa configurada
   return (
-    <aside className="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col fixed h-full">
-      <div className="p-6 flex items-center gap-3">
-        <div className="bg-primary text-white p-1.5 rounded-lg">
+    <aside className="w-60 border-r border-corporate-200 bg-white flex flex-col fixed h-full">
+      <div className="p-4 flex items-center gap-2 border-b border-corporate-100">
+        <div className="bg-primary text-white p-1 rounded">
           <span className="material-symbols-outlined">payments</span>
         </div>
-        <h2 className="text-xl font-bold tracking-tight text-primary">SALYA</h2>
+        <h2 className="text-lg font-semibold text-corporate-800">SALYA</h2>
       </div>
       
       {/* Informação da empresa ativa */}
-      <div className="mx-4 mb-4 p-3 bg-primary/5 rounded-lg border border-primary/10">
-        <div className="flex items-center gap-2 text-primary">
-          <span className="material-symbols-outlined text-sm">business</span>
-          <span className="text-xs font-medium">Entidade Ativa</span>
-        </div>
-        <p className="text-sm font-semibold mt-1 truncate">{empresa.nome}</p>
-        <p className="text-xs text-slate-500">NIF: {empresa.nif}</p>
+      <div className="mx-3 my-3 p-3 bg-corporate-50 rounded border border-corporate-200">
+        <p className="text-xs text-corporate-400">Entidade</p>
+        <p className="text-sm font-medium text-corporate-700 truncate">{empresa.nome}</p>
+        <p className="text-xs text-corporate-400">NIF: {empresa.nif}</p>
       </div>
       
-      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
         {menuItems.map((item) => (
           <button
             key={item.id}
             onClick={() => handleNavigate(item.id)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors ${
               currentPage === item.id
-                ? 'bg-primary/10 text-primary font-medium'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                ? 'bg-primary text-white'
+                : 'text-corporate-600 hover:bg-corporate-100'
             }`}
           >
-            <span className="material-symbols-outlined">{item.icon}</span>
+            <span className="material-symbols-outlined text-sm">{item.icon}</span>
             {item.label}
           </button>
         ))}
       </nav>
 
-      <div className="p-4 border-t border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-3 p-2">
-          <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold uppercase">
+      <div className="p-3 border-t border-corporate-200">
+        <div className="flex items-center gap-2 p-2">
+          <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-medium">
             {user?.name?.substring(0, 2) || 'US'}
           </div>
           <div className="overflow-hidden">
-            <div className="flex items-center gap-1.5">
-              <p className="text-sm font-semibold truncate">{user?.name || 'Administrador'}</p>
-            </div>
-            <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@salya.com'}</p>
+            <p className="text-sm font-medium text-corporate-700 truncate">{user?.name || 'Admin'}</p>
           </div>
         </div>
         <button 
           onClick={handleLogout}
-          className="w-full mt-3 flex items-center gap-2 px-3 py-2 text-sm text-slate-500 hover:text-rose-500 transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-corporate-500 hover:text-rose-600 transition-colors"
         >
-          <span className="material-symbols-outlined text-lg">logout</span>
+          <span className="material-symbols-outlined text-sm">logout</span>
           Terminar Sessão
         </button>
       </div>
