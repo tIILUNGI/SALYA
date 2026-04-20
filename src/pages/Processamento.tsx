@@ -172,8 +172,8 @@ const Processamento: React.FC = () => {
           salarioBaseOverride: colab.salarioBase || 0,
           diasTrabalhados: 22,
           diasUteis: 22,
-          diasAlimentacao: 22,
-          diasTransporte: 22,
+          diasAlimentacao: 1,
+          diasTransporte: 1,
           valorDiaAlimentacao: colab.subsidioAlimentacao || 0,
           valorDiaTransporte: colab.subsidioTransporte || 0,
           ganhoFeriasTotal: colab.subsidioFerias || 0,
@@ -209,8 +209,8 @@ const Processamento: React.FC = () => {
         salarioBaseOverride: formSalario,
         diasTrabalhados: formDiasTrabalhados,
         diasUteis: 22,
-        diasAlimentacao: formDiasTrabalhados,
-        diasTransporte: formDiasTrabalhados,
+        diasAlimentacao: 1,
+        diasTransporte: 1,
         valorDiaAlimentacao: formGanhoAlimentacao,
         valorDiaTransporte: formGanhoTransporte,
         ganhoFeriasTotal: formGanhoFerias,
@@ -318,7 +318,7 @@ const Processamento: React.FC = () => {
               <tr key={colaborador.id} className="hover:bg-slate-50 transition-all font-app">
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-4">
-                    <div className="size-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xs">{colaborador.nome.substring(0, 2).toUpperCase()}</div>
+                    <div className="size-10 rounded-full bg-primary text-white flex items-center justify-center font-black text-xs">{colaborador.nome.substring(0, 2).toUpperCase()}</div>
                     <div>
                       <p className="text-sm font-black text-slate-800 uppercase tracking-tighter">{colaborador.nome}</p>
                       <p className="text-[10px] font-bold text-slate-400 uppercase">{colaborador.cargo}</p>
@@ -419,7 +419,7 @@ const Processamento: React.FC = () => {
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Outros Ganhos</h4>
                   <p className="text-sm text-slate-500 mt-2">Registe ganhos adicionais com descricao propria para este processamento.</p>
                 </div>
-                <button type="button" onClick={handleAddOtherGain} className="px-5 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 self-start lg:self-auto">
+                <button type="button" onClick={handleAddOtherGain} className="px-5 py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 self-start lg:self-auto">
                   <span className="material-symbols-outlined text-sm">add</span>
                   Acrescentar
                 </button>
@@ -522,7 +522,7 @@ const Processamento: React.FC = () => {
                 <tr><td className="p-4 text-slate-400 italic">INSSTrabalhador (3%)</td><td className="p-4 text-right">-</td><td className="p-4 text-right">{formatMoney(receiptSnapshot.valorINSS)}</td></tr>
                 <tr><td className="p-4 text-slate-400 italic">Retencao de I.R.T</td><td className="p-4 text-right">-</td><td className="p-4 text-right">{formatMoney(receiptSnapshot.valorIRT)}</td></tr>
                 {receiptSnapshot.faltas > 0 && <tr className="text-rose-500 font-bold"><td className="p-4">Faltas e Penalizacoes</td><td className="p-4 text-right">-</td><td className="p-4 text-right">{formatMoney(receiptSnapshot.faltas)}</td></tr>}
-                <tr className="bg-slate-900 text-white font-black">
+                <tr className="bg-primary text-white font-black">
                   <td className="p-4">TOTAIS</td>
                   <td className="p-4 text-right">{formatMoney(receiptSnapshot.totalBruto)}</td>
                   <td className="p-4 text-right">{formatMoney(receiptSnapshot.totalDescontos)}</td>
@@ -642,7 +642,7 @@ const Processamento: React.FC = () => {
           <button onClick={() => setShowHistoricoModal(true)} className="px-6 py-3.5 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-[2px] shadow-sm hover:bg-slate-50 transition-all">
             Historico
           </button>
-          <button onClick={handleBulkProcess} disabled={isProcessingBulk} className="px-8 py-3.5 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[2px] shadow-xl shadow-slate-900/10 hover:bg-primary transition-all">
+          <button onClick={handleBulkProcess} disabled={isProcessingBulk} className="px-8 py-3.5 bg-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-[2px] shadow-xl shadow-primary/20 hover:bg-primary/80 transition-all">
             {isProcessingBulk ? 'A Processar...' : 'Liquidacao Mensal (Lote)'}
           </button>
         </div>

@@ -353,7 +353,7 @@ const Colaboradores: React.FC = () => {
                   <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">Arquivo Digital</p>
                   <h4 className="text-2xl font-black uppercase text-slate-900 dark:text-white tracking-tight mt-2">Documentos do Funcionario</h4>
                 </div>
-                <button type="button" onClick={() => setShowDocForm(!showDocForm)} className="bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 self-start lg:self-auto">
+                <button type="button" onClick={() => setShowDocForm(!showDocForm)} className="bg-primary text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 self-start lg:self-auto">
                   <span className="material-symbols-outlined text-sm">{showDocForm ? 'close' : 'add'}</span>
                   {showDocForm ? 'Fechar' : 'Novo Documento'}
                 </button>
@@ -680,7 +680,7 @@ const Colaboradores: React.FC = () => {
             <button
               key={option.id}
               onClick={() => setFilter(option.id as FilterStatus)}
-              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === option.id ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === option.id ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
             >
               {option.label}
             </button>
@@ -703,7 +703,7 @@ const Colaboradores: React.FC = () => {
               <tr key={colaborador.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-4">
-                    <div className="size-11 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xs shadow-lg">
+                    <div className="size-11 rounded-full bg-primary text-white flex items-center justify-center font-black text-xs shadow-lg shadow-primary/20">
                       {colaborador.nome.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
@@ -810,7 +810,7 @@ const Colaboradores: React.FC = () => {
                       Cancelar
                     </button>
                     {!isLastTab ? (
-                      <button type="button" onClick={handleNext} className="px-12 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 active:scale-95 transition-all">
+                      <button type="button" onClick={handleNext} className="px-12 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 active:scale-95 transition-all">
                         Seguinte
                       </button>
                     ) : (

@@ -65,7 +65,7 @@ const Landing: React.FC = () => {
               <button onClick={() => scrollToSection('funcionalidades')} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-primary transition-colors">Funcionalidades</button>
               <button onClick={() => scrollToSection('porque-usar')} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-primary transition-colors">Vantagens</button>
             </nav>
-            <button onClick={() => navigate('/login')} className="px-8 py-3 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary transition-all active:scale-95 shadow-xl shadow-slate-900/10">Entrar</button>
+            <button onClick={() => navigate('/login')} className="px-8 py-3 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary/80 transition-all active:scale-95 shadow-xl shadow-primary/10">Entrar</button>
           </div>
         </div>
       </header>
@@ -148,7 +148,7 @@ const Landing: React.FC = () => {
                   </div>
                   <div className="flex-1 space-y-6">
                     <div className="flex items-center gap-4">
-                      <span className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-xs shadow-lg">{index + 1}</span>
+                      <span className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center font-black text-xs shadow-lg">{index + 1}</span>
                       <h4 className="text-2xl font-black text-slate-900 uppercase tracking-tighter leading-none">{func.titulo}</h4>
                     </div>
                     <p className="text-lg text-slate-500 leading-relaxed font-medium">{func.descricao}</p>
@@ -188,7 +188,7 @@ const Landing: React.FC = () => {
       <footer className="py-12 px-8 bg-white border-t border-slate-200">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
            <div className="flex items-center gap-3 opacity-50">
-              <div className="bg-slate-900 text-white size-8 rounded-lg flex items-center justify-center"><span className="material-symbols-outlined text-sm">payments</span></div>
+              <div className="bg-primary text-white size-8 rounded-lg flex items-center justify-center"><span className="material-symbols-outlined text-sm">payments</span></div>
               <span className="text-sm font-black text-slate-900 uppercase">SALYA</span>
            </div>
        
