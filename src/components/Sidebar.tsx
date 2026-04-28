@@ -8,9 +8,11 @@ interface SidebarProps {
   currentPage: string;
   setCurrentPage: (page: string) => void;
   onCompanyCreated?: () => void;
+  sidebarOpen?: boolean;
+  setSidebarOpen?: (v: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompanyCreated }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompanyCreated, sidebarOpen, setSidebarOpen }) => {
   const navigate = useNavigate();
   const { user, setUser, setIsAuthenticated, empresa, setEmpresa, setEmpresaId, setEmpresas, empresas, setIsConfigured, setColaboradores, refreshData, setMessage } = useContext(AppContext);
 
@@ -38,6 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
     navigate(`/${page}`);
+    if (setSidebarOpen) setSidebarOpen(false);
   };
 
   const handleLogout = () => {
@@ -118,7 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
   // Se não tiver empresa configurada, mostrar tela de configuração inicial
   if (!empresa) {
     return (
-      <aside className="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col fixed h-full">
+      <aside className={`w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col fixed h-full z-50 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="p-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800">
           <div className="bg-primary text-white p-1.5 rounded-lg">
             <span className="material-symbols-outlined">payments</span>
@@ -294,7 +297,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
 
   // Sidebar normal quando tem empresa configurada
   return (
-    <aside className="w-60 border-r border-corporate-200 bg-white flex flex-col fixed h-full">
+    <aside className={`w-64 border-r border-corporate-200 bg-white flex flex-col fixed h-full z-50 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
       <div className="p-4 flex items-center gap-2 border-b border-corporate-100">
         <div className="bg-primary text-white p-1 rounded">
           <span className="material-symbols-outlined">payments</span>

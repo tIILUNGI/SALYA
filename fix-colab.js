@@ -1,0 +1,12 @@
+const fs = require('fs');
+const f = 'src/pages/Colaboradores.tsx';
+let c = fs.readFileSync(f, 'utf8');
+c = c.replace('className="p-8 font-app">', 'className="p-6 md:p-8 font-app">');
+c = c.replace('className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 uppercase tracking-widest">', 'className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">');
+c = c.replace('className="text-3xl font-black text-slate-800 dark:text-white">Recursos Humanos</h1>', 'className="text-2xl font-semibold text-slate-800 dark:text-white">Recursos Humanos</h1>');
+c = c.replace('className="text-slate-500 text-xs font-bold opacity-60 ml-4">Gestao de Colaboradores e Fichas Individuais</p>', 'className="text-slate-500 text-xs font-medium opacity-60 ml-4">Gestao de Colaboradores e Fichas Individuais</p>');
+c = c.replace('className="px-8 h-12 bg-primary text-white text-[10px] font-black rounded-xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center gap-3">', 'className="px-6 h-10 bg-primary text-white text-xs font-medium rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2">');
+c = c.replace('<span className="material-symbols-outlined text-[18px]">person_add</span>', '<span className="material-symbols-outlined text-base">person_add</span>');
+c = c.replace('NOVO FUNCIONARIO', 'Novo Funcionario');
+fs.writeFileSync(f, c);
+console.log('Done');
