@@ -1,7 +1,8 @@
-import React, { useState, useContext, useEffect, useCallback } from 'react';
+import React, { useState, useContext, useEffect, useCallback, useMemo } from 'react';
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
 import { api } from '../services/api';
+import { taxasIRT } from '../data/mockData';
 import html2pdf from 'html2pdf.js';
 import Swal from 'sweetalert2';
 
@@ -54,6 +55,17 @@ const formatMoney = (value?: number | null) => `${(value ?? 0).toLocaleString('p
 const formatMoneyInput = (value?: number | null) => (value ?? 0).toLocaleString('pt-AO');
 const createOtherGain = (): OutroGanhoInput => ({ id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, descricao: '', valor: 0 });
 
+const calcularINSS = (bruto: number): number => Math.round(bruto * 0.03);
+
+const calcularIRT = (bruto: number): { valor: number; faixa: string } => {
+  const faixa = taxasIRT.find(f => bruto >= f.minimo && bruto < f.maximo);
+  if (!faixa) {
+    const ultima = taxasIRT[taxasIRT.length - 1];
+    return { valor: Math.max(0, Math.round(bruto * ultima.taxa / 100 - ultima.parcelaAbt)), faixa: ultima.faixa };
+  }
+  return { valor: Math.max(0, Math.round(bruto * faixa.taxa / 100 - faixa.parcelaAbt)), faixa: faixa.faixa };
+};
+
 const Processamento: React.FC = () => {
   const { empresa, colaboradores, empresaId, setMessage } = useContext(AppContext);
   const ativos = colaboradores.filter((colaborador) => colaborador.status === 'Ativo' && (!empresaId || colaborador.empresaId === empresaId || (colaborador as any).empresa?.id === empresaId));
@@ -82,6 +94,12 @@ const Processamento: React.FC = () => {
   const [formOutrosGanhos, setFormOutrosGanhos] = useState<OutroGanhoInput[]>([]);
 
   const totalOutrosGanhos = formOutrosGanhos.reduce((total, ganho) => total + (ganho.valor || 0), 0);
+
+  const salarioProporcional = useMemo(() => Math.round(formSalario / 22 * formDiasTrabalhados), [formSalario, formDiasTrabalhados]);
+  const totalBruto = useMemo(() => salarioProporcional + formGanhoAlimentacao + formGanhoTransporte + formGanhoFerias + formGanhoNatal + formHorasExtra + formBonus + totalOutrosGanhos, [salarioProporcional, formGanhoAlimentacao, formGanhoTransporte, formGanhoFerias, formGanhoNatal, formHorasExtra, formBonus, totalOutrosGanhos]);
+  const inssEstimado = useMemo(() => calcularINSS(totalBruto), [totalBruto]);
+  const irtEstimado = useMemo(() => calcularIRT(totalBruto), [totalBruto]);
+  const salarioLiquidoEstimado = useMemo(() => totalBruto - inssEstimado - irtEstimado.valor - formFaltas, [totalBruto, inssEstimado, irtEstimado, formFaltas]);
 
   const loadHistorico = useCallback(async () => {
     if (!empresaId) return;
@@ -436,49 +454,70 @@ const Processamento: React.FC = () => {
               <input type="text" value={formatMoneyInput(formFaltas)} onChange={(e) => setFormFaltas(parseMoneyInput(e.target.value))} className="w-full bg-white border-2 border-rose-100 rounded-2xl p-5 font-medium text-rose-600 text-xl outline-none focus:border-rose-300" placeholder="0" />
             </div>
 
-            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 space-y-4">
-              <h4 className="text-sm font-medium text-slate-600">Resumo em Tempo Real</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Salário Proporcional:</span>
-                  <span className="font-medium">{formatMoney(Math.round(formSalario / 22 * formDiasTrabalhados))}</span>
+            {/* Real-time Payroll Preview */}
+            <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+              <h4 className="text-sm font-semibold text-slate-700">Pré-visualização do Cálculo</h4>
+
+              {/* Proventos condicionais */}
+              {[
+                { label: 'Salário Proporcional', valor: salarioProporcional },
+                { label: 'Alimentação', valor: formGanhoAlimentacao },
+                { label: 'Transporte', valor: formGanhoTransporte },
+                { label: 'Férias', valor: formGanhoFerias },
+                { label: 'Natal', valor: formGanhoNatal },
+                { label: 'Horas Extra', valor: formHorasExtra },
+                { label: 'Bónus', valor: formBonus },
+                { label: 'Outros Ganhos', valor: totalOutrosGanhos },
+              ].filter(p => p.valor > 0).length > 0 && (
+                <div className="space-y-2">
+                  {[
+                    { label: 'Salário Proporcional', valor: salarioProporcional },
+                    { label: 'Alimentação', valor: formGanhoAlimentacao },
+                    { label: 'Transporte', valor: formGanhoTransporte },
+                    { label: 'Férias', valor: formGanhoFerias },
+                    { label: 'Natal', valor: formGanhoNatal },
+                    { label: 'Horas Extra', valor: formHorasExtra },
+                    { label: 'Bónus', valor: formBonus },
+                    { label: 'Outros Ganhos', valor: totalOutrosGanhos },
+                  ].filter(p => p.valor > 0).map(p => (
+                    <div key={p.label} className="flex justify-between text-sm">
+                      <span className="text-slate-500">{p.label}</span>
+                      <span className="font-medium text-slate-700">{formatMoney(p.valor)}</span>
+                    </div>
+                  ))}
+                  <div className="border-t border-slate-100 pt-2 flex justify-between text-sm">
+                    <span className="font-medium text-slate-600">Total Bruto</span>
+                    <span className="font-semibold text-slate-800">{formatMoney(totalBruto)}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Alimentação:</span>
-                  <span className="font-medium">{formatMoney(formGanhoAlimentacao)}</span>
+              )}
+
+              {/* Descontos obrigatórios */}
+              <div className="pt-2 border-t border-slate-100 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">INSS (3%)</span>
+                  <span className="font-medium text-slate-700">{formatMoney(inssEstimado)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Transporte:</span>
-                  <span className="font-medium">{formatMoney(formGanhoTransporte)}</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">IRT — {irtEstimado.faixa}</span>
+                  <span className="font-medium text-slate-700">{formatMoney(irtEstimado.valor)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Férias:</span>
-                  <span className="font-medium">{formatMoney(formGanhoFerias)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Natal:</span>
-                  <span className="font-medium">{formatMoney(formGanhoNatal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Horas Extra:</span>
-                  <span className="font-medium">{formatMoney(formHorasExtra)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Bónus:</span>
-                  <span className="font-medium">{formatMoney(formBonus)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Outros:</span>
-                  <span className="font-medium">{formatMoney(totalOutrosGanhos)}</span>
+                {formFaltas > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-rose-500">Faltas / Penalizações</span>
+                    <span className="font-medium text-rose-600">{formatMoney(formFaltas)}</span>
+                  </div>
+                )}
+                <div className="border-t border-slate-100 pt-2 flex justify-between text-sm">
+                  <span className="font-medium text-slate-600">Total Descontos</span>
+                  <span className="font-semibold text-slate-800">{formatMoney(inssEstimado + irtEstimado.valor + formFaltas)}</span>
                 </div>
               </div>
-              <div className="border-t border-primary/20 pt-4 flex justify-between text-base">
-                <span className="font-medium text-slate-700">Total Bruto Estimado:</span>
-                <span className="font-semibold text-primary">{formatMoney(
-                  Math.round(formSalario / 22 * formDiasTrabalhados) +
-                  formGanhoAlimentacao + formGanhoTransporte + formGanhoFerias +
-                  formGanhoNatal + formHorasExtra + formBonus + totalOutrosGanhos
-                )}</span>
+
+              {/* Salário Líquido como KPI principal */}
+              <div className="mt-2 bg-corporate-50 border border-corporate-200 rounded-lg p-4">
+                <p className="text-xs font-medium text-corporate-500 uppercase tracking-wide mb-1">Salário Líquido Estimado</p>
+                <p className="text-2xl font-semibold text-corporate-900">{formatMoney(salarioLiquidoEstimado)}</p>
               </div>
             </div>
 
