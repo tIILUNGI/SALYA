@@ -29,6 +29,7 @@ interface ReceiptSnapshot {
   colaborador: Colaborador;
   mes: string;
   ano: string;
+  dataProcessamento: string;
   salarioBase: number;
   diasTrabalhados: number;
   ganhoAlimentacao: number;
@@ -246,6 +247,7 @@ const Processamento: React.FC = () => {
         colaborador: selectedColab,
         mes: selectedMonth,
         ano: selectedYear,
+        dataProcessamento: new Date().toLocaleDateString('pt-AO'),
         salarioBase: formSalario,
         diasTrabalhados: formDiasTrabalhados,
         ganhoAlimentacao: formGanhoAlimentacao,
