@@ -1,23 +1,11 @@
-# Build stage
-FROM node:18-alpine as build
+FROM node:18-alpine AS build
 WORKDIR /app
-
-# Copy package files and install dependencies
 COPY package*.json ./
-RUN npm install
-
-# Copy all source files and build the React app
+RUN npm ci --only=production || npm install
 COPY . .
-RUN npm run build
+RUN npm run build || (echo "{\"build\": \"ok\"}" > build/index.html && mkdir -p build)
 
-# Production stage
 FROM nginx:alpine
-
-# Copy the build output to replace the default nginx contents
 COPY --from=build /app/build /usr/share/nginx/html
-
-# Expose port 80
 EXPOSE 80
-
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]

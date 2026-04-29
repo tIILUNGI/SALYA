@@ -70,7 +70,7 @@ salya_payroll_react/
 │   │   ├── Header.tsx
 │   │   └── Sidebar.tsx
 │   ├── data/
-│   │   └── mockData.ts
+│   │   └── ts
 │   ├── pages/
 │   │   ├── Login.tsx
 │   │   ├── Dashboard.tsx

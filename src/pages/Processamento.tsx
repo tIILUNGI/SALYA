@@ -52,19 +52,40 @@ const MONTHS = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julh
 const monthToNum = (month: string) => MONTHS.indexOf(month) + 1;
 const numToMonth = (month: number) => MONTHS[month - 1] || `Mes ${month}`;
 const parseMoneyInput = (value: string) => Number(value.replace(/[^\d]/g, '')) || 0;
-const formatMoney = (value?: number | null) => `${(value ?? 0).toLocaleString('pt-AO')} Kz`;
+const formatMoney = (value?: number | null) => {
+  const amount = value ?? 0;
+  const hasDecimals = !Number.isInteger(amount);
+  return `${amount.toLocaleString('pt-AO', { minimumFractionDigits: hasDecimals ? 2 : 0, maximumFractionDigits: 2 })} Kz`;
+};
 const formatMoneyInput = (value?: number | null) => (value ?? 0).toLocaleString('pt-AO');
 const createOtherGain = (): OutroGanhoInput => ({ id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, descricao: '', valor: 0 });
 
-const calcularINSS = (bruto: number): number => Math.round(bruto * 0.03);
+const roundMoney = (value: number): number => Number(value.toFixed(2));
 
-const calcularIRT = (bruto: number): { valor: number; faixa: string } => {
-  const faixa = taxasIRT.find(f => bruto >= f.minimo && bruto < f.maximo);
-  if (!faixa) {
-    const ultima = taxasIRT[taxasIRT.length - 1];
-    return { valor: Math.max(0, Math.round(bruto * ultima.taxa / 100 - ultima.parcelaAbt)), faixa: ultima.faixa };
-  }
-  return { valor: Math.max(0, Math.round(bruto * faixa.taxa / 100 - faixa.parcelaAbt)), faixa: faixa.faixa };
+// INSS: 3% sobre o salário base proporcional (não sobre subsídios) - Lei n.º 14/25
+const calcularINSS = (salarioBase: number): number => roundMoney(salarioBase * 0.03);
+
+/**
+ * IRT — Lei n.º 14/25 (Angola)
+ * Fórmula correta: IRT = parcelaFixa + (MC - excesso) × taxa
+ *
+ * Algoritmo: percorre a tabela ao contrário e encontra o último escalão
+ * onde MC > excesso. Isso evita qualquer gap entre escalões.
+ *
+ * Exemplos validados:
+ *   MC =  67.900  → 1º Escalão → IRT = 0 Kz
+ *   MC = 174.600  → 2º Escalão → IRT = 12.500 + (174.600 - 150.000) × 16% = 16.436 Kz ✅
+ *   MC = 194.600  → 2º Escalão → IRT = 12.500 + (194.600 - 150.000) × 16% = 19.636 Kz ✅
+ *   MC = 254.600  → 3º Escalão → IRT = 31.250 + (254.600 - 200.000) × 18% = 41.078 Kz ✅
+ *   MC = 970.000  → 5º Escalão → IRT = 87.250 + (970.000 - 500.000) × 20% = 181.250 Kz ✅
+ */
+const calcularIRT = (mc: number): { valor: number; faixa: string } => {
+  if (mc <= 0) return { valor: 0, faixa: '1º Escalão' };
+  // Encontra o escalão correcto: o mais alto cujo excesso seja < MC
+  const f = [...taxasIRT].reverse().find(b => mc > b.excesso) ?? taxasIRT[0];
+  // Fórmula correta: parcelaFixa + (MC - excesso) × taxa
+  const irt = Math.max(0, roundMoney(f.parcelaFixa + (mc - f.excesso) * f.taxa / 100));
+  return { valor: irt, faixa: f.faixa };
 };
 
 const Processamento: React.FC = () => {
@@ -96,11 +117,69 @@ const Processamento: React.FC = () => {
 
   const totalOutrosGanhos = formOutrosGanhos.reduce((total, ganho) => total + (ganho.valor || 0), 0);
 
-  const salarioProporcional = useMemo(() => Math.round(formSalario / 22 * formDiasTrabalhados), [formSalario, formDiasTrabalhados]);
-  const totalBruto = useMemo(() => salarioProporcional + formGanhoAlimentacao + formGanhoTransporte + formGanhoFerias + formGanhoNatal + formHorasExtra + formBonus + totalOutrosGanhos, [salarioProporcional, formGanhoAlimentacao, formGanhoTransporte, formGanhoFerias, formGanhoNatal, formHorasExtra, formBonus, totalOutrosGanhos]);
-  const inssEstimado = useMemo(() => calcularINSS(totalBruto), [totalBruto]);
-  const irtEstimado = useMemo(() => calcularIRT(totalBruto), [totalBruto]);
-  const salarioLiquidoEstimado = useMemo(() => totalBruto - inssEstimado - irtEstimado.valor - formFaltas, [totalBruto, inssEstimado, irtEstimado, formFaltas]);
+  // ── Salário proporcional pelos dias trabalhados ──────────────────────────────
+  const salarioProporcional = useMemo(
+    () => Math.round(formSalario / 22 * formDiasTrabalhados),
+    [formSalario, formDiasTrabalhados]
+  );
+
+  // ── Alimentação e Transporte (valores mensais inseridos pelo utilizador) ─────
+  // O utilizador insere o valor mensal. Estes NÃO são proporcionalizados porque
+  // normalmente correspondem a vales/subsídios fixos do mês.
+  const alimentacao = formGanhoAlimentacao;
+  const transporte  = formGanhoTransporte;
+
+  // ── Tributável: excesso acima do limite de isenção (30.000 Kz cada) ──────────
+  const alimentacaoTributavel = useMemo(() => Math.max(0, alimentacao - 30000), [alimentacao]);
+  const transporteTributavel  = useMemo(() => Math.max(0, transporte  - 30000), [transporte]);
+
+  // ── Total Bruto = todos os rendimentos (base + subsídios + extras) ───────────
+  const totalBruto = useMemo(
+    () => roundMoney(salarioProporcional + alimentacao + transporte + formGanhoFerias + formGanhoNatal + formHorasExtra + formBonus + totalOutrosGanhos),
+    [salarioProporcional, alimentacao, transporte, formGanhoFerias, formGanhoNatal, formHorasExtra, formBonus, totalOutrosGanhos]
+  );
+
+  // ── INSS: 3% APENAS sobre o salário base proporcional ───────────────────────
+  const inssEstimado = useMemo(
+    () => calcularINSS(Math.max(0, salarioProporcional - formFaltas)),
+    [salarioProporcional, formFaltas]
+  );
+
+  // ── Matéria Colectável para IRT mensal ──────────────────────────────────────
+  // MC = Salário + Alimentação tributável + Transporte tributável + Extras - INSS
+  // Férias e Natal são excluídos da MC (têm retenção autónoma de 15%)
+  const materiaColectavel = useMemo(
+    () => roundMoney(Math.max(0, salarioProporcional + alimentacaoTributavel + transporteTributavel + formHorasExtra + formBonus + totalOutrosGanhos - inssEstimado)),
+    [salarioProporcional, alimentacaoTributavel, transporteTributavel, formHorasExtra, formBonus, totalOutrosGanhos, inssEstimado]
+  );
+
+  // ── IRT Progressivo (sobre a MC) ─────────────────────────────────────────────
+  const irtEstimado = useMemo(() => calcularIRT(materiaColectavel), [materiaColectavel]);
+
+  // ── Retenções autónomas de 15% para Férias e Natal ──────────────────────────
+  const retencaoFerias = useMemo(() => roundMoney(formGanhoFerias * 0.15), [formGanhoFerias]);
+  const retencaoNatal  = useMemo(() => roundMoney(formGanhoNatal  * 0.15), [formGanhoNatal]);
+
+  // ── Total Descontos e Salário Líquido ────────────────────────────────────────
+  const totalDescontos = useMemo(
+    () => roundMoney(inssEstimado + irtEstimado.valor + retencaoFerias + retencaoNatal + formFaltas),
+    [inssEstimado, irtEstimado, retencaoFerias, retencaoNatal, formFaltas]
+  );
+  const salarioLiquidoEstimado = useMemo(() => roundMoney(totalBruto - totalDescontos), [totalBruto, totalDescontos]);
+
+  // Filtered history for the current period
+  const historicoDoPeriodo = useMemo(() => {
+    return historico.filter((item) => item.mes === monthToNum(selectedMonth) && String(item.ano) === selectedYear);
+  }, [historico, selectedMonth, selectedYear]);
+
+  // Totals for the current month summary
+  const totaisPeriodo = useMemo(() => {
+    return historicoDoPeriodo.reduce((acc, curr) => ({
+      bruto: acc.bruto + curr.totalBruto,
+      descontos: acc.descontos + curr.descontos,
+      liquido: acc.liquido + curr.salarioLiquido,
+    }), { bruto: 0, descontos: 0, liquido: 0 });
+  }, [historicoDoPeriodo]);
 
   const loadHistorico = useCallback(async () => {
     if (!empresaId) return;
@@ -195,8 +274,8 @@ const Processamento: React.FC = () => {
           diasTransporte: 1,
           valorDiaAlimentacao: colab.subsidioAlimentacao || 0,
           valorDiaTransporte: colab.subsidioTransporte || 0,
-          ganhoFeriasTotal: colab.subsidioFerias || 0,
-          ganhoNatalTotal: colab.subsidioNatal || 0,
+          subsidioFeriasValor: colab.subsidioFerias || 0,
+          subsidioNatalValor: colab.subsidioNatal || 0,
           outrosSubsidiosTotal: 0,
           horasExtraTotal: 0,
           bonusTotal: 0,
@@ -232,8 +311,8 @@ const Processamento: React.FC = () => {
         diasTransporte: 1,
         valorDiaAlimentacao: formGanhoAlimentacao,
         valorDiaTransporte: formGanhoTransporte,
-        ganhoFeriasTotal: formGanhoFerias,
-        ganhoNatalTotal: formGanhoNatal,
+        subsidioFeriasValor: formGanhoFerias,
+        subsidioNatalValor: formGanhoNatal,
         outrosSubsidiosTotal: 0,
         horasExtraTotal: formHorasExtra,
         bonusTotal: formBonus,
@@ -300,22 +379,32 @@ const Processamento: React.FC = () => {
     setFormOutrosGanhos((previous) => previous.filter((ganho) => ganho.id !== id));
   };
 
-  const historicoDoPeriodo = historico.filter((item) => item.mes === monthToNum(selectedMonth) && String(item.ano) === selectedYear);
 
   const renderMainContent = () => (
     <div className="space-y-6">
-      <div className="glass-card p-6 border border-slate-100">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div>
-            <h3 className="text-lg font-medium text-slate-800">Processamento Salarial</h3>
-            <p className="text-sm text-slate-500 mt-1">{selectedMonth} {selectedYear} · {ativos.length} colaborador(es) ativo(s)</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="glass-card p-6 border border-slate-100">
+          <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Bruto</p>
+          <p className="text-2xl font-bold text-slate-800 mt-2">{formatMoney(totaisPeriodo.bruto)}</p>
+          <div className="flex items-center gap-1 mt-1 text-emerald-500">
+            <span className="material-symbols-outlined text-sm">trending_up</span>
+            <span className="text-[10px] font-medium">{historicoDoPeriodo.length} recibos</span>
           </div>
-          <div className="flex gap-4">
-            <div className="rounded-lg bg-slate-50 px-4 py-2">
-              <p className="text-xs text-slate-400">Ativos</p>
-              <p className="text-lg font-medium text-slate-700">{ativos.length}</p>
-            </div>
-          </div>
+        </div>
+        <div className="glass-card p-6 border border-slate-100">
+          <p className="text-xs text-rose-500 uppercase tracking-wider font-semibold">Total Descontos</p>
+          <p className="text-2xl font-bold text-slate-800 mt-2">{formatMoney(totaisPeriodo.descontos)}</p>
+          <p className="text-[10px] text-slate-400 mt-1">Inclui INSS e IRT</p>
+        </div>
+        <div className="glass-card p-6 border border-primary/10 bg-primary/5">
+          <p className="text-xs text-primary uppercase tracking-wider font-semibold">Total Líquido</p>
+          <p className="text-2xl font-bold text-primary mt-2">{formatMoney(totaisPeriodo.liquido)}</p>
+          <p className="text-[10px] text-primary/60 mt-1">Valor a transferir</p>
+        </div>
+        <div className="glass-card p-6 border border-slate-100 bg-slate-50">
+          <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Período</p>
+          <p className="text-xl font-bold text-slate-700 mt-2">{selectedMonth} {selectedYear}</p>
+          <p className="text-[10px] text-slate-400 mt-1">{ativos.length} colaboradores ativos</p>
         </div>
       </div>
 
@@ -392,12 +481,41 @@ const Processamento: React.FC = () => {
               <h4 className="text-sm font-medium text-slate-600">Ganhos</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-xs text-slate-500">Alimentação</label>
-                  <input type="text" value={formatMoneyInput(formGanhoAlimentacao)} onChange={(e) => setFormGanhoAlimentacao(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-lg p-3 font-medium border border-slate-100" />
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs text-slate-500">Alimentação</label>
+                    {formGanhoAlimentacao > 30000 && (
+                      <button type="button" onClick={() => setFormGanhoAlimentacao(30000)}
+                        className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full hover:bg-amber-100 transition-all flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[11px]">warning</span>
+                        Excede limite — ajustar para 30.000
+                      </button>
+                    )}
+                  </div>
+                  <input type="text" value={formatMoneyInput(formGanhoAlimentacao)}
+                    onChange={(e) => setFormGanhoAlimentacao(parseMoneyInput(e.target.value))}
+                    className={`w-full rounded-lg p-3 font-medium border ${formGanhoAlimentacao > 30000 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-slate-100'}`} />
+                  {formGanhoAlimentacao > 30000 && (
+                    <p className="text-[10px] text-amber-600">⚠️ Isento até 30.000 Kz — excesso de {formatMoney(formGanhoAlimentacao - 30000)} é tributável</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-xs text-slate-500">Transporte</label>
-                  <input type="text" value={formatMoneyInput(formGanhoTransporte)} onChange={(e) => setFormGanhoTransporte(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-lg p-3 font-medium border border-slate-100" />
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs text-slate-500">Transporte</label>
+                    {formGanhoTransporte > 30000 && (
+                      <button type="button" onClick={() => setFormGanhoTransporte(30000)}
+                        className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full hover:bg-amber-100 transition-all flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[11px]">warning</span>
+                        Excede limite — ajustar para 30.000
+                      </button>
+                    )}
+                  </div>
+                  <input type="text" value={formatMoneyInput(formGanhoTransporte)}
+                    onChange={(e) => setFormGanhoTransporte(parseMoneyInput(e.target.value))}
+                    className={`w-full rounded-lg p-3 font-medium border ${formGanhoTransporte > 30000 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-slate-100'}`} />
+                  {formGanhoTransporte > 30000 && (
+                    <p className="text-[10px] text-amber-600">⚠️ Isento até 30.000 Kz — excesso de {formatMoney(formGanhoTransporte - 30000)} é tributável</p>
+                  )}
+
                 </div>
                 <div className="space-y-2">
                   <label className="block text-xs text-slate-500">Férias</label>
@@ -456,70 +574,160 @@ const Processamento: React.FC = () => {
               <input type="text" value={formatMoneyInput(formFaltas)} onChange={(e) => setFormFaltas(parseMoneyInput(e.target.value))} className="w-full bg-white border-2 border-rose-100 rounded-2xl p-5 font-medium text-rose-600 text-xl outline-none focus:border-rose-300" placeholder="0" />
             </div>
 
-            {/* Real-time Payroll Preview */}
-            <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
-              <h4 className="text-sm font-semibold text-slate-700">Pré-visualização do Cálculo</h4>
+            {/* ── Resumo em Tempo Real ── */}
+            <div className="rounded-[24px] border-2 border-primary/10 bg-slate-50/50 p-6 space-y-5">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-lg">analytics</span>
+                  Resumo em Tempo Real
+                </h4>
+                <span className="px-2 py-1 bg-primary/10 text-primary rounded-md text-[10px] font-bold uppercase">{formDiasTrabalhados}/22 Dias</span>
+              </div>
 
-              {/* Proventos condicionais */}
-              {[
-                { label: 'Salário Proporcional', valor: salarioProporcional },
-                { label: 'Alimentação', valor: formGanhoAlimentacao },
-                { label: 'Transporte', valor: formGanhoTransporte },
-                { label: 'Férias', valor: formGanhoFerias },
-                { label: 'Natal', valor: formGanhoNatal },
-                { label: 'Horas Extra', valor: formHorasExtra },
-                { label: 'Bónus', valor: formBonus },
-                { label: 'Outros Ganhos', valor: totalOutrosGanhos },
-              ].filter(p => p.valor > 0).length > 0 && (
+              {/* Rendimentos + Descontos em duas colunas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                {/* Coluna Rendimentos */}
                 <div className="space-y-2">
-                  {[
-                    { label: 'Salário Proporcional', valor: salarioProporcional },
-                    { label: 'Alimentação', valor: formGanhoAlimentacao },
-                    { label: 'Transporte', valor: formGanhoTransporte },
-                    { label: 'Férias', valor: formGanhoFerias },
-                    { label: 'Natal', valor: formGanhoNatal },
-                    { label: 'Horas Extra', valor: formHorasExtra },
-                    { label: 'Bónus', valor: formBonus },
-                    { label: 'Outros Ganhos', valor: totalOutrosGanhos },
-                  ].filter(p => p.valor > 0).map(p => (
-                    <div key={p.label} className="flex justify-between text-sm">
-                      <span className="text-slate-500">{p.label}</span>
-                      <span className="font-medium text-slate-700">{formatMoney(p.valor)}</span>
-                    </div>
-                  ))}
-                  <div className="border-t border-slate-100 pt-2 flex justify-between text-sm">
-                    <span className="font-medium text-slate-600">Total Bruto</span>
-                    <span className="font-semibold text-slate-800">{formatMoney(totalBruto)}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Descontos obrigatórios */}
-              <div className="pt-2 border-t border-slate-100 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">INSS (3%)</span>
-                  <span className="font-medium text-slate-700">{formatMoney(inssEstimado)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">IRT — {irtEstimado.faixa}</span>
-                  <span className="font-medium text-slate-700">{formatMoney(irtEstimado.valor)}</span>
-                </div>
-                {formFaltas > 0 && (
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Rendimentos</p>
                   <div className="flex justify-between text-sm">
-                    <span className="text-rose-500">Faltas / Penalizações</span>
-                    <span className="font-medium text-rose-600">{formatMoney(formFaltas)}</span>
+                    <span className="text-slate-500">Salário ({formDiasTrabalhados} dias)</span>
+                    <span className="font-medium text-slate-700">{formatMoney(salarioProporcional)}</span>
                   </div>
-                )}
-                <div className="border-t border-slate-100 pt-2 flex justify-between text-sm">
-                  <span className="font-medium text-slate-600">Total Descontos</span>
-                  <span className="font-semibold text-slate-800">{formatMoney(inssEstimado + irtEstimado.valor + formFaltas)}</span>
+                  {alimentacao > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <div>
+                        <span className="text-slate-500">Alimentação</span>
+                        {alimentacaoTributavel > 0
+                          ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(alimentacaoTributavel)} trib.</span>
+                          : <span className="ml-1 text-[9px] text-emerald-500">isento</span>}
+                      </div>
+                      <span className="font-medium text-slate-700">{formatMoney(alimentacao)}</span>
+                    </div>
+                  )}
+                  {transporte > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <div>
+                        <span className="text-slate-500">Transporte</span>
+                        {transporteTributavel > 0
+                          ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(transporteTributavel)} trib.</span>
+                          : <span className="ml-1 text-[9px] text-emerald-500">isento</span>}
+                      </div>
+                      <span className="font-medium text-slate-700">{formatMoney(transporte)}</span>
+                    </div>
+                  )}
+                  {formGanhoFerias > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <div>
+                        <span className="text-slate-500">Férias</span>
+                        <span className="ml-1 text-[9px] text-amber-500">ret. 15%</span>
+                      </div>
+                      <span className="font-medium text-slate-700">{formatMoney(formGanhoFerias)}</span>
+                    </div>
+                  )}
+                  {formGanhoNatal > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <div>
+                        <span className="text-slate-500">Natal</span>
+                        <span className="ml-1 text-[9px] text-amber-500">ret. 15%</span>
+                      </div>
+                      <span className="font-medium text-slate-700">{formatMoney(formGanhoNatal)}</span>
+                    </div>
+                  )}
+                  {(formHorasExtra + formBonus + totalOutrosGanhos) > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Outros Abonos</span>
+                      <span className="font-medium text-slate-700">{formatMoney(formHorasExtra + formBonus + totalOutrosGanhos)}</span>
+                    </div>
+                  )}
+                  <div className="border-t border-slate-200 pt-2 flex justify-between text-sm font-bold">
+                    <span className="text-slate-800">Total Bruto</span>
+                    <span className="text-slate-900">{formatMoney(totalBruto)}</span>
+                  </div>
+                </div>
+
+                {/* Coluna Descontos */}
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Descontos</p>
+
+                  {/* INSS */}
+                  <div className="flex justify-between text-sm">
+                    <div>
+                      <span className="text-slate-500">INSS</span>
+                      <span className="ml-1 text-[9px] text-slate-400">3% s/ sal. base</span>
+                    </div>
+                    <span className="font-medium text-rose-500">-{formatMoney(inssEstimado)}</span>
+                  </div>
+
+                  {/* IRT */}
+                  <div className="flex flex-col gap-1 text-sm">
+                    <div className="flex justify-between">
+                      <div>
+                        <span className="text-slate-500">IRT</span>
+                        <span className="ml-1 text-[9px] text-slate-400">{irtEstimado.faixa}</span>
+                      </div>
+                      <span className="font-medium text-rose-500">-{formatMoney(irtEstimado.valor)}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500">IRT = parcela fixa + (MC - excesso) × taxa</div>
+                  </div>
+
+                  {/* Matéria Colectável (informativo) */}
+                  <div className="flex justify-between text-[10px] text-slate-400">
+                    <span>Matéria Colectável</span>
+                    <span>{formatMoney(materiaColectavel)}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 leading-snug">
+                    MC = Salário + Alimentação tributável + Transporte tributável + extras - INSS
+                  </div>
+
+                  {/* Retenção Férias */}
+                  {retencaoFerias > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <div>
+                        <span className="text-slate-500">Ret. Férias</span>
+                        <span className="ml-1 text-[9px] text-slate-400">15% autónomo</span>
+                      </div>
+                      <span className="font-medium text-rose-500">-{formatMoney(retencaoFerias)}</span>
+                    </div>
+                  )}
+
+                  {/* Retenção Natal */}
+                  {retencaoNatal > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <div>
+                        <span className="text-slate-500">Ret. Natal</span>
+                        <span className="ml-1 text-[9px] text-slate-400">15% autónomo</span>
+                      </div>
+                      <span className="font-medium text-rose-500">-{formatMoney(retencaoNatal)}</span>
+                    </div>
+                  )}
+
+                  {/* Faltas */}
+                  {formFaltas > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Faltas</span>
+                      <span className="font-medium text-rose-500">-{formatMoney(formFaltas)}</span>
+                    </div>
+                  )}
+
+                  <div className="border-t border-slate-200 pt-2 flex justify-between text-sm font-bold">
+                    <span className="text-slate-800">Total Descontos</span>
+                    <span className="text-rose-600">-{formatMoney(totalDescontos)}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Salário Líquido como KPI principal */}
-              <div className="mt-2 bg-corporate-50 border border-corporate-200 rounded-lg p-4">
-                <p className="text-xs font-medium text-corporate-500 uppercase tracking-wide mb-1">Salário Líquido Estimado</p>
-                <p className="text-2xl font-semibold text-corporate-900">{formatMoney(salarioLiquidoEstimado)}</p>
+              {/* Salário Líquido KPI */}
+              <div className="bg-white border-2 border-primary rounded-2xl p-5 shadow-sm overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-8 -mt-8" />
+                <div className="relative z-10 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Salário Líquido Estimado</p>
+                    <p className="text-3xl font-black text-slate-900 tracking-tighter">{formatMoney(salarioLiquidoEstimado)}</p>
+                  </div>
+                  <span className="material-symbols-outlined text-4xl text-primary/20">payments</span>
+                </div>
               </div>
             </div>
 
@@ -598,6 +806,32 @@ const Processamento: React.FC = () => {
                 </tr>
               </tbody>
             </table>
+
+            <div className="mb-10 rounded-3xl border border-slate-100 bg-slate-50 p-6">
+              <h2 className="text-sm font-black uppercase tracking-widest text-slate-700 mb-4">Tabela de Escalões IRT</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[10px] border border-slate-200">
+                  <thead>
+                    <tr className="bg-slate-100 uppercase text-slate-700">
+                      <th className="p-3 text-left">Escalão</th>
+                      <th className="p-3 text-right">MC / Excesso</th>
+                      <th className="p-3 text-right">Parcela Fixa</th>
+                      <th className="p-3 text-right">Taxa</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {taxasIRT.map((item) => (
+                      <tr key={item.faixa} className="border-t border-slate-200">
+                        <td className="p-3 font-bold text-slate-700">{item.faixa}</td>
+                        <td className="p-3 text-right text-slate-600">{item.excesso.toLocaleString('pt-AO')} Kz+</td>
+                        <td className="p-3 text-right text-slate-600">{item.parcelaFixa.toLocaleString('pt-AO')} Kz</td>
+                        <td className="p-3 text-right text-slate-600">{item.taxa}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
             <div className="flex justify-between items-end pt-8 border-t border-dashed">
               <div className="text-[9px] font-bold text-slate-400 uppercase max-w-[300px] leading-relaxed italic">
