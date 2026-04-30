@@ -1,7 +1,7 @@
 import { notify } from '../utils/notifications';
 
 // api.ts
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8081/api';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
 
 const TOKEN_STORAGE_KEYS = ['salya_token', 'token'] as const;
 const AUTH_STORAGE_KEYS = ['salya_token', 'token', 'salya_user', 'salya_empresaId', 'salya_empresa'] as const;

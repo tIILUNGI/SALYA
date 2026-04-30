@@ -15,12 +15,15 @@ interface OutroGanhoInput {
 interface HistoricoProcessamento {
   id: number;
   colaboradorId?: number;
-  colaboradorNome: string;
+  nomeColaborador: string;
   cargo?: string;
   mes: number;
   ano: number;
   totalBruto: number;
   descontos: number;
+  valorINSS?: number;
+  valorIRT?: number;
+  valorFaltas?: number;
   salarioLiquido: number;
   createdAt?: string;
 }
@@ -53,11 +56,14 @@ const monthToNum = (month: string) => MONTHS.indexOf(month) + 1;
 const numToMonth = (month: number) => MONTHS[month - 1] || `Mes ${month}`;
 const parseMoneyInput = (value: string) => Number(value.replace(/[^\d]/g, '')) || 0;
 const formatMoney = (value?: number | null) => {
-  const amount = value ?? 0;
+  const amount = typeof value === 'number' && Number.isFinite(value) ? value : 0;
   const hasDecimals = !Number.isInteger(amount);
   return `${amount.toLocaleString('pt-AO', { minimumFractionDigits: hasDecimals ? 2 : 0, maximumFractionDigits: 2 })} Kz`;
 };
-const formatMoneyInput = (value?: number | null) => (value ?? 0).toLocaleString('pt-AO');
+const formatMoneyInput = (value?: number | null) => {
+  const amount = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  return amount.toLocaleString('pt-AO');
+};
 const createOtherGain = (): OutroGanhoInput => ({ id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, descricao: '', valor: 0 });
 
 const roundMoney = (value: number): number => Number(value.toFixed(2));
@@ -88,13 +94,18 @@ const calcularIRT = (mc: number): { valor: number; faixa: string } => {
   return { valor: irt, faixa: f.faixa };
 };
 
+// ── Data actual ─────────────────────────────────────────────────────────────
+const TODAY = new Date();
+const CURRENT_MONTH_NUM = TODAY.getMonth() + 1; // 1-12
+const CURRENT_YEAR = TODAY.getFullYear();
+
 const Processamento: React.FC = () => {
   const { empresa, colaboradores, empresaId, setMessage } = useContext(AppContext);
   const ativos = colaboradores.filter((colaborador) => colaborador.status === 'Ativo' && (!empresaId || colaborador.empresaId === empresaId || (colaborador as any).empresa?.id === empresaId));
 
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState('Janeiro');
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  const [selectedMonth, setSelectedMonth] = useState(MONTHS[CURRENT_MONTH_NUM - 1]);
+  const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR.toString());
   const [showFormModal, setShowFormModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showHistoricoModal, setShowHistoricoModal] = useState(false);
@@ -103,6 +114,7 @@ const Processamento: React.FC = () => {
   const [historico, setHistorico] = useState<HistoricoProcessamento[]>([]);
   const [historicoLoading, setHistoricoLoading] = useState(false);
   const [historicoError, setHistoricoError] = useState('');
+  const [selectedHistoryPeriod, setSelectedHistoryPeriod] = useState('');
 
   const [formSalario, setFormSalario] = useState(0);
   const [formDiasTrabalhados, setFormDiasTrabalhados] = useState(22);
@@ -114,8 +126,27 @@ const Processamento: React.FC = () => {
   const [formBonus, setFormBonus] = useState(0);
   const [formFaltas, setFormFaltas] = useState(0);
   const [formOutrosGanhos, setFormOutrosGanhos] = useState<OutroGanhoInput[]>([]);
+  // Subsidios opcionais
+  const [incluirFerias, setIncluirFerias] = useState(false);
+  const [incluirNatal, setIncluirNatal] = useState(false);
+
+  // ── Verificar se o período seleccionado é futuro (bloqueado) ────────────────
+  const selectedMonthNum = monthToNum(selectedMonth);
+  const selectedYearNum  = parseInt(selectedYear, 10);
+  const isPeriodoFuturo  = selectedYearNum > CURRENT_YEAR ||
+    (selectedYearNum === CURRENT_YEAR && selectedMonthNum > CURRENT_MONTH_NUM);
+
+  const periodoLocked = isPeriodoFuturo;
+  const periodoLockedMessage = 'Mês futuro bloqueado para processamento.';
+  const isMonthOptionDisabled = (month: string, year: string) => {
+    const monthNum = monthToNum(month);
+    const yearNum = parseInt(year, 10);
+    return yearNum > CURRENT_YEAR || (yearNum === CURRENT_YEAR && monthNum > CURRENT_MONTH_NUM);
+  };
 
   const totalOutrosGanhos = formOutrosGanhos.reduce((total, ganho) => total + (ganho.valor || 0), 0);
+  const ferias = incluirFerias ? formGanhoFerias : 0;
+  const natal = incluirNatal ? formGanhoNatal : 0;
 
   // ── Salário proporcional pelos dias trabalhados ──────────────────────────────
   const salarioProporcional = useMemo(
@@ -135,8 +166,8 @@ const Processamento: React.FC = () => {
 
   // ── Total Bruto = todos os rendimentos (base + subsídios + extras) ───────────
   const totalBruto = useMemo(
-    () => roundMoney(salarioProporcional + alimentacao + transporte + formGanhoFerias + formGanhoNatal + formHorasExtra + formBonus + totalOutrosGanhos),
-    [salarioProporcional, alimentacao, transporte, formGanhoFerias, formGanhoNatal, formHorasExtra, formBonus, totalOutrosGanhos]
+    () => roundMoney(salarioProporcional + alimentacao + transporte + ferias + natal + formHorasExtra + formBonus + totalOutrosGanhos),
+    [salarioProporcional, alimentacao, transporte, ferias, natal, formHorasExtra, formBonus, totalOutrosGanhos]
   );
 
   // ── INSS: 3% APENAS sobre o salário base proporcional ───────────────────────
@@ -157,14 +188,18 @@ const Processamento: React.FC = () => {
   const irtEstimado = useMemo(() => calcularIRT(materiaColectavel), [materiaColectavel]);
 
   // ── Retenções autónomas de 15% para Férias e Natal ──────────────────────────
-  const retencaoFerias = useMemo(() => roundMoney(formGanhoFerias * 0.15), [formGanhoFerias]);
-  const retencaoNatal  = useMemo(() => roundMoney(formGanhoNatal  * 0.15), [formGanhoNatal]);
+  const retencaoFerias = useMemo(() => roundMoney(ferias * 0.15), [ferias]);
+  const retencaoNatal  = useMemo(() => roundMoney(natal  * 0.15), [natal]);
 
   // ── Total Descontos e Salário Líquido ────────────────────────────────────────
-  const totalDescontos = useMemo(
-    () => roundMoney(inssEstimado + irtEstimado.valor + retencaoFerias + retencaoNatal + formFaltas),
-    [inssEstimado, irtEstimado, retencaoFerias, retencaoNatal, formFaltas]
-  );
+  const totalDescontos = useMemo(() => {
+    const inss   = isNaN(inssEstimado)       ? 0 : inssEstimado;
+    const irt    = isNaN(irtEstimado.valor)  ? 0 : irtEstimado.valor;
+    const rf     = isNaN(retencaoFerias)     ? 0 : retencaoFerias;
+    const rn     = isNaN(retencaoNatal)      ? 0 : retencaoNatal;
+    const faltas = isNaN(formFaltas)         ? 0 : formFaltas;
+    return roundMoney(inss + irt + rf + rn + faltas);
+  }, [inssEstimado, irtEstimado, retencaoFerias, retencaoNatal, formFaltas]);
   const salarioLiquidoEstimado = useMemo(() => roundMoney(totalBruto - totalDescontos), [totalBruto, totalDescontos]);
 
   // Filtered history for the current period
@@ -172,14 +207,36 @@ const Processamento: React.FC = () => {
     return historico.filter((item) => item.mes === monthToNum(selectedMonth) && String(item.ano) === selectedYear);
   }, [historico, selectedMonth, selectedYear]);
 
+  const colaboradoresProcessadosNoPeriodo = useMemo(() => {
+    return new Set<number>(historicoDoPeriodo
+      .map((item) => item.colaboradorId)
+      .filter((id): id is number => typeof id === 'number'));
+  }, [historicoDoPeriodo]);
+
   // Totals for the current month summary
   const totaisPeriodo = useMemo(() => {
     return historicoDoPeriodo.reduce((acc, curr) => ({
-      bruto: acc.bruto + curr.totalBruto,
-      descontos: acc.descontos + curr.descontos,
-      liquido: acc.liquido + curr.salarioLiquido,
+      bruto: acc.bruto + (typeof curr.totalBruto === 'number' && Number.isFinite(curr.totalBruto) ? curr.totalBruto : 0),
+      descontos: acc.descontos + (typeof curr.descontos === 'number' && Number.isFinite(curr.descontos) ? curr.descontos : 0),
+      liquido: acc.liquido + (typeof curr.salarioLiquido === 'number' && Number.isFinite(curr.salarioLiquido) ? curr.salarioLiquido : 0),
     }), { bruto: 0, descontos: 0, liquido: 0 });
   }, [historicoDoPeriodo]);
+
+  const historyPeriods = useMemo(() => {
+    const keys = historico.map((item) => `${item.ano}-${String(item.mes).padStart(2, '0')}`);
+    return Array.from(new Set(keys)).sort((a, b) => b.localeCompare(a));
+  }, [historico]);
+
+  useEffect(() => {
+    if (historyPeriods.length && !historyPeriods.includes(selectedHistoryPeriod)) {
+      setSelectedHistoryPeriod(historyPeriods[0]);
+    }
+  }, [historyPeriods, selectedHistoryPeriod]);
+
+  const historicoPorPeriodo = useMemo(() => {
+    if (!selectedHistoryPeriod) return [];
+    return historico.filter((item) => `${item.ano}-${String(item.mes).padStart(2, '0')}` === selectedHistoryPeriod);
+  }, [historico, selectedHistoryPeriod]);
 
   const loadHistorico = useCallback(async () => {
     if (!empresaId) return;
@@ -218,16 +275,25 @@ const Processamento: React.FC = () => {
     setFormBonus(0);
     setFormFaltas(0);
     setFormOutrosGanhos([]);
+    setIncluirFerias(false);
+    setIncluirNatal(false);
   };
 
   const handleStartProcessar = (colab: Colaborador) => {
+    if (periodoLocked) return;
+    if (colaboradoresProcessadosNoPeriodo.has(colab.id)) {
+      setMessage({ title: 'Aviso', text: 'Este colaborador já foi processado para o mês selecionado.', type: 'warning' });
+      return;
+    }
     setSelectedColab(colab);
     setFormSalario(colab.salarioBase || 0);
     setFormDiasTrabalhados(22);
     setFormGanhoAlimentacao(colab.subsidioAlimentacao || 0);
     setFormGanhoTransporte(colab.subsidioTransporte || 0);
-    setFormGanhoFerias(colab.subsidioFerias || 0);
-    setFormGanhoNatal(colab.subsidioNatal || 0);
+    setFormGanhoFerias(0);
+    setFormGanhoNatal(0);
+    setIncluirFerias(false);
+    setIncluirNatal(false);
     setFormHorasExtra(0);
     setFormBonus(0);
     setFormFaltas(0);
@@ -244,11 +310,17 @@ const Processamento: React.FC = () => {
       }));
 
   const handleBulkProcess = async () => {
-    if (isProcessingBulk) return;
+    if (isProcessingBulk || periodoLocked) return;
+
+    const ativosParaProcessar = ativos.filter((colab) => !colaboradoresProcessadosNoPeriodo.has(colab.id));
+    if (ativosParaProcessar.length === 0) {
+      Swal.fire('Aviso', 'Todos os colaboradores já foram processados para este mês.', 'info');
+      return;
+    }
 
     const result = await Swal.fire({
       title: 'Processamento em Lote',
-      text: `Deseja processar o salario de todos os ${ativos.length} funcionarios ativos para ${selectedMonth}/${selectedYear}?`,
+      text: `Deseja processar o salario de todos os ${ativosParaProcessar.length} funcionarios ativos não processados para ${selectedMonth}/${selectedYear}?`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Sim, Processar Todos',
@@ -262,7 +334,7 @@ const Processamento: React.FC = () => {
     Swal.fire({ title: 'A Processar...', text: 'A gerar recibos padrao. Por favor, aguarde.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     try {
-      for (const colab of ativos) {
+      for (const colab of ativosParaProcessar) {
         const dto = {
           trabalhadorId: colab.id,
           mes: monthToNum(selectedMonth),
@@ -311,8 +383,8 @@ const Processamento: React.FC = () => {
         diasTransporte: 1,
         valorDiaAlimentacao: formGanhoAlimentacao,
         valorDiaTransporte: formGanhoTransporte,
-        subsidioFeriasValor: formGanhoFerias,
-        subsidioNatalValor: formGanhoNatal,
+        subsidioFeriasValor: incluirFerias ? formGanhoFerias : 0,
+        subsidioNatalValor: incluirNatal ? formGanhoNatal : 0,
         outrosSubsidiosTotal: 0,
         horasExtraTotal: formHorasExtra,
         bonusTotal: formBonus,
@@ -331,24 +403,27 @@ const Processamento: React.FC = () => {
         diasTrabalhados: formDiasTrabalhados,
         ganhoAlimentacao: formGanhoAlimentacao,
         ganhoTransporte: formGanhoTransporte,
-        ganhoFerias: formGanhoFerias,
-        ganhoNatal: formGanhoNatal,
+        ganhoFerias: incluirFerias ? formGanhoFerias : 0,
+        ganhoNatal: incluirNatal ? formGanhoNatal : 0,
         horasExtra: formHorasExtra,
         bonus: formBonus,
         faltas: formFaltas,
         outrosGanhos: outrosGanhosPayload.map((ganho, index) => ({ id: `${index}`, descricao: ganho.descricao, valor: ganho.valor })),
-        totalBruto: result.totalBruto || 0,
-        valorINSS: result.valorINSS || 0,
-        valorIRT: result.valorIRT || 0,
-        totalDescontos: result.descontos || 0,
-        salarioLiquido: result.salarioLiquido || 0,
+        totalBruto: typeof result.totalBruto === 'number' && Number.isFinite(result.totalBruto) ? result.totalBruto : 0,
+        valorINSS: typeof result.valorINSS === 'number' && Number.isFinite(result.valorINSS) ? result.valorINSS : 0,
+        valorIRT: typeof result.valorIRT === 'number' && Number.isFinite(result.valorIRT) ? result.valorIRT : 0,
+        totalDescontos: typeof result.descontos === 'number' && Number.isFinite(result.descontos) ? result.descontos : 0,
+        salarioLiquido: typeof result.salarioLiquido === 'number' && Number.isFinite(result.salarioLiquido) ? result.salarioLiquido : 0,
       });
 
       await loadHistorico();
       setShowFormModal(false);
       setShowReceiptModal(true);
     } catch (error: any) {
-      setMessage({ title: 'Erro', text: error?.message || 'Erro ao processar.', type: 'error' });
+      const text = error?.status === 409
+        ? 'Este colaborador já foi processado para este mês/ano.'
+        : error?.message || 'Erro ao processar.';
+      setMessage({ title: 'Erro', text, type: 'error' });
     }
   };
 
@@ -431,8 +506,8 @@ const Processamento: React.FC = () => {
                 </td>
                 <td className="px-6 py-4 text-right text-sm font-medium text-slate-600">{formatMoney(colaborador.salarioBase || 0)}</td>
                 <td className="px-6 py-4 text-center">
-                  <button onClick={() => handleStartProcessar(colaborador)} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-xs font-medium transition-all">
-                    Processar
+                  <button onClick={() => handleStartProcessar(colaborador)} disabled={periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id)} className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id) ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary/90'}`}>
+                    {colaboradoresProcessadosNoPeriodo.has(colaborador.id) ? 'Processado' : 'Processar'}
                   </button>
                 </td>
               </tr>
@@ -518,12 +593,24 @@ const Processamento: React.FC = () => {
 
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-xs text-slate-500">Férias</label>
-                  <input type="text" value={formatMoneyInput(formGanhoFerias)} onChange={(e) => setFormGanhoFerias(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-lg p-3 font-medium border border-slate-100" />
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="block text-xs text-slate-500">Férias</label>
+                    <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-500">
+                      <input type="checkbox" checked={incluirFerias} onChange={(e) => setIncluirFerias(e.target.checked)} className="rounded border-slate-300 text-primary focus:ring-primary" />
+                      Opcional
+                    </label>
+                  </div>
+                  <input type="text" value={formatMoneyInput(formGanhoFerias)} onChange={(e) => setFormGanhoFerias(parseMoneyInput(e.target.value))} disabled={!incluirFerias} className={`w-full rounded-lg p-3 font-medium border ${incluirFerias ? 'bg-white border-slate-100' : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'}`} />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-xs text-slate-500">Natal</label>
-                  <input type="text" value={formatMoneyInput(formGanhoNatal)} onChange={(e) => setFormGanhoNatal(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-lg p-3 font-medium border border-slate-100" />
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="block text-xs text-slate-500">Natal</label>
+                    <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-500">
+                      <input type="checkbox" checked={incluirNatal} onChange={(e) => setIncluirNatal(e.target.checked)} className="rounded border-slate-300 text-primary focus:ring-primary" />
+                      Opcional
+                    </label>
+                  </div>
+                  <input type="text" value={formatMoneyInput(formGanhoNatal)} onChange={(e) => setFormGanhoNatal(parseMoneyInput(e.target.value))} disabled={!incluirNatal} className={`w-full rounded-lg p-3 font-medium border ${incluirNatal ? 'bg-white border-slate-100' : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'}`} />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-xs text-slate-500">Horas Extra</label>
@@ -743,111 +830,106 @@ const Processamento: React.FC = () => {
     if (!showReceiptModal || !receiptSnapshot) return null;
 
     const receiptLines = [
-      { label: `Salario Base (${receiptSnapshot.diasTrabalhados} dias)`, valor: receiptSnapshot.salarioBase },
-      { label: 'Ganho Alimentacao', valor: receiptSnapshot.ganhoAlimentacao },
-      { label: 'Ganho Transporte', valor: receiptSnapshot.ganhoTransporte },
-      { label: 'Ganho de Ferias', valor: receiptSnapshot.ganhoFerias },
-      { label: 'Ganho de Natal', valor: receiptSnapshot.ganhoNatal },
-      { label: 'Horas Extra', valor: receiptSnapshot.horasExtra },
-      { label: 'Bonus / Premios', valor: receiptSnapshot.bonus },
+      { label: `Salário Base (${receiptSnapshot.diasTrabalhados} dias)`, valor: receiptSnapshot.salarioBase },
+      { label: 'Subsídio de Alimentação', valor: receiptSnapshot.ganhoAlimentacao },
+      { label: 'Subsídio de Transporte', valor: receiptSnapshot.ganhoTransporte },
+      ...(receiptSnapshot.ganhoFerias > 0 ? [{ label: 'Férias', valor: receiptSnapshot.ganhoFerias }] : []),
+      ...(receiptSnapshot.ganhoNatal > 0 ? [{ label: 'Natal', valor: receiptSnapshot.ganhoNatal }] : []),
+      ...(receiptSnapshot.horasExtra > 0 ? [{ label: 'Horas Extras', valor: receiptSnapshot.horasExtra }] : []),
+      ...(receiptSnapshot.bonus > 0 ? [{ label: 'Bónus', valor: receiptSnapshot.bonus }] : []),
       ...receiptSnapshot.outrosGanhos.map((ganho) => ({ label: ganho.descricao, valor: ganho.valor })),
     ].filter((item) => item.valor > 0);
 
+    const valorHora = receiptSnapshot.diasTrabalhados > 0
+      ? roundMoney(receiptSnapshot.salarioBase / (receiptSnapshot.diasTrabalhados * 8))
+      : 0;
+
     return (
       <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[110] p-4 backdrop-blur-sm">
-        <div className="bg-white rounded-[40px] max-w-[210mm] w-full max-h-[95vh] overflow-y-auto shadow-2xl relative flex flex-col">
-          <div className="p-12 bg-white" id="recibo-para-impressao" style={{ minHeight: '297mm', width: '210mm', boxSizing: 'border-box' }}>
-            <div className="flex justify-between items-start mb-12 border-b-2 border-primary pb-8">
-              <div>
-                <h1 className="text-2xl font-black text-primary uppercase italic">{empresa?.nome || 'ENTIDADE EMPREGADORA'}</h1>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">NIF: {empresa?.nif || '-'}</p>
+        <div className="bg-white rounded-[40px] max-w-[210mm] w-full max-h-[95vh] overflow-hidden shadow-2xl relative flex flex-col">
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="p-8 bg-white" id="recibo-para-impressao" style={{ width: '210mm', boxSizing: 'border-box' }}>
+              <div className="text-center mb-10">
+                <p className="text-[10px] uppercase tracking-[0.35em] text-slate-500 mb-2">Recibo de Vencimentos</p>
+                <h1 className="text-3xl font-black text-slate-900 uppercase">Recibo de Vencimentos</h1>
               </div>
-              <div className="text-right">
-                <p className="bg-slate-950 text-white px-6 py-2 text-sm font-black uppercase tracking-widest inline-block">Recibo de Salario</p>
-                <p className="text-xs font-black text-primary uppercase mt-4">{receiptSnapshot.mes} / {receiptSnapshot.ano}</p>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-8 mb-10">
-              <div className="border border-slate-100 p-6 rounded-2xl">
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Colaborador</p>
-                <p className="text-lg font-black text-slate-900 uppercase leading-none">{receiptSnapshot.colaborador.nome}</p>
-                <p className="text-[10px] font-bold text-primary uppercase mt-2">{receiptSnapshot.colaborador.cargo}</p>
-              </div>
-              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pagamento via IBAN</p>
-                <p className="text-[11px] font-black font-mono text-slate-800 italic">{receiptSnapshot.colaborador.iban || 'NAO DEFINIDO'}</p>
-              </div>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 space-y-3 text-sm text-slate-700">
+                  <div className="flex justify-between"><span className="font-semibold">Período</span><span>{receiptSnapshot.mes}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold">Data Fecho</span><span>{receiptSnapshot.dataProcessamento}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold">Vencimento</span><span>{formatMoney(receiptSnapshot.salarioBase)}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold">Venc./Hora</span><span>{formatMoney(valorHora)}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold">Nº Dias Úteis</span><span>{receiptSnapshot.diasTrabalhados}</span></div>
+                </div>
 
-            <table className="w-full text-[12px] mb-12">
-              <thead>
-                <tr className="bg-primary text-white font-black uppercase">
-                  <th className="p-4 text-left">Verbas Salariais</th>
-                  <th className="p-4 text-right">Rendimentos</th>
-                  <th className="p-4 text-right">Descontos</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y border-x border-b">
-                {receiptLines.map((line) => (
-                  <tr key={line.label} className="font-bold italic">
-                    <td className="p-4 uppercase">{line.label}</td>
-                    <td className="p-4 text-right">{formatMoney(line.valor)}</td>
-                    <td className="p-4 text-right">-</td>
-                  </tr>
-                ))}
-                <tr><td className="p-4 text-slate-400 italic">INSSTrabalhador (3%)</td><td className="p-4 text-right">-</td><td className="p-4 text-right">{formatMoney(receiptSnapshot.valorINSS)}</td></tr>
-                <tr><td className="p-4 text-slate-400 italic">Retencao de I.R.T</td><td className="p-4 text-right">-</td><td className="p-4 text-right">{formatMoney(receiptSnapshot.valorIRT)}</td></tr>
-                {receiptSnapshot.faltas > 0 && <tr className="text-rose-500 font-bold"><td className="p-4">Faltas e Penalizacoes</td><td className="p-4 text-right">-</td><td className="p-4 text-right">{formatMoney(receiptSnapshot.faltas)}</td></tr>}
-                <tr className="bg-primary text-white font-black">
-                  <td className="p-4">TOTAIS</td>
-                  <td className="p-4 text-right">{formatMoney(receiptSnapshot.totalBruto)}</td>
-                  <td className="p-4 text-right">{formatMoney(receiptSnapshot.totalDescontos)}</td>
-                </tr>
-              </tbody>
-            </table>
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 space-y-3 text-sm text-slate-700">
+                  <div className="flex justify-between"><span className="font-semibold">Nome</span><span>{receiptSnapshot.colaborador.nome}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold">Nº Mec.</span><span>{receiptSnapshot.colaborador.numeroColaborador || '-'}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold">Categoria</span><span>{receiptSnapshot.colaborador.cargo || '-'}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold">Contrib.</span><span>{receiptSnapshot.colaborador.nif || '-'}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold">Departamento</span><span>{receiptSnapshot.colaborador.departamento || '-'}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold">Seguro</span><span>{receiptSnapshot.colaborador.banco || empresa?.banco || 'AXA, SA 212132142'}</span></div>
+                </div>
+              </div>
 
-            <div className="mb-10 rounded-3xl border border-slate-100 bg-slate-50 p-6">
-              <h2 className="text-sm font-black uppercase tracking-widest text-slate-700 mb-4">Tabela de Escalões IRT</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-[10px] border border-slate-200">
-                  <thead>
-                    <tr className="bg-slate-100 uppercase text-slate-700">
-                      <th className="p-3 text-left">Escalão</th>
-                      <th className="p-3 text-right">MC / Excesso</th>
-                      <th className="p-3 text-right">Parcela Fixa</th>
-                      <th className="p-3 text-right">Taxa</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {taxasIRT.map((item) => (
-                      <tr key={item.faixa} className="border-t border-slate-200">
-                        <td className="p-3 font-bold text-slate-700">{item.faixa}</td>
-                        <td className="p-3 text-right text-slate-600">{item.excesso.toLocaleString('pt-AO')} Kz+</td>
-                        <td className="p-3 text-right text-slate-600">{item.parcelaFixa.toLocaleString('pt-AO')} Kz</td>
-                        <td className="p-3 text-right text-slate-600">{item.taxa}%</td>
-                      </tr>
+              <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6 mb-8">
+                <div className="rounded-3xl border border-slate-200 bg-white p-6">
+                  <p className="text-sm font-black uppercase tracking-widest text-slate-700 mb-4">Remunerações</p>
+                  <div className="space-y-3 text-sm text-slate-700">
+                    {receiptLines.map((line) => (
+                      <div key={line.label} className="flex justify-between">
+                        <span>{line.label}</span>
+                        <span>{formatMoney(line.valor)}</span>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                    <div className="border-t border-slate-200 pt-3 mt-3 flex justify-between font-bold text-slate-900">
+                      <span>Total Remun.</span>
+                      <span>{formatMoney(receiptSnapshot.totalBruto)}</span>
+                    </div>
+                  </div>
+                </div>
 
-            <div className="flex justify-between items-end pt-8 border-t border-dashed">
-              <div className="text-[9px] font-bold text-slate-400 uppercase max-w-[300px] leading-relaxed italic">
-                Declaramos que o montante liquido abaixo foi processado conforme a legislacao laboral e fiscal em vigor na Republica de Angola.
+                <div className="rounded-3xl border border-slate-200 bg-white p-6">
+                  <p className="text-sm font-black uppercase tracking-widest text-slate-700 mb-4">Descontos</p>
+                  <div className="space-y-3 text-sm text-slate-700">
+                    <div className="flex justify-between"><span>INSS</span><span>{formatMoney(receiptSnapshot.valorINSS)}</span></div>
+                    <div className="flex justify-between"><span>IRT</span><span>{formatMoney(receiptSnapshot.valorIRT)}</span></div>
+                    <div className="flex justify-between"><span>Faltas</span><span>{formatMoney(receiptSnapshot.faltas)}</span></div>
+                    <div className="flex justify-between"><span>Outros</span><span>{formatMoney(0)}</span></div>
+                    <div className="border-t border-slate-200 pt-3 mt-3 flex justify-between font-bold text-slate-900">
+                      <span>Total Descontos</span>
+                      <span>{formatMoney(receiptSnapshot.totalDescontos)}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="bg-primary text-white p-8 rounded-[24px] shadow-2xl">
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1">Montante Liquido</p>
-                <p className="text-4xl font-black italic tracking-tighter">{formatMoney(receiptSnapshot.salarioLiquido)}</p>
+
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 mb-10 text-sm text-slate-700">
+                <div className="flex justify-between pb-3 border-b border-slate-200 mb-3">
+                  <span>Total Remun.</span>
+                  <span>{formatMoney(receiptSnapshot.totalBruto)}</span>
+                </div>
+                <div className="flex justify-between pb-3 border-b border-slate-200 mb-3">
+                  <span>Total Descontos</span>
+                  <span>{formatMoney(receiptSnapshot.totalDescontos)}</span>
+                </div>
+                <div className="flex justify-between text-lg font-black text-slate-900">
+                  <span>Total Pago (KZ)</span>
+                  <span>{formatMoney(receiptSnapshot.salarioLiquido)}</span>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 mb-6 text-sm text-slate-700">
+                <p className="font-black uppercase tracking-widest text-slate-700 mb-3">Observações</p>
+                <p>Pagamento efectuado por transferência bancária.</p>
               </div>
             </div>
           </div>
 
           <div className="p-8 border-t flex gap-4 no-print bg-slate-50 rounded-b-[40px]">
             <button onClick={handleGuardarPDF} className="flex-1 py-4 bg-white border-2 border-slate-200 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all">Exportar PDF</button>
-            <button onClick={() => window.print()} className="flex-1 py-4 bg-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20">Imprimir Recibo</button>
-            <button onClick={() => setShowReceiptModal(false)} className="px-10 py-4 text-[10px] font-black uppercase text-slate-400">Fechar</button>
+            <button onClick={() => setShowReceiptModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all">Fechar</button>
           </div>
         </div>
       </div>
@@ -878,39 +960,65 @@ const Processamento: React.FC = () => {
             ) : historico.length === 0 ? (
               <div className="py-12 text-center text-sm text-slate-400">Sem processamentos registados</div>
             ) : (
-              <div className="rounded-xl border border-slate-100 overflow-hidden">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100">
-                      <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase">Colaborador</th>
-                      <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase">Período</th>
-                      <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Bruto</th>
-                      <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Desc.</th>
-                      <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Líquido</th>
-                      <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase">Data</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {historico.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50 transition-all">
-                        <td className="px-4 py-3">
-                          <p className="text-sm font-medium text-slate-700">{item.colaboradorNome}</p>
-                          <p className="text-xs text-slate-400">{item.cargo || '-'}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded text-xs ${item.mes === monthToNum(selectedMonth) && String(item.ano) === selectedYear ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500'}`}>
-                            {numToMonth(item.mes)}/{item.ano}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm font-medium text-slate-600">{formatMoney(item.totalBruto)}</td>
-                        <td className="px-4 py-3 text-right text-sm font-medium text-slate-500">{formatMoney(item.descontos)}</td>
-                        <td className="px-4 py-3 text-right text-sm font-medium text-primary">{formatMoney(item.salarioLiquido)}</td>
-                        <td className="px-4 py-3 text-xs text-slate-400">{item.createdAt ? new Date(item.createdAt).toLocaleString('pt-AO') : '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {historyPeriods.map((period) => (
+                    <button
+                      key={period}
+                      type="button"
+                      onClick={() => setSelectedHistoryPeriod(period)}
+                      className={`px-3 py-2 text-xs font-semibold rounded-full transition-all ${selectedHistoryPeriod === period ? 'bg-primary text-white border border-primary' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                    >
+                      {`${numToMonth(Number(period.split('-')[1]))} ${period.split('-')[0]}`}
+                    </button>
+                  ))}
+                </div>
+
+                {historicoPorPeriodo.length === 0 ? (
+                  <div className="py-12 text-center text-sm text-slate-400">Nenhum processamento registado para o periodo selecionado.</div>
+                ) : (
+                  <div className="rounded-xl border border-slate-100 overflow-hidden">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100">
+                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase">Colaborador</th>
+                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase">Período</th>
+                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Bruto</th>
+                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Desc.</th>
+                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Líquido</th>
+                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase">Data</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {historicoPorPeriodo.map((item) => (
+                          <tr key={item.id} className="hover:bg-slate-50 transition-all">
+                            <td className="px-4 py-3">
+                              <p className="text-sm font-medium text-slate-700">{item.nomeColaborador}</p>
+                              <p className="text-xs text-slate-400">{item.cargo || '-'}</p>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="px-2 py-1 rounded text-xs bg-slate-100 text-slate-500">
+                                {numToMonth(item.mes)}/{item.ano}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right text-sm font-medium text-slate-600">{formatMoney(item.totalBruto)}</td>
+                            <td className="px-4 py-3 text-right text-sm font-medium text-slate-500">
+                              <div>{formatMoney(item.descontos)}</div>
+                              <div className="text-[10px] text-slate-400 mt-1 space-y-0.5">
+                                <div>INSS: {formatMoney(item.valorINSS)}</div>
+                                <div>IRT: {formatMoney(item.valorIRT)}</div>
+                                <div>Faltas: {formatMoney(item.valorFaltas)}</div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-right text-sm font-medium text-primary">{formatMoney(item.salarioLiquido)}</td>
+                            <td className="px-4 py-3 text-xs text-slate-400">{item.createdAt ? new Date(item.createdAt).toLocaleString('pt-AO') : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -926,10 +1034,14 @@ const Processamento: React.FC = () => {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-slate-50 border-none rounded-lg py-2 px-3 text-sm font-medium outline-none">
-            {MONTHS.map((month) => <option key={month} value={month}>{month}</option>)}
+            {MONTHS.map((month) => (
+              <option key={month} value={month} disabled={isMonthOptionDisabled(month, selectedYear)}>{month}</option>
+            ))}
           </select>
           <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="bg-slate-50 border-none rounded-lg py-2 px-3 text-sm font-medium outline-none">
-            {['2025', '2026', '2027'].map((year) => <option key={year} value={year}>{year}</option>)}
+            {['2025', '2026', '2027'].map((year) => (
+              <option key={year} value={year} disabled={parseInt(year, 10) > CURRENT_YEAR}>{year}</option>
+            ))}
           </select>
           <span className="px-3 py-1.5 rounded-lg bg-primary/5 text-xs text-primary">
             {historicoDoPeriodo.length} processamento(s)
@@ -940,11 +1052,16 @@ const Processamento: React.FC = () => {
           <button onClick={() => setShowHistoricoModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-all">
             Histórico
           </button>
-          <button onClick={handleBulkProcess} disabled={isProcessingBulk} className="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/80 transition-all">
+          <button onClick={handleBulkProcess} disabled={isProcessingBulk || periodoLocked} className={`px-6 py-2.5 rounded-xl text-sm font-medium transition-all ${periodoLocked ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary/80'}`}>
             {isProcessingBulk ? 'A Processar...' : 'Liquidação Mensal'}
           </button>
         </div>
       </div>
+      {periodoLocked && (
+        <div className="mb-4 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {periodoLockedMessage}
+        </div>
+      )}
 
       {renderMainContent()}
       {renderFormModal()}
