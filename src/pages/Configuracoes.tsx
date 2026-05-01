@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api } from '../services/api';
 import Swal from 'sweetalert2';
+import { countries } from '../data/countries';
+
 
 interface ConfiguracaoEmpresa {
   id: number;
@@ -24,6 +26,8 @@ interface ConfiguracaoEmpresa {
   regimeFiscal: string;
   tipoEntidade: string;
   categoria: string;
+  pais: string;
+  tipoProcessamento: 'Dias Variáveis' | 'Dias Fixos';
 }
 
 interface TaxaIRT {
@@ -73,7 +77,9 @@ const mapEmpresaToConfig = (emp: any): ConfiguracaoEmpresa => ({
   diaProcessamento: emp.diaProcessamento ?? 5,
   regimeFiscal: emp.regimeFiscal || 'Geral',
   tipoEntidade: emp.tipoEntidade || 'Lda',
-  categoria: emp.categoria || 'Empresa'
+  categoria: emp.categoria || 'Empresa',
+  pais: emp.pais || 'Angola',
+  tipoProcessamento: emp.tipoProcessamento || 'Dias Variáveis'
 });
 
 const Configuracoes: React.FC = () => {
@@ -101,7 +107,9 @@ const Configuracoes: React.FC = () => {
     diaProcessamento: 5,
     regimeFiscal: 'Geral',
     tipoEntidade: 'Lda',
-    categoria: 'Empresa'
+    categoria: 'Empresa',
+    pais: 'Angola',
+    tipoProcessamento: 'Dias Variáveis'
   };
 
   const [config, setConfig] = useState<ConfiguracaoEmpresa>(
@@ -113,6 +121,9 @@ const Configuracoes: React.FC = () => {
   const [taxasIRT, setTaxasIRT] = useState<TaxaIRT[]>([]);
   const [taxasLoading, setTaxasLoading] = useState(false);
   const [taxasError, setTaxasError] = useState('');
+  const [holidays, setHolidays] = useState<any[]>([]);
+  const [holidaysLoading, setHolidaysLoading] = useState(false);
+
 
   // Sincronizar quando a empresa mudar via switcher
   useEffect(() => {
@@ -142,6 +153,32 @@ const Configuracoes: React.FC = () => {
     };
     fetchTaxas();
   }, []);
+
+  useEffect(() => {
+    const fetchHolidays = async () => {
+      if (!config.pais) return;
+      const country = countries.find(c => c.name === config.pais);
+      if (!country) return;
+
+      setHolidaysLoading(true);
+      try {
+        const year = new Date().getFullYear();
+        const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/${country.code}`);
+        if (response.ok) {
+          const data = await response.json();
+          setHolidays(data);
+        } else {
+          setHolidays([]);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar feriados:', error);
+        setHolidays([]);
+      } finally {
+        setHolidaysLoading(false);
+      }
+    };
+    fetchHolidays();
+  }, [config.pais]);
 
   const handleChooseCategory = (category: 'Empresa' | 'Particular') => {
     setConfig({ ...emptyConfig, id: Date.now(), categoria: category });
@@ -367,11 +404,28 @@ const Configuracoes: React.FC = () => {
                         <option>Geral</option><option>Simplificado</option><option>Isento</option>
                       </select>
                     </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de Processamento</label>
+                      <select value={config.tipoProcessamento} onChange={(e) => setConfig({...config, tipoProcessamento: e.target.value as any})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
+                        <option>Dias Variáveis</option>
+                        <option>Dias Fixos</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                   <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Localização e Contacto</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">País</label>
+                      <select value={config.pais} onChange={(e) => setConfig({...config, pais: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
+                        {countries.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="md:col-span-1">
+                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Província</label>
+                       <input type="text" value={config.provincia} onChange={(e) => setConfig({...config, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                    </div>
                     <div className="md:col-span-2">
                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Endereço</label>
                        <input type="text" value={config.endereco} onChange={(e) => setConfig({...config, endereco: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
@@ -394,8 +448,34 @@ const Configuracoes: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Calendário de Feriados */}
+                <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-black text-lg uppercase tracking-wider text-slate-800 dark:text-white">Calendário Vigente ({new Date().getFullYear()})</h3>
+                    {holidaysLoading && <span className="text-xs text-primary animate-pulse font-bold uppercase">A carregar feriados...</span>}
+                  </div>
+                  
+                  {holidays.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {holidays.map((h, i) => (
+                        <div key={i} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 hover:border-primary transition-colors">
+                          <p className="text-[10px] font-black text-primary uppercase mb-1">{new Date(h.date).toLocaleDateString('pt-AO', { day: '2-digit', month: 'long' })}</p>
+                          <p className="text-sm font-bold text-slate-700 dark:text-white truncate">{h.localName}</p>
+                          <p className="text-[9px] text-slate-400 uppercase font-medium truncate">{h.name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+                      <span className="material-symbols-outlined text-slate-300 text-4xl mb-2">calendar_today</span>
+                      <p className="text-sm text-slate-400">Nenhum feriado carregado para {config.pais}.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
+
             {activeTab === 'impostos' && (
               <div className="space-y-6">
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">

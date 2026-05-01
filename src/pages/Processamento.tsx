@@ -5,6 +5,8 @@ import { api } from '../services/api';
 import { taxasIRT } from '../data/mockData';
 import html2pdf from 'html2pdf.js';
 import Swal from 'sweetalert2';
+import { countries } from '../data/countries';
+
 
 interface OutroGanhoInput {
   id: string;
@@ -115,6 +117,8 @@ const Processamento: React.FC = () => {
   const [historicoLoading, setHistoricoLoading] = useState(false);
   const [historicoError, setHistoricoError] = useState('');
   const [selectedHistoryPeriod, setSelectedHistoryPeriod] = useState('');
+  const [holidays, setHolidays] = useState<any[]>([]);
+  const [holidaysLoading, setHolidaysLoading] = useState(false);
 
   const [formSalario, setFormSalario] = useState(0);
   const [formDiasTrabalhados, setFormDiasTrabalhados] = useState(22);
@@ -148,10 +152,60 @@ const Processamento: React.FC = () => {
   const ferias = incluirFerias ? formGanhoFerias : 0;
   const natal = incluirNatal ? formGanhoNatal : 0;
 
+  // ── Configurações de Processamento ─────────────────────────────────────────
+  const baseDays = useMemo(() => empresa?.tipoProcessamento === 'Dias Fixos' ? 30 : 22, [empresa]);
+
+  // ── Cálculo de Dias Úteis Reais (Calendário) ───────────────────────────────
+  const diasUteisReal = useMemo(() => {
+    if (empresa?.tipoProcessamento === 'Dias Fixos') return 30;
+    
+    // Se for variável, calculamos os dias úteis do mês (Seg-Sex) menos feriados
+    const month = monthToNum(selectedMonth);
+    const year = parseInt(selectedYear, 10);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    let workDays = 0;
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month - 1, day);
+      const isWeekend = date.getDay() === 0 || date.getDay() === 6; // Dom ou Sáb
+      
+      if (!isWeekend) {
+        const dateStr = date.toISOString().split('T')[0];
+        const isHoliday = holidays.some(h => h.date === dateStr);
+        if (!isHoliday) {
+          workDays++;
+        }
+      }
+    }
+    return workDays || 22; // Fallback para 22 se der erro
+  }, [empresa, selectedMonth, selectedYear, holidays]);
+
+  useEffect(() => {
+    const fetchHolidays = async () => {
+      if (!empresa?.pais) return;
+      const country = countries.find(c => c.name === empresa.pais);
+      if (!country) return;
+
+      setHolidaysLoading(true);
+      try {
+        const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${selectedYear}/${country.code}`);
+        if (response.ok) {
+          const data = await response.json();
+          setHolidays(data);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar feriados para processamento:', error);
+      } finally {
+        setHolidaysLoading(false);
+      }
+    };
+    fetchHolidays();
+  }, [empresa?.pais, selectedYear]);
+
   // ── Salário proporcional pelos dias trabalhados ──────────────────────────────
   const salarioProporcional = useMemo(
-    () => Math.round(formSalario / 22 * formDiasTrabalhados),
-    [formSalario, formDiasTrabalhados]
+    () => Math.round(formSalario / baseDays * formDiasTrabalhados),
+    [formSalario, formDiasTrabalhados, baseDays]
   );
 
   // ── Alimentação e Transporte (valores mensais inseridos pelo utilizador) ─────
@@ -266,7 +320,7 @@ const Processamento: React.FC = () => {
 
   const resetProcessingForm = () => {
     setFormSalario(0);
-    setFormDiasTrabalhados(22);
+    setFormDiasTrabalhados(diasUteisReal);
     setFormGanhoAlimentacao(0);
     setFormGanhoTransporte(0);
     setFormGanhoFerias(0);
@@ -287,7 +341,7 @@ const Processamento: React.FC = () => {
     }
     setSelectedColab(colab);
     setFormSalario(colab.salarioBase || 0);
-    setFormDiasTrabalhados(22);
+    setFormDiasTrabalhados(diasUteisReal);
     setFormGanhoAlimentacao(colab.subsidioAlimentacao || 0);
     setFormGanhoTransporte(colab.subsidioTransporte || 0);
     setFormGanhoFerias(0);
@@ -340,8 +394,8 @@ const Processamento: React.FC = () => {
           mes: monthToNum(selectedMonth),
           ano: parseInt(selectedYear, 10),
           salarioBaseOverride: colab.salarioBase || 0,
-          diasTrabalhados: 22,
-          diasUteis: 22,
+          diasTrabalhados: diasUteisReal,
+          diasUteis: diasUteisReal,
           diasAlimentacao: 1,
           diasTransporte: 1,
           valorDiaAlimentacao: colab.subsidioAlimentacao || 0,
@@ -378,7 +432,7 @@ const Processamento: React.FC = () => {
         ano: parseInt(selectedYear, 10),
         salarioBaseOverride: formSalario,
         diasTrabalhados: formDiasTrabalhados,
-        diasUteis: 22,
+        diasUteis: diasUteisReal,
         diasAlimentacao: 1,
         diasTransporte: 1,
         valorDiaAlimentacao: formGanhoAlimentacao,
@@ -669,7 +723,7 @@ const Processamento: React.FC = () => {
                   <span className="material-symbols-outlined text-primary text-lg">analytics</span>
                   Resumo em Tempo Real
                 </h4>
-                <span className="px-2 py-1 bg-primary/10 text-primary rounded-md text-[10px] font-bold uppercase">{formDiasTrabalhados}/22 Dias</span>
+                <span className="px-2 py-1 bg-primary/10 text-primary rounded-md text-[10px] font-bold uppercase">{formDiasTrabalhados}/{diasUteisReal} Dias ({empresa?.tipoProcessamento || 'Dias Variáveis'})</span>
               </div>
 
               {/* Rendimentos + Descontos em duas colunas */}
@@ -829,112 +883,148 @@ const Processamento: React.FC = () => {
   const renderReceiptModal = () => {
     if (!showReceiptModal || !receiptSnapshot) return null;
 
-    const receiptLines = [
-      { label: `Salário Base (${receiptSnapshot.diasTrabalhados} dias)`, valor: receiptSnapshot.salarioBase },
-      { label: 'Subsídio de Alimentação', valor: receiptSnapshot.ganhoAlimentacao },
-      { label: 'Subsídio de Transporte', valor: receiptSnapshot.ganhoTransporte },
-      ...(receiptSnapshot.ganhoFerias > 0 ? [{ label: 'Férias', valor: receiptSnapshot.ganhoFerias }] : []),
-      ...(receiptSnapshot.ganhoNatal > 0 ? [{ label: 'Natal', valor: receiptSnapshot.ganhoNatal }] : []),
-      ...(receiptSnapshot.horasExtra > 0 ? [{ label: 'Horas Extras', valor: receiptSnapshot.horasExtra }] : []),
-      ...(receiptSnapshot.bonus > 0 ? [{ label: 'Bónus', valor: receiptSnapshot.bonus }] : []),
-      ...receiptSnapshot.outrosGanhos.map((ganho) => ({ label: ganho.descricao, valor: ganho.valor })),
-    ].filter((item) => item.valor > 0);
-
-    const valorHora = receiptSnapshot.diasTrabalhados > 0
-      ? roundMoney(receiptSnapshot.salarioBase / (receiptSnapshot.diasTrabalhados * 8))
+    const valorHora = receiptSnapshot.diasTrabalhados > 0 
+      ? receiptSnapshot.salarioBase / (receiptSnapshot.diasTrabalhados * 8) 
       : 0;
+
+    const receiptLines = [
+      { label: `Salário Base`, valorRemun: receiptSnapshot.salarioBase, valorDesc: 0, qtd: `${receiptSnapshot.diasTrabalhados} Dias` },
+      ...(receiptSnapshot.ganhoAlimentacao > 0 ? [{ label: 'Subsídio de Alimentação', valorRemun: receiptSnapshot.ganhoAlimentacao, valorDesc: 0, qtd: '1' }] : []),
+      ...(receiptSnapshot.ganhoTransporte > 0 ? [{ label: 'Subsídio de Transporte', valorRemun: receiptSnapshot.ganhoTransporte, valorDesc: 0, qtd: '1' }] : []),
+      ...(receiptSnapshot.ganhoFerias > 0 ? [{ label: 'Subsídio de Férias', valorRemun: receiptSnapshot.ganhoFerias, valorDesc: 0, qtd: '1' }] : []),
+      ...(receiptSnapshot.ganhoNatal > 0 ? [{ label: 'Subsídio de Natal', valorRemun: receiptSnapshot.ganhoNatal, valorDesc: 0, qtd: '1' }] : []),
+      ...(receiptSnapshot.horasExtra > 0 ? [{ label: 'Horas Extras', valorRemun: receiptSnapshot.horasExtra, valorDesc: 0, qtd: '1' }] : []),
+      ...(receiptSnapshot.bonus > 0 ? [{ label: 'Bónus / Prémio', valorRemun: receiptSnapshot.bonus, valorDesc: 0, qtd: '1' }] : []),
+      ...receiptSnapshot.outrosGanhos.map((ganho) => ({ label: ganho.descricao, valorRemun: ganho.valor, valorDesc: 0, qtd: '1' })),
+      { label: 'Segurança Social (INSS)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: '3%' },
+      { label: 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: '-' },
+      ...(receiptSnapshot.faltas > 0 ? [{ label: 'Faltas', valorRemun: 0, valorDesc: receiptSnapshot.faltas, qtd: '-' }] : []),
+    ];
 
     return (
       <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[110] p-4 backdrop-blur-sm">
-        <div className="bg-white rounded-[40px] max-w-[210mm] w-full max-h-[95vh] overflow-hidden shadow-2xl relative flex flex-col">
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="p-8 bg-white" id="recibo-para-impressao" style={{ width: '210mm', boxSizing: 'border-box' }}>
-              <div className="text-center mb-10">
-                <p className="text-[10px] uppercase tracking-[0.35em] text-slate-500 mb-2">Recibo de Vencimentos</p>
-                <h1 className="text-3xl font-black text-slate-900 uppercase">Recibo de Vencimentos</h1>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 space-y-3 text-sm text-slate-700">
-                  <div className="flex justify-between"><span className="font-semibold">Período</span><span>{receiptSnapshot.mes}</span></div>
-                  <div className="flex justify-between"><span className="font-semibold">Data Fecho</span><span>{receiptSnapshot.dataProcessamento}</span></div>
-                  <div className="flex justify-between"><span className="font-semibold">Vencimento</span><span>{formatMoney(receiptSnapshot.salarioBase)}</span></div>
-                  <div className="flex justify-between"><span className="font-semibold">Venc./Hora</span><span>{formatMoney(valorHora)}</span></div>
-                  <div className="flex justify-between"><span className="font-semibold">Nº Dias Úteis</span><span>{receiptSnapshot.diasTrabalhados}</span></div>
+        <div className="bg-white rounded-[40px] max-w-[220mm] w-full max-h-[95vh] overflow-hidden shadow-2xl relative flex flex-col">
+          <div className="flex-1 overflow-y-auto p-8 bg-slate-100">
+            <div id="recibo-para-impressao" style={{ 
+              width: '210mm', 
+              minHeight: '297mm', 
+              backgroundColor: '#fff', 
+              margin: '0 auto', 
+              padding: '15mm',
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'column',
+              fontFamily: 'Arial, sans-serif',
+              color: '#000'
+            }}>
+              
+              {/* Cabeçalho Empresa */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10mm', borderBottom: '2px solid #000', paddingBottom: '5mm' }}>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ fontSize: '18px', fontWeight: '900', margin: '0 0 4px 0' }}>{empresa?.nome}</h2>
+                  <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
+                  <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>{empresa?.endereco}, {empresa?.municipio}</p>
+                  <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>{empresa?.email} | {empresa?.telefone}</p>
                 </div>
-
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 space-y-3 text-sm text-slate-700">
-                  <div className="flex justify-between"><span className="font-semibold">Nome</span><span>{receiptSnapshot.colaborador.nome}</span></div>
-                  <div className="flex justify-between"><span className="font-semibold">Nº Mec.</span><span>{receiptSnapshot.colaborador.numeroColaborador || '-'}</span></div>
-                  <div className="flex justify-between"><span className="font-semibold">Categoria</span><span>{receiptSnapshot.colaborador.cargo || '-'}</span></div>
-                  <div className="flex justify-between"><span className="font-semibold">Contrib.</span><span>{receiptSnapshot.colaborador.nif || '-'}</span></div>
-                  <div className="flex justify-between"><span className="font-semibold">Departamento</span><span>{receiptSnapshot.colaborador.departamento || '-'}</span></div>
-                  <div className="flex justify-between"><span className="font-semibold">Seguro</span><span>{receiptSnapshot.colaborador.banco || empresa?.banco || 'AXA, SA 212132142'}</span></div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6 mb-8">
-                <div className="rounded-3xl border border-slate-200 bg-white p-6">
-                  <p className="text-sm font-black uppercase tracking-widest text-slate-700 mb-4">Remunerações</p>
-                  <div className="space-y-3 text-sm text-slate-700">
-                    {receiptLines.map((line) => (
-                      <div key={line.label} className="flex justify-between">
-                        <span>{line.label}</span>
-                        <span>{formatMoney(line.valor)}</span>
-                      </div>
-                    ))}
-                    <div className="border-t border-slate-200 pt-3 mt-3 flex justify-between font-bold text-slate-900">
-                      <span>Total Remun.</span>
-                      <span>{formatMoney(receiptSnapshot.totalBruto)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-3xl border border-slate-200 bg-white p-6">
-                  <p className="text-sm font-black uppercase tracking-widest text-slate-700 mb-4">Descontos</p>
-                  <div className="space-y-3 text-sm text-slate-700">
-                    <div className="flex justify-between"><span>INSS</span><span>{formatMoney(receiptSnapshot.valorINSS)}</span></div>
-                    <div className="flex justify-between"><span>IRT</span><span>{formatMoney(receiptSnapshot.valorIRT)}</span></div>
-                    <div className="flex justify-between"><span>Faltas</span><span>{formatMoney(receiptSnapshot.faltas)}</span></div>
-                    <div className="flex justify-between"><span>Outros</span><span>{formatMoney(0)}</span></div>
-                    <div className="border-t border-slate-200 pt-3 mt-3 flex justify-between font-bold text-slate-900">
-                      <span>Total Descontos</span>
-                      <span>{formatMoney(receiptSnapshot.totalDescontos)}</span>
-                    </div>
+                <div style={{ flex: 1, textAlign: 'right' }}>
+                  <h1 style={{ fontSize: '16px', fontWeight: '900', margin: '0 0 8px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
+                  <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '10px', background: '#f1f5f9', padding: '2mm 4mm', borderRadius: '4px' }}>
+                    <p style={{ margin: '0 0 2px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {receiptSnapshot.mes} / {receiptSnapshot.ano}</p>
+                    <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Data:</span> {receiptSnapshot.dataProcessamento}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 mb-10 text-sm text-slate-700">
-                <div className="flex justify-between pb-3 border-b border-slate-200 mb-3">
-                  <span>Total Remun.</span>
-                  <span>{formatMoney(receiptSnapshot.totalBruto)}</span>
+              {/* Informação do Colaborador */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8mm', marginBottom: '8mm', padding: '4mm', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                <div style={{ fontSize: '10px', lineHeight: '1.8' }}>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Nome:</span> <span>{receiptSnapshot.colaborador.nome}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Nº Mec.:</span> <span>{receiptSnapshot.colaborador.numeroColaborador || '---'}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Categoria:</span> <span>{receiptSnapshot.colaborador.cargo}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Contribuinte:</span> <span>{receiptSnapshot.colaborador.nif}</span></div>
                 </div>
-                <div className="flex justify-between pb-3 border-b border-slate-200 mb-3">
-                  <span>Total Descontos</span>
-                  <span>{formatMoney(receiptSnapshot.totalDescontos)}</span>
-                </div>
-                <div className="flex justify-between text-lg font-black text-slate-900">
-                  <span>Total Pago (KZ)</span>
-                  <span>{formatMoney(receiptSnapshot.salarioLiquido)}</span>
+                <div style={{ fontSize: '10px', lineHeight: '1.8' }}>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Vencimento:</span> <span>{formatMoney(receiptSnapshot.salarioBase)}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Venc./Hora:</span> <span>{formatMoney(valorHora)}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Dias Úteis:</span> <span>{receiptSnapshot.diasTrabalhados}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Departamento:</span> <span>{receiptSnapshot.colaborador.departamento || '---'}</span></div>
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 mb-6 text-sm text-slate-700">
-                <p className="font-black uppercase tracking-widest text-slate-700 mb-3">Observações</p>
-                <p>Pagamento efectuado por transferência bancária.</p>
+              {/* Tabela Principal */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginBottom: '10mm' }}>
+                <thead>
+                  <tr style={{ borderTop: '2px solid #000', borderBottom: '1.5px solid #000', textAlign: 'left', backgroundColor: '#f8fafc' }}>
+                    <th style={{ padding: '3mm 2mm' }}>Descrição</th>
+                    <th style={{ padding: '3mm 2mm', width: '20mm', textAlign: 'center' }}>Qtd.</th>
+                    <th style={{ padding: '3mm 2mm', width: '40mm', textAlign: 'right' }}>Remunerações</th>
+                    <th style={{ padding: '3mm 2mm', width: '40mm', textAlign: 'right' }}>Descontos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {receiptLines.map((line, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '3mm 2mm', fontWeight: '500' }}>{line.label}</td>
+                      <td style={{ padding: '3mm 2mm', textAlign: 'center', color: '#64748b' }}>{line.qtd}</td>
+                      <td style={{ padding: '3mm 2mm', textAlign: 'right' }}>{line.valorRemun > 0 ? formatMoney(line.valorRemun) : ''}</td>
+                      <td style={{ padding: '3mm 2mm', textAlign: 'right', color: line.valorDesc > 0 ? '#e11d48' : '#000' }}>{line.valorDesc > 0 ? formatMoney(line.valorDesc) : ''}</td>
+                    </tr>
+                  ))}
+                  {/* Espaçadores para empurrar o total para baixo */}
+                  <tr style={{ height: '20mm' }}><td colSpan={4}></td></tr>
+                </tbody>
+              </table>
+
+              {/* Totais */}
+              <div style={{ marginTop: 'auto', borderTop: '2px solid #000', paddingTop: '4mm' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15mm', marginBottom: '4mm' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Total Remunerações</p>
+                    <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{formatMoney(receiptSnapshot.totalBruto)}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Total Descontos</p>
+                    <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0, color: '#e11d48' }}>{formatMoney(receiptSnapshot.totalDescontos)}</p>
+                  </div>
+                </div>
+                <div style={{ background: '#000', color: '#fff', padding: '5mm 8mm', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '900', letterSpacing: '0.1em' }}>VALOR LÍQUIDO A RECEBER (KZ)</span>
+                  <span style={{ fontSize: '24px', fontWeight: '900' }}>{formatMoney(receiptSnapshot.salarioLiquido)}</span>
+                </div>
+              </div>
+
+              {/* Rodapé / Assinaturas */}
+              <div style={{ marginTop: '15mm', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '15mm' }}>
+                <div style={{ fontSize: '10px' }}>
+                  <p style={{ fontWeight: 'bold', margin: '0 0 4px 0', color: '#333' }}>NOTAS / COORDENADAS BANCÁRIAS:</p>
+                  <p style={{ margin: '2px 0', color: '#64748b' }}>Banco: {empresa?.banco}</p>
+                  <p style={{ margin: '2px 0', color: '#64748b' }}>IBAN: {empresa?.iban}</p>
+                  <p style={{ margin: '8px 0 0 0', fontStyle: 'italic', color: '#94a3b8' }}>Este documento serve como comprovativo de pagamento de vencimento.</p>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ borderBottom: '1px solid #000', height: '15mm', marginBottom: '2mm' }}></div>
+                  <p style={{ fontSize: '10px', fontWeight: 'bold', margin: 0 }}>Assinatura e Carimbo</p>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '10mm', textAlign: 'center', fontSize: '9px', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '4mm', fontWeight: 'bold' }}>
+                Processado por SALYA, Sistema de Recibo Salarial
               </div>
             </div>
           </div>
 
-          <div className="p-8 border-t flex gap-4 no-print bg-slate-50 rounded-b-[40px]">
-            <button onClick={handleGuardarPDF} className="flex-1 py-4 bg-white border-2 border-slate-200 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all">Exportar PDF</button>
-            <button onClick={() => setShowReceiptModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all">Fechar</button>
+          <div className="p-6 border-t flex gap-4 no-print bg-white">
+            <button onClick={handleGuardarPDF} className="flex-2 py-4 bg-primary text-white rounded-2xl font-bold px-8 shadow-lg hover:shadow-primary/20 transition-all flex items-center justify-center gap-2">
+              <span className="material-symbols-outlined">download</span>
+              Exportar Recibo (PDF)
+            </button>
+            <button onClick={() => setShowReceiptModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-200 transition-all">Fechar</button>
           </div>
         </div>
       </div>
     );
   };
+
 
   const renderHistoricoModal = () => {
     if (!showHistoricoModal) return null;

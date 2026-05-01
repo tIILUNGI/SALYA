@@ -26,6 +26,9 @@ export interface Empresa {
   processamentoAutomatico?: boolean;
   envioAutomaticoContracheques?: boolean;
   diaProcessamento?: number;
+  pais?: string;
+  tipoProcessamento?: 'Dias Variáveis' | 'Dias Fixos';
+
   createdAt?: string;
   updatedAt?: string;
 }
@@ -161,6 +164,9 @@ export interface ConfiguracaoEmpresa {
   regimeFiscal?: string;
   tipoEntidade?: string;
   categoria?: 'Empresa' | 'Particular';
+  pais?: string;
+  tipoProcessamento?: 'Dias Variáveis' | 'Dias Fixos';
+
 }
 
 export interface TaxaIRT {
