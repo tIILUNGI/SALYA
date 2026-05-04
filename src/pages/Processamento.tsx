@@ -153,10 +153,11 @@ const Processamento: React.FC = () => {
   const ferias = incluirFerias ? formGanhoFerias : 0;
   const natal = incluirNatal ? formGanhoNatal : 0;
 
+
   // ── Cálculo de Dias Úteis Reais (Calendário) ───────────────────────────────
   const diasUteisReal = useMemo(() => {
-    const tp = empresa?.tipoProcessamento?.toUpperCase() || '';
-    if (tp === 'DIAS FIXOS' || tp === 'DIAS_FIXOS' || tp === 'DIAS FIXO') return 22;
+    const isFixed = empresa?.tipoProcessamento === 'Dias Fixos' || empresa?.tipoProcessamento === 'DIAS_FIXOS';
+    if (isFixed) return 22;
     
     // Se for variável, calculamos os dias úteis do mês (Seg-Sex) menos feriados
     const month = monthToNum(selectedMonth);
@@ -180,11 +181,7 @@ const Processamento: React.FC = () => {
   }, [empresa, selectedMonth, selectedYear, holidays]);
 
   // ── Configurações de Processamento ─────────────────────────────────────────
-  const isFixed = useMemo(() => {
-    const tp = empresa?.tipoProcessamento?.toUpperCase() || '';
-    return tp === 'DIAS FIXOS' || tp === 'DIAS_FIXOS' || tp === 'DIAS FIXO';
-  }, [empresa?.tipoProcessamento]);
-
+  const isFixed = empresa?.tipoProcessamento === 'Dias Fixos' || empresa?.tipoProcessamento === 'DIAS_FIXOS';
   const baseDays = useMemo(() => isFixed ? 22 : diasUteisReal, [isFixed, diasUteisReal]);
 
   useEffect(() => {
@@ -343,7 +340,7 @@ const Processamento: React.FC = () => {
 
   const resetProcessingForm = () => {
     setFormSalario(0);
-    setFormDiasTrabalhados(baseDays);
+    // formDiasTrabalhados será sincronizado pelo useEffect
     setFormGanhoAlimentacao(0);
     setFormGanhoTransporte(0);
     setFormGanhoFerias(0);
@@ -364,7 +361,7 @@ const Processamento: React.FC = () => {
     }
     setSelectedColab(colab);
     setFormSalario(colab.salarioBase || 0);
-    setFormDiasTrabalhados(baseDays);
+    // formDiasTrabalhados será sincronizado pelo useEffect
     setFormGanhoAlimentacao(colab.subsidioAlimentacao || 0);
     setFormGanhoTransporte(colab.subsidioTransporte || 0);
     setFormGanhoFerias(0);
@@ -417,8 +414,8 @@ const Processamento: React.FC = () => {
           mes: monthToNum(selectedMonth),
           ano: parseInt(selectedYear, 10),
           salarioBaseOverride: colab.salarioBase || 0,
-          diasTrabalhados: baseDays,
-          diasUteis: baseDays,
+          diasTrabalhados: diasUteisReal,
+          diasUteis: diasUteisReal,
           diasAlimentacao: 1,
           diasTransporte: 1,
           valorDiaAlimentacao: colab.subsidioAlimentacao || 0,
@@ -629,23 +626,24 @@ const Processamento: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-medium text-slate-500">Dias Trabalhados</label>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isFixed ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-indigo-100 text-indigo-700 border border-indigo-200'}`}>
-                    {isFixed ? `22 dias (Regime fixo)` : `${diasUteisReal} dias (Regime variável)`}
+                    {isFixed ? 'REGIME FIXO (22)' : 'REGIME VARIÁVEL'}
                   </span>
                 </div>
                 <div className="relative group">
                   <input 
                     type="number" 
-                    min="0"
-                    max={isFixed ? 22 : 31}
+                    readOnly 
                     value={formDiasTrabalhados} 
-                    onChange={(e) => setFormDiasTrabalhados(Number(e.target.value) || 0)}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-4 font-black text-slate-600 text-lg outline-none focus:ring-2 focus:ring-primary transition-colors"
+                    className="w-full bg-slate-100 border-none rounded-xl p-4 font-black text-slate-600 text-lg cursor-not-allowed group-hover:bg-slate-200/50 transition-colors"
                   />
+                  <div className="absolute inset-y-0 right-4 flex items-center">
+                    <span className="material-symbols-outlined text-slate-400 text-base">lock</span>
+                  </div>
                 </div>
                 <p className="text-[10px] text-slate-400 font-medium">
                   {isFixed 
                     ? 'Fórmula aplicada: Base ÷ 22 × Dias Trabalhados' 
-                    : `Fórmula aplicada: Base ÷ ${baseDays} (Dias Úteis) × Dias Trabalhados`
+                    : `Fórmula aplicada: Base ÷ ${formDiasTrabalhados} (Dias Úteis) × Dias Trabalhados`
                   }
                 </p>
               </div>
@@ -784,7 +782,7 @@ const Processamento: React.FC = () => {
             <div className="p-6 bg-rose-50 rounded-[32px] space-y-4">
               <label className="block text-xs font-medium text-rose-500">Faltas (dias)</label>
               <input type="number" min="0" max="31" value={formFaltas} onChange={(e) => setFormFaltas(Number(e.target.value) || 0)} className="w-full bg-white border-2 border-rose-100 rounded-2xl p-5 font-medium text-rose-600 text-xl outline-none focus:border-rose-300" placeholder="0" />
-              <p className="text-[11px] text-slate-500">Desconto por falta: {formatMoney(descontoFaltas)} – calculado como salário base / {baseDays} dias ({isFixed ? 'Regime Fixo' : 'Regime Variável'}).</p>
+              <p className="text-[11px] text-slate-500">Desconto por falta: {formatMoney(descontoFaltas)} – calculado como salário base / {empresa?.tipoProcessamento === 'Dias Fixos' ? '22' : `${diasDoMes}`} dias do mês.</p>
             </div>
 
             {/* ── Resumo em Tempo Real ── */}
