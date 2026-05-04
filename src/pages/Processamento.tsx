@@ -44,6 +44,7 @@ interface ReceiptSnapshot {
   horasExtra: number;
   bonus: number;
   faltas: number;
+  faltasDias?: number;
   outrosGanhos: OutroGanhoInput[];
   totalBruto: number;
   valorINSS: number;
@@ -152,12 +153,9 @@ const Processamento: React.FC = () => {
   const ferias = incluirFerias ? formGanhoFerias : 0;
   const natal = incluirNatal ? formGanhoNatal : 0;
 
-  // ── Configurações de Processamento ─────────────────────────────────────────
-  const baseDays = useMemo(() => empresa?.tipoProcessamento === 'Dias Fixos' ? 30 : 22, [empresa]);
-
   // ── Cálculo de Dias Úteis Reais (Calendário) ───────────────────────────────
   const diasUteisReal = useMemo(() => {
-    if (empresa?.tipoProcessamento === 'Dias Fixos') return 30;
+    if (empresa?.tipoProcessamento === 'Dias Fixos') return 22;
     
     // Se for variável, calculamos os dias úteis do mês (Seg-Sex) menos feriados
     const month = monthToNum(selectedMonth);
@@ -179,6 +177,15 @@ const Processamento: React.FC = () => {
     }
     return workDays || 22; // Fallback para 22 se der erro
   }, [empresa, selectedMonth, selectedYear, holidays]);
+
+  // ── Configurações de Processamento ─────────────────────────────────────────
+  const baseDays = useMemo(() => empresa?.tipoProcessamento === 'Dias Fixos' ? 22 : diasUteisReal, [empresa, diasUteisReal]);
+
+  const diasDoMes = useMemo(() => {
+    const month = monthToNum(selectedMonth);
+    const year = parseInt(selectedYear, 10);
+    return new Date(year, month, 0).getDate();
+  }, [selectedMonth, selectedYear]);
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -208,6 +215,18 @@ const Processamento: React.FC = () => {
     [formSalario, formDiasTrabalhados, baseDays]
   );
 
+  const descontoFaltasPorDia = useMemo(() => {
+    if (empresa?.tipoProcessamento === 'Dias Fixos') {
+      return formSalario / 22;
+    }
+    return formSalario / diasDoMes;
+  }, [empresa?.tipoProcessamento, formSalario, diasDoMes]);
+
+  const descontoFaltas = useMemo(() => {
+    const faltasDias = Number.isFinite(formFaltas) ? formFaltas : 0;
+    return Math.round(Math.max(0, faltasDias) * descontoFaltasPorDia);
+  }, [formFaltas, descontoFaltasPorDia]);
+
   // ── Alimentação e Transporte (valores mensais inseridos pelo utilizador) ─────
   // O utilizador insere o valor mensal. Estes NÃO são proporcionalizados porque
   // normalmente correspondem a vales/subsídios fixos do mês.
@@ -226,8 +245,8 @@ const Processamento: React.FC = () => {
 
   // ── INSS: 3% APENAS sobre o salário base proporcional ───────────────────────
   const inssEstimado = useMemo(
-    () => calcularINSS(Math.max(0, salarioProporcional - formFaltas)),
-    [salarioProporcional, formFaltas]
+    () => calcularINSS(Math.max(0, salarioProporcional - descontoFaltas)),
+    [salarioProporcional, descontoFaltas]
   );
 
   // ── Matéria Colectável para IRT mensal ──────────────────────────────────────
@@ -251,9 +270,8 @@ const Processamento: React.FC = () => {
     const irt    = isNaN(irtEstimado.valor)  ? 0 : irtEstimado.valor;
     const rf     = isNaN(retencaoFerias)     ? 0 : retencaoFerias;
     const rn     = isNaN(retencaoNatal)      ? 0 : retencaoNatal;
-    const faltas = isNaN(formFaltas)         ? 0 : formFaltas;
-    return roundMoney(inss + irt + rf + rn + faltas);
-  }, [inssEstimado, irtEstimado, retencaoFerias, retencaoNatal, formFaltas]);
+    return roundMoney(inss + irt + rf + rn + descontoFaltas);
+  }, [inssEstimado, irtEstimado, retencaoFerias, retencaoNatal, descontoFaltas]);
   const salarioLiquidoEstimado = useMemo(() => roundMoney(totalBruto - totalDescontos), [totalBruto, totalDescontos]);
 
   // Filtered history for the current period
@@ -442,7 +460,7 @@ const Processamento: React.FC = () => {
         outrosSubsidiosTotal: 0,
         horasExtraTotal: formHorasExtra,
         bonusTotal: formBonus,
-        faltasTotal: formFaltas,
+        faltasTotal: descontoFaltas,
         outrosGanhos: outrosGanhosPayload,
       };
 
@@ -461,7 +479,8 @@ const Processamento: React.FC = () => {
         ganhoNatal: incluirNatal ? formGanhoNatal : 0,
         horasExtra: formHorasExtra,
         bonus: formBonus,
-        faltas: formFaltas,
+        faltas: descontoFaltas,
+        faltasDias: formFaltas,
         outrosGanhos: outrosGanhosPayload.map((ganho, index) => ({ id: `${index}`, descricao: ganho.descricao, valor: ganho.valor })),
         totalBruto: typeof result.totalBruto === 'number' && Number.isFinite(result.totalBruto) ? result.totalBruto : 0,
         valorINSS: typeof result.valorINSS === 'number' && Number.isFinite(result.valorINSS) ? result.valorINSS : 0,
@@ -711,8 +730,9 @@ const Processamento: React.FC = () => {
             </div>
 
             <div className="p-6 bg-rose-50 rounded-[32px] space-y-4">
-              <label className="block text-xs font-medium text-rose-500">Descontos / Faltas (KZ)</label>
-              <input type="text" value={formatMoneyInput(formFaltas)} onChange={(e) => setFormFaltas(parseMoneyInput(e.target.value))} className="w-full bg-white border-2 border-rose-100 rounded-2xl p-5 font-medium text-rose-600 text-xl outline-none focus:border-rose-300" placeholder="0" />
+              <label className="block text-xs font-medium text-rose-500">Faltas (dias)</label>
+              <input type="number" min="0" max="31" value={formFaltas} onChange={(e) => setFormFaltas(Number(e.target.value) || 0)} className="w-full bg-white border-2 border-rose-100 rounded-2xl p-5 font-medium text-rose-600 text-xl outline-none focus:border-rose-300" placeholder="0" />
+              <p className="text-[11px] text-slate-500">Desconto por falta: {formatMoney(descontoFaltas)} – calculado como salário base / {empresa?.tipoProcessamento === 'Dias Fixos' ? '22' : `${diasDoMes}`} dias do mês.</p>
             </div>
 
             {/* ── Resumo em Tempo Real ── */}
@@ -721,7 +741,7 @@ const Processamento: React.FC = () => {
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                 <h4 className="text-sm font-bold text-slate-800 uppercase tracking-tight flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary text-lg">analytics</span>
-                  Resumo em Tempo Real
+                  Resumo
                 </h4>
                 <span className="px-2 py-1 bg-primary/10 text-primary rounded-md text-[10px] font-bold uppercase">{formDiasTrabalhados}/{diasUteisReal} Dias ({empresa?.tipoProcessamento || 'Dias Variáveis'})</span>
               </div>
@@ -898,7 +918,7 @@ const Processamento: React.FC = () => {
       ...receiptSnapshot.outrosGanhos.map((ganho) => ({ label: ganho.descricao, valorRemun: ganho.valor, valorDesc: 0, qtd: '1' })),
       { label: 'Segurança Social (INSS)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: '3%' },
       { label: 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: '-' },
-      ...(receiptSnapshot.faltas > 0 ? [{ label: 'Faltas', valorRemun: 0, valorDesc: receiptSnapshot.faltas, qtd: '-' }] : []),
+      ...(receiptSnapshot.faltas > 0 ? [{ label: 'Faltas', valorRemun: 0, valorDesc: receiptSnapshot.faltas, qtd: receiptSnapshot.faltasDias ? `${receiptSnapshot.faltasDias} dias` : '-' }] : []),
     ];
 
     return (
