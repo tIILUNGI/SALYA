@@ -187,15 +187,15 @@ const Configuracoes: React.FC = () => {
     setActiveTab('empresa');
   };
 
- const handleSave = async () => {
-  if (!config.nome || !config.nif) {
-    setMessage({
-      title: 'ERRO!',
-      text: 'Por favor, preencha o Nome e o NIF antes de salvar.',
-      type: 'error'
-    });
-    return;
-  }
+const handleSave = async () => {
+    if (!config.nome || !config.nif) {
+      setMessage({
+        title: 'ERRO!',
+        text: 'Por favor, preencha o Nome e o NIF antes de salvar.',
+        type: 'error'
+      });
+      return;
+    }
 
     try {
       const dataToSave = {
@@ -204,31 +204,28 @@ const Configuracoes: React.FC = () => {
         taxaINSSPatronal: parseTaxInputValue(config.taxaINSSPatronal),
       };
 
-      
       if (!isCreatingNew && empresa?.id) {
         await api.put(`/empresas/${empresa.id}`, dataToSave);
-
-
+        const updatedEmpresa = await api.get(`/empresas/${empresa.id}`);
+        setEmpresa(updatedEmpresa);
       } else {
-        // Excluir ID para o backend gerar e evitar erro 409 Conflict
         const { id, ...postData } = dataToSave;
         const newEmpresa = await api.post('/empresas', postData);
         setEmpresa(newEmpresa);
         setEmpresaId(newEmpresa.id);
       }
 
-      
       await refreshData();
-      
+
       setSaved(true);
       setIsCreatingNew(false);
-      
+
       setMessage({
         title: 'SUCESSO!',
         text: isCreatingNew ? 'Empresa criada com sucesso!' : 'Configurações salvas com sucesso!',
         type: 'success'
       });
-      
+
       setTimeout(() => {
         setSaved(false);
         if (isCreatingNew) {
@@ -319,7 +316,7 @@ const Configuracoes: React.FC = () => {
   const tabs = [
     { id: 'empresa', label: 'Dados da Entidade', icon: 'business' },
     { id: 'impostos', label: 'Taxas de Impostos', icon: 'percent' },
-    { id: 'processamento', label: 'Notificações', icon: 'notifications' },
+    { id: 'processamento', label: 'Processamento', icon: 'settings_suggest' },
     { id: 'gestao', label: 'Minhas Entidades', icon: 'account_tree' },
   ];
 
@@ -376,7 +373,9 @@ const Configuracoes: React.FC = () => {
         <div className="flex gap-8">
           <aside className="w-64 shrink-0">
             <nav className="space-y-1">
-              {tabs.map(tab => (
+              {tabs
+                .filter(tab => !isCreatingNew || tab.id === 'empresa')
+                .map(tab => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-primary/10 text-primary font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                   <span className="material-symbols-outlined">{tab.icon}</span>
                   {tab.label}
@@ -398,20 +397,13 @@ const Configuracoes: React.FC = () => {
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">NIF</label>
                       <input type="text" value={config.nif} onChange={(e) => setConfig({...config, nif: e.target.value.replace(/\D/g, '').slice(0, 9)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder="123456789" />
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Regime Fiscal</label>
-                      <select value={config.regimeFiscal} onChange={(e) => setConfig({...config, regimeFiscal: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
-                        <option>Geral</option><option>Simplificado</option><option>Isento</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de Processamento</label>
-                      <select value={config.tipoProcessamento} onChange={(e) => setConfig({...config, tipoProcessamento: e.target.value as any})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
-                        <option>Dias Variáveis</option>
-                        <option>Dias Fixos</option>
-                      </select>
-                    </div>
-                  </div>
+<div>
+                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Regime Fiscal</label>
+                       <select value={config.regimeFiscal} onChange={(e) => setConfig({...config, regimeFiscal: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
+                         <option>Geral</option><option>Simplificado</option><option>Isento</option>
+                       </select>
+                     </div>
+                   </div>
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                   <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Localização e Contacto</h3>
@@ -476,21 +468,21 @@ const Configuracoes: React.FC = () => {
               </div>
             )}
 
-            {activeTab === 'impostos' && (
-              <div className="space-y-6">
-                <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                  <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Taxas de INSS</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Taxa Trabalhador (%)</label>
-                      <input type="number" min="0" step="0.01" value={config.taxaINSS} onChange={(e) => setConfig({...config, taxaINSS: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Taxa Patronal (%)</label>
-                      <input type="number" min="0" step="0.01" value={config.taxaINSSPatronal} onChange={(e) => setConfig({...config, taxaINSSPatronal: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
-                    </div>
-                  </div>
-                </div>
+{activeTab === 'impostos' && (
+               <div className="space-y-6">
+                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                   <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Taxas de INSS</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div>
+                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Taxa Trabalhador (%)</label>
+                       <input type="number" min="0" step="0.01" value={config.taxaINSS} onChange={(e) => setConfig({...config, taxaINSS: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                     </div>
+                     <div>
+                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Taxa Patronal (%)</label>
+                       <input type="number" min="0" step="0.01" value={config.taxaINSSPatronal} onChange={(e) => setConfig({...config, taxaINSSPatronal: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                     </div>
+                   </div>
+                 </div>
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                   <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Tabela de IRT</h3>
                   <div className="overflow-x-auto">
@@ -529,32 +521,49 @@ const Configuracoes: React.FC = () => {
                   </div>
                 </div>
               </div>
-            )}
-            {activeTab === 'processamento' && (
-              <div className="space-y-6">
-                <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                  <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Notificações Automatizadas</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                      <div>
-                        <p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Notificar para Processar</p>
-                        <p className="text-xs text-slate-400 mt-1">Receba um alerta quando chegar o dia de processar os salários</p>
+)}
+              {activeTab === 'processamento' && (
+                <div className="space-y-6">
+                  <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Tipo de Processamento</h3>
+                    <div className="space-y-4">
+                      <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Modo de Processamento</p>
+                            <p className="text-xs text-slate-400 mt-1">Dias Fixos usa 30 dias; Dias Variáveis calcula dias úteis do mês</p>
+                          </div>
+                          <select value={config.tipoProcessamento} onChange={(e) => setConfig({...config, tipoProcessamento: e.target.value as any})} className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold text-sm outline-none focus:ring-2 focus:ring-primary">
+                            <option value="Dias Variáveis">Dias Variáveis</option>
+                            <option value="Dias Fixos">Dias Fixos</option>
+                          </select>
+                        </div>
                       </div>
-                      <button onClick={() => setConfig({...config, processamentoAutomatico: !config.processamentoAutomatico})} className={`w-14 h-7 rounded-full flex items-center px-1 ${config.processamentoAutomatico ? 'bg-primary justify-end' : 'bg-slate-300 justify-start'}`}>
-                        <div className="size-5 bg-white rounded-full shadow-lg" />
-                      </button>
                     </div>
-                    <div className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                      <div>
-                        <p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Dia de Processamento</p>
-                        <p className="text-xs text-slate-400 mt-1">Dia do mês em que deseja ser notificado</p>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Notificações Automatizadas</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                        <div>
+                          <p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Notificar para Processar</p>
+                          <p className="text-xs text-slate-400 mt-1">Receba um alerta quando chegar o dia de processar os salários</p>
+                        </div>
+                        <button onClick={() => setConfig({...config, processamentoAutomatico: !config.processamentoAutomatico})} className={`w-14 h-7 rounded-full flex items-center px-1 ${config.processamentoAutomatico ? 'bg-primary justify-end' : 'bg-slate-300 justify-start'}`}>
+                          <div className="size-5 bg-white rounded-full shadow-lg" />
+                        </button>
                       </div>
-                      <input type="number" min="1" max="31" value={config.diaProcessamento} onChange={(e) => setConfig({...config, diaProcessamento: Number(e.target.value) || 1})} className="w-20 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg text-center font-black" />
+                      <div className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                        <div>
+                          <p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Dia de Processamento</p>
+                          <p className="text-xs text-slate-400 mt-1">Dia do mês em que deseja ser notificado</p>
+                        </div>
+                        <input type="number" min="1" max="31" value={config.diaProcessamento} onChange={(e) => setConfig({...config, diaProcessamento: Number(e.target.value) || 1})} className="w-20 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg text-center font-black" />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
             {activeTab === 'gestao' && (
               <div className="space-y-6">
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">

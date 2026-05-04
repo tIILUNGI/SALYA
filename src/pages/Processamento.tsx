@@ -153,7 +153,7 @@ const Processamento: React.FC = () => {
   const natal = incluirNatal ? formGanhoNatal : 0;
 
   // ── Configurações de Processamento ─────────────────────────────────────────
-  const baseDays = useMemo(() => empresa?.tipoProcessamento === 'Dias Fixos' ? 30 : 22, [empresa]);
+  const baseDays = useMemo(() => empresa?.tipoProcessamento === 'Dias Fixos' ? 30 : diasUteisReal, [empresa, diasUteisReal]);
 
   // ── Cálculo de Dias Úteis Reais (Calendário) ───────────────────────────────
   const diasUteisReal = useMemo(() => {
