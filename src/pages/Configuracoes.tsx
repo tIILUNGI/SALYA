@@ -123,6 +123,8 @@ const Configuracoes: React.FC = () => {
   const [taxasError, setTaxasError] = useState('');
   const [holidays, setHolidays] = useState<any[]>([]);
   const [holidaysLoading, setHolidaysLoading] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [sharing, setSharing] = useState(false);
 
 
   // Sincronizar quando a empresa mudar via switcher
@@ -320,6 +322,7 @@ const Configuracoes: React.FC = () => {
     { id: 'empresa', label: 'Dados da Entidade', icon: 'business' },
     { id: 'impostos', label: 'Taxas de Impostos', icon: 'percent' },
     { id: 'processamento', label: 'Notificações', icon: 'notifications' },
+    { id: 'acessos', label: 'Gestão de Acessos', icon: 'group_add' },
     { id: 'gestao', label: 'Minhas Entidades', icon: 'account_tree' },
   ];
 
@@ -628,6 +631,102 @@ const Configuracoes: React.FC = () => {
                       <input type="number" min="1" max="31" value={config.diaProcessamento} onChange={(e) => setConfig({...config, diaProcessamento: Number(e.target.value) || 1})} className="w-20 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg text-center font-black" />
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+            {activeTab === 'acessos' && (
+              <div className="space-y-6">
+                <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                      <span className="material-symbols-outlined">person_add</span>
+                    </div>
+                    <div>
+                      <h3 className="font-black text-lg uppercase tracking-wider text-slate-800 dark:text-white">Convidar Colaborador / Usuário</h3>
+                      <p className="text-xs text-slate-400">Dê acesso a esta entidade para outros usuários do Salya</p>
+                    </div>
+                  </div>
+
+                  {(empresa as any)?.demo ? (
+                    <div className="p-6 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900 rounded-2xl flex items-start gap-4">
+                      <span className="material-symbols-outlined text-amber-500">warning</span>
+                      <p className="text-sm text-amber-700 dark:text-amber-400">
+                        Esta é uma <strong>Entidade de Demonstração</strong> pública. Não é possível partilhar o acesso de entidades demo, pois elas já são visíveis para todos os utilizadores para fins de teste.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">E-mail do Usuário</label>
+                        <div className="flex gap-3">
+                          <input 
+                            type="email" 
+                            value={inviteEmail}
+                            onChange={(e) => setInviteEmail(e.target.value)}
+                            placeholder="exemplo@email.com"
+                            className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none focus:ring-2 focus:ring-primary"
+                          />
+                          <button 
+                            onClick={async () => {
+                              if (!inviteEmail) return;
+                              setSharing(true);
+                              try {
+                                await api.post(`/empresas/${empresa?.id}/compartilhar`, { email: inviteEmail });
+                                Swal.fire({
+                                  title: 'Sucesso!',
+                                  text: `Acesso concedido a ${inviteEmail} com sucesso.`,
+                                  icon: 'success',
+                                  confirmButtonColor: '#1e293b'
+                                });
+                                setInviteEmail('');
+                              } catch (err: any) {
+                                Swal.fire({
+                                  title: 'Erro!',
+                                  text: err.response?.data?.error || err.message || 'Erro ao partilhar acesso.',
+                                  icon: 'error',
+                                  confirmButtonColor: '#e11d48'
+                                });
+                              } finally {
+                                setSharing(false);
+                              }
+                            }}
+                            disabled={sharing || !inviteEmail}
+                            className="px-6 py-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                          >
+                            {sharing ? 'A processar...' : 'Conceder Acesso'}
+                            {!sharing && <span className="material-symbols-outlined text-sm">send</span>}
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-4 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-xs">info</span>
+                          O utilizador deve estar previamente registrado no Salya com este e-mail.
+                        </p>
+                      </div>
+
+                      {/* Lista de Usuários com Acesso (Opcional, mas bom ter) */}
+                      {(empresa as any)?.sharedUsers && (empresa as any).sharedUsers.length > 0 && (
+                        <div className="mt-8">
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Usuários com Acesso</h4>
+                          <div className="space-y-2">
+                            {(empresa as any).sharedUsers.map((u: any) => (
+                              <div key={u.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl">
+                                <div className="flex items-center gap-3">
+                                  <div className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 font-bold text-xs">
+                                    {u.name?.charAt(0) || u.email?.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-bold text-slate-700 dark:text-white">{u.name}</p>
+                                    <p className="text-[10px] text-slate-400">{u.email}</p>
+                                  </div>
+                                </div>
+                                <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 text-[9px] font-black uppercase rounded">Acesso Total</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
