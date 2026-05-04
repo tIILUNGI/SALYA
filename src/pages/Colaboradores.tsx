@@ -160,7 +160,6 @@ const Colaboradores: React.FC = () => {
   };
 
   const currentTabIndex = TABS.findIndex((tab) => tab.id === modalTab);
-  const currentTab = TABS[currentTabIndex];
   const isLastTab = currentTabIndex === TABS.length - 1;
 
   const handleNext = (e: React.MouseEvent) => {

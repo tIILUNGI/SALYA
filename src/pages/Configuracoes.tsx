@@ -404,12 +404,88 @@ const Configuracoes: React.FC = () => {
                         <option>Geral</option><option>Simplificado</option><option>Isento</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de Processamento</label>
-                      <select value={config.tipoProcessamento} onChange={(e) => setConfig({...config, tipoProcessamento: e.target.value as any})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary">
-                        <option>Dias Variáveis</option>
-                        <option>Dias Fixos</option>
-                      </select>
+                    <div className="md:col-span-2 mt-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Regime de Processamento</label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div 
+                          onClick={() => setConfig({...config, tipoProcessamento: 'Dias Variáveis'})}
+                          className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${config.tipoProcessamento === 'Dias Variáveis' ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'}`}
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className={`material-symbols-outlined ${config.tipoProcessamento === 'Dias Variáveis' ? 'text-primary' : 'text-slate-400'}`}>calendar_month</span>
+                            <span className="font-bold text-slate-700 dark:text-white uppercase text-xs">Dias Variáveis</span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 leading-relaxed">O cálculo baseia-se nos dias úteis reais de cada mês (ex: 20, 21 ou 23 dias).</p>
+                        </div>
+
+                        <div 
+                          onClick={() => setConfig({...config, tipoProcessamento: 'Dias Fixos'})}
+                          className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${config.tipoProcessamento === 'Dias Fixos' ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'}`}
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className={`material-symbols-outlined ${config.tipoProcessamento === 'Dias Fixos' ? 'text-primary' : 'text-slate-400'}`}>pin</span>
+                            <span className="font-bold text-slate-700 dark:text-white uppercase text-xs">Dias Fixos (22 dias)</span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 leading-relaxed">A base de cálculo é sempre 22 dias, independentemente do mês.</p>
+                        </div>
+                      </div>
+
+                      {/* Explicação Visual */}
+                      <div className="mt-6 p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center gap-2 mb-4">
+                          <span className="material-symbols-outlined text-primary text-sm">info</span>
+                          <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Como funciona o cálculo?</h4>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                          <div className="space-y-4">
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                              Se o funcionário trabalhar o <strong>mês completo</strong>, o valor final será igual ao salário base em ambos os regimes. A diferença aparece apenas em <strong>meses incompletos</strong> (admissões, demissões ou faltas).
+                            </p>
+                            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Exemplo (Salário: 180.000 Kz)</p>
+                              <table className="w-full text-[11px]">
+                                <thead>
+                                  <tr className="text-slate-400 border-b border-slate-50 dark:border-slate-800">
+                                    <th className="pb-2 text-left">Situação</th>
+                                    <th className="pb-2 text-right">Dias Fixos</th>
+                                    <th className="pb-2 text-right">Dias Variáveis</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="text-slate-700 dark:text-slate-300">
+                                  <tr className="border-b border-slate-50 dark:border-slate-800">
+                                    <td className="py-2">Mês Completo</td>
+                                    <td className="py-2 text-right font-bold text-emerald-500">180.000 Kz</td>
+                                    <td className="py-2 text-right font-bold text-emerald-500">180.000 Kz</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-2">10 Dias (Fev/20)</td>
+                                    <td className="py-2 text-right">81.818 Kz</td>
+                                    <td className="py-2 text-right text-primary font-bold">90.000 Kz</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-primary/5 p-5 rounded-2xl border border-primary/10">
+                            <h5 className="text-[10px] font-black text-primary uppercase mb-3 flex items-center gap-2">
+                              <span className="material-symbols-outlined text-sm">calculate</span>
+                              Fórmulas Aplicadas
+                            </h5>
+                            <div className="space-y-4">
+                              <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Regime Fixo</p>
+                                <p className="text-xs font-mono bg-white dark:bg-slate-900 p-2 rounded-lg border border-primary/10 text-slate-700 dark:text-slate-300">Base ÷ 22 × Dias_Trab</p>
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Regime Variável</p>
+                                <p className="text-xs font-mono bg-white dark:bg-slate-900 p-2 rounded-lg border border-primary/10 text-slate-700 dark:text-slate-300">Base ÷ Úteis ÷ Dias_Trab</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
