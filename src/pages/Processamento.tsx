@@ -153,12 +153,10 @@ const Processamento: React.FC = () => {
   const ferias = incluirFerias ? formGanhoFerias : 0;
   const natal = incluirNatal ? formGanhoNatal : 0;
 
-  // ── Configurações de Processamento ─────────────────────────────────────────
-  const baseDays = useMemo(() => empresa?.tipoProcessamento === 'Dias Fixos' ? 30 : 22, [empresa]);
 
   // ── Cálculo de Dias Úteis Reais (Calendário) ───────────────────────────────
   const diasUteisReal = useMemo(() => {
-    if (empresa?.tipoProcessamento === 'Dias Fixos') return 22;
+    if (empresa?.tipoProcessamento === 'Dias Fixos') return 30;
     
     // Se for variável, calculamos os dias úteis do mês (Seg-Sex) menos feriados
     const month = monthToNum(selectedMonth);
@@ -182,7 +180,7 @@ const Processamento: React.FC = () => {
   }, [empresa, selectedMonth, selectedYear, holidays]);
 
   // ── Configurações de Processamento ─────────────────────────────────────────
-  const baseDays = useMemo(() => empresa?.tipoProcessamento === 'Dias Fixos' ? 22 : diasUteisReal, [empresa, diasUteisReal]);
+  const baseDays = useMemo(() => empresa?.tipoProcessamento === 'Dias Fixos' ? 30 : diasUteisReal, [empresa, diasUteisReal]);
 
   const diasDoMes = useMemo(() => {
     const month = monthToNum(selectedMonth);
