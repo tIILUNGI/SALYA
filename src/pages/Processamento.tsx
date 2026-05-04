@@ -49,6 +49,7 @@ interface ReceiptSnapshot {
   totalBruto: number;
   valorINSS: number;
   valorIRT: number;
+  percentualIRT?: number;
   totalDescontos: number;
   salarioLiquido: number;
 }
@@ -119,7 +120,6 @@ const Processamento: React.FC = () => {
   const [historicoError, setHistoricoError] = useState('');
   const [selectedHistoryPeriod, setSelectedHistoryPeriod] = useState('');
   const [holidays, setHolidays] = useState<any[]>([]);
-  const [holidaysLoading, setHolidaysLoading] = useState(false);
 
   const [formSalario, setFormSalario] = useState(0);
   const [formDiasTrabalhados, setFormDiasTrabalhados] = useState(22);
@@ -156,7 +156,8 @@ const Processamento: React.FC = () => {
 
   // ── Cálculo de Dias Úteis Reais (Calendário) ───────────────────────────────
   const diasUteisReal = useMemo(() => {
-    if (empresa?.tipoProcessamento === 'Dias Fixos') return 30;
+    const isFixed = empresa?.tipoProcessamento === 'Dias Fixos' || empresa?.tipoProcessamento === 'DIAS_FIXOS';
+    if (isFixed) return 22;
     
     // Se for variável, calculamos os dias úteis do mês (Seg-Sex) menos feriados
     const month = monthToNum(selectedMonth);
@@ -180,7 +181,12 @@ const Processamento: React.FC = () => {
   }, [empresa, selectedMonth, selectedYear, holidays]);
 
   // ── Configurações de Processamento ─────────────────────────────────────────
-  const baseDays = useMemo(() => empresa?.tipoProcessamento === 'Dias Fixos' ? 30 : diasUteisReal, [empresa, diasUteisReal]);
+  const isFixed = empresa?.tipoProcessamento === 'Dias Fixos' || empresa?.tipoProcessamento === 'DIAS_FIXOS';
+  const baseDays = useMemo(() => isFixed ? 22 : diasUteisReal, [isFixed, diasUteisReal]);
+
+  useEffect(() => {
+    setFormDiasTrabalhados(diasUteisReal);
+  }, [diasUteisReal]);
 
   const diasDoMes = useMemo(() => {
     const month = monthToNum(selectedMonth);
@@ -194,7 +200,6 @@ const Processamento: React.FC = () => {
       const country = countries.find(c => c.name === empresa.pais);
       if (!country) return;
 
-      setHolidaysLoading(true);
       try {
         const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${selectedYear}/${country.code}`);
         if (response.ok) {
@@ -202,9 +207,8 @@ const Processamento: React.FC = () => {
           setHolidays(data);
         }
       } catch (error) {
-        console.error('Erro ao carregar feriados para processamento:', error);
-      } finally {
-        setHolidaysLoading(false);
+        console.error('Erro ao carregar feriados:', error);
+        setHolidays([]);
       }
     };
     fetchHolidays();
@@ -217,11 +221,8 @@ const Processamento: React.FC = () => {
   );
 
   const descontoFaltasPorDia = useMemo(() => {
-    if (empresa?.tipoProcessamento === 'Dias Fixos') {
-      return formSalario / 22;
-    }
-    return formSalario / diasDoMes;
-  }, [empresa?.tipoProcessamento, formSalario, diasDoMes]);
+    return formSalario / baseDays;
+  }, [formSalario, baseDays]);
 
   const descontoFaltas = useMemo(() => {
     const faltasDias = Number.isFinite(formFaltas) ? formFaltas : 0;
@@ -246,16 +247,16 @@ const Processamento: React.FC = () => {
 
   // ── INSS: 3% APENAS sobre o salário base proporcional ───────────────────────
   const inssEstimado = useMemo(
-    () => calcularINSS(Math.max(0, salarioProporcional - descontoFaltas)),
-    [salarioProporcional, descontoFaltas]
+    () => calcularINSS(salarioProporcional),
+    [salarioProporcional]
   );
 
   // ── Matéria Colectável para IRT mensal ──────────────────────────────────────
   // MC = Salário + Alimentação tributável + Transporte tributável + Extras - INSS
   // Férias e Natal são excluídos da MC (têm retenção autónoma de 15%)
   const materiaColectavel = useMemo(
-    () => roundMoney(Math.max(0, salarioProporcional + alimentacaoTributavel + transporteTributavel + formHorasExtra + formBonus + totalOutrosGanhos - inssEstimado)),
-    [salarioProporcional, alimentacaoTributavel, transporteTributavel, formHorasExtra, formBonus, totalOutrosGanhos, inssEstimado]
+    () => roundMoney(Math.max(0, salarioProporcional + alimentacaoTributavel + transporteTributavel + formHorasExtra + formBonus + totalOutrosGanhos - inssEstimado - descontoFaltas)),
+    [salarioProporcional, alimentacaoTributavel, transporteTributavel, formHorasExtra, formBonus, totalOutrosGanhos, inssEstimado, descontoFaltas]
   );
 
   // ── IRT Progressivo (sobre a MC) ─────────────────────────────────────────────
@@ -339,7 +340,7 @@ const Processamento: React.FC = () => {
 
   const resetProcessingForm = () => {
     setFormSalario(0);
-    setFormDiasTrabalhados(diasUteisReal);
+    // formDiasTrabalhados será sincronizado pelo useEffect
     setFormGanhoAlimentacao(0);
     setFormGanhoTransporte(0);
     setFormGanhoFerias(0);
@@ -360,7 +361,7 @@ const Processamento: React.FC = () => {
     }
     setSelectedColab(colab);
     setFormSalario(colab.salarioBase || 0);
-    setFormDiasTrabalhados(diasUteisReal);
+    // formDiasTrabalhados será sincronizado pelo useEffect
     setFormGanhoAlimentacao(colab.subsidioAlimentacao || 0);
     setFormGanhoTransporte(colab.subsidioTransporte || 0);
     setFormGanhoFerias(0);
@@ -486,6 +487,7 @@ const Processamento: React.FC = () => {
         totalBruto: typeof result.totalBruto === 'number' && Number.isFinite(result.totalBruto) ? result.totalBruto : 0,
         valorINSS: typeof result.valorINSS === 'number' && Number.isFinite(result.valorINSS) ? result.valorINSS : 0,
         valorIRT: typeof result.valorIRT === 'number' && Number.isFinite(result.valorIRT) ? result.valorIRT : 0,
+        percentualIRT: result.detalhesIRT?.taxaIRT ? result.detalhesIRT.taxaIRT * 100 : 0,
         totalDescontos: typeof result.descontos === 'number' && Number.isFinite(result.descontos) ? result.descontos : 0,
         salarioLiquido: typeof result.salarioLiquido === 'number' && Number.isFinite(result.salarioLiquido) ? result.salarioLiquido : 0,
       });
@@ -621,8 +623,29 @@ const Processamento: React.FC = () => {
                 <input type="text" value={formatMoneyInput(formSalario)} onChange={(e) => setFormSalario(parseMoneyInput(e.target.value))} className="w-full bg-slate-50 border-none rounded-xl p-4 font-medium text-primary text-lg outline-none focus:ring-2 focus:ring-primary" />
               </div>
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-slate-500">Dias Trabalhados</label>
-                <input type="number" min="0" max="31" value={formDiasTrabalhados} onChange={(e) => setFormDiasTrabalhados(Number(e.target.value) || 0)} className="w-full bg-slate-50 border-none rounded-xl p-4 font-medium text-slate-700 text-lg outline-none focus:ring-2 focus:ring-primary" />
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-medium text-slate-500">Dias Trabalhados</label>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isFixed ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-indigo-100 text-indigo-700 border border-indigo-200'}`}>
+                    {isFixed ? 'REGIME FIXO (22)' : 'REGIME VARIÁVEL'}
+                  </span>
+                </div>
+                <div className="relative group">
+                  <input 
+                    type="number" 
+                    readOnly 
+                    value={formDiasTrabalhados} 
+                    className="w-full bg-slate-100 border-none rounded-xl p-4 font-black text-slate-600 text-lg cursor-not-allowed group-hover:bg-slate-200/50 transition-colors"
+                  />
+                  <div className="absolute inset-y-0 right-4 flex items-center">
+                    <span className="material-symbols-outlined text-slate-400 text-base">lock</span>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 font-medium">
+                  {isFixed 
+                    ? 'Fórmula aplicada: Base ÷ 22 × Dias Trabalhados' 
+                    : `Fórmula aplicada: Base ÷ ${formDiasTrabalhados} (Dias Úteis) × Dias Trabalhados`
+                  }
+                </p>
               </div>
             </div>
 
@@ -693,6 +716,32 @@ const Processamento: React.FC = () => {
                 <div className="space-y-2">
                   <label className="block text-xs text-slate-500">Bónus</label>
                   <input type="text" value={formatMoneyInput(formBonus)} onChange={(e) => setFormBonus(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-lg p-3 font-medium border border-slate-100" />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5 bg-rose-50/30 rounded-2xl space-y-4 border border-rose-100">
+              <h4 className="text-sm font-medium text-rose-600">Descontos / Faltas</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-xs text-slate-500 uppercase font-bold tracking-tight">Número de Faltas (Dias)</label>
+                  <input 
+                    type="number" 
+                    min="0" 
+                    max={baseDays}
+                    value={formFaltas} 
+                    onChange={(e) => setFormFaltas(Number(e.target.value) || 0)} 
+                    className="w-full rounded-lg p-3 font-medium border border-rose-100 bg-white outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
+                  />
+                  {formFaltas > 0 && (
+                    <p className="text-[10px] text-rose-600 font-medium animate-pulse">
+                      Desconto estimado: -{formatMoney(descontoFaltas)}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                   <label className="block text-xs text-slate-500 uppercase font-bold tracking-tight opacity-50">Outros Descontos</label>
+                   <input disabled type="text" placeholder="0 Kz" className="w-full rounded-lg p-3 font-medium border border-slate-100 bg-slate-50/50 cursor-not-allowed" />
                 </div>
               </div>
             </div>
@@ -868,8 +917,8 @@ const Processamento: React.FC = () => {
                   {/* Faltas */}
                   {formFaltas > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Faltas</span>
-                      <span className="font-medium text-rose-500">-{formatMoney(formFaltas)}</span>
+                      <span className="text-slate-500">Faltas ({formFaltas} dias)</span>
+                      <span className="font-medium text-rose-500">-{formatMoney(descontoFaltas)}</span>
                     </div>
                   )}
 
@@ -918,7 +967,7 @@ const Processamento: React.FC = () => {
       ...(receiptSnapshot.bonus > 0 ? [{ label: 'Bónus / Prémio', valorRemun: receiptSnapshot.bonus, valorDesc: 0, qtd: '1' }] : []),
       ...receiptSnapshot.outrosGanhos.map((ganho) => ({ label: ganho.descricao, valorRemun: ganho.valor, valorDesc: 0, qtd: '1' })),
       { label: 'Segurança Social (INSS)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: '3%' },
-      { label: 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: '-' },
+      { label: 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: receiptSnapshot.percentualIRT ? `${receiptSnapshot.percentualIRT}%` : '-' },
       ...(receiptSnapshot.faltas > 0 ? [{ label: 'Faltas', valorRemun: 0, valorDesc: receiptSnapshot.faltas, qtd: receiptSnapshot.faltasDias ? `${receiptSnapshot.faltasDias} dias` : '-' }] : []),
     ];
 
@@ -1018,8 +1067,8 @@ const Processamento: React.FC = () => {
               <div style={{ marginTop: '15mm', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '15mm' }}>
                 <div style={{ fontSize: '10px' }}>
                   <p style={{ fontWeight: 'bold', margin: '0 0 4px 0', color: '#333' }}>NOTAS / COORDENADAS BANCÁRIAS:</p>
-                  <p style={{ margin: '2px 0', color: '#64748b' }}>Banco: {empresa?.banco}</p>
-                  <p style={{ margin: '2px 0', color: '#64748b' }}>IBAN: {empresa?.iban}</p>
+                  <p style={{ margin: '2px 0', color: '#64748b' }}>Banco: {receiptSnapshot.colaborador.banco || '---'}</p>
+                  <p style={{ margin: '2px 0', color: '#64748b' }}>IBAN: {receiptSnapshot.colaborador.iban || '---'}</p>
                   <p style={{ margin: '8px 0 0 0', fontStyle: 'italic', color: '#94a3b8' }}>Este documento serve como comprovativo de pagamento de vencimento.</p>
                 </div>
                 <div style={{ textAlign: 'center' }}>

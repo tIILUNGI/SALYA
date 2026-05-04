@@ -27,7 +27,7 @@ export interface Empresa {
   envioAutomaticoContracheques?: boolean;
   diaProcessamento?: number;
   pais?: string;
-  tipoProcessamento?: 'Dias Variáveis' | 'Dias Fixos';
+  tipoProcessamento?: 'Dias Variáveis' | 'Dias Fixos' | 'DIAS_VARIAVEIS' | 'DIAS_FIXOS';
 
   createdAt?: string;
   updatedAt?: string;
@@ -165,7 +165,7 @@ export interface ConfiguracaoEmpresa {
   tipoEntidade?: string;
   categoria?: 'Empresa' | 'Particular';
   pais?: string;
-  tipoProcessamento?: 'Dias Variáveis' | 'Dias Fixos';
+  tipoProcessamento?: 'Dias Variáveis' | 'Dias Fixos' | 'DIAS_VARIAVEIS' | 'DIAS_FIXOS';
 
 }
 
