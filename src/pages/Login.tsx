@@ -1,10 +1,19 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api, clearAuthStorage, getApiErrorMessage, setAuthToken } from '../services/api';
 
 
-type ViewMode = 'login' | 'register' | 'confirm' | 'forgot';
+type ViewMode = 'login' | 'register' | 'select-plan' | 'confirm' | 'forgot';
+
+type Plan = {
+  id: number;
+  name: string;
+  price?: string;
+  durationDays?: number;
+  type: string;
+  isActive?: boolean;
+};
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -22,11 +31,38 @@ const Login: React.FC = () => {
   const [errorString, setErrorString] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [shake, setShake] = useState(false);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<string>('');
 
   const showError = (msg: string) => {
     setErrorString(msg);
     setShake(true);
     setTimeout(() => setShake(false), 600);
+  };
+
+  useEffect(() => {
+    if (mode !== 'select-plan') return;
+
+    setIsLoading(true);
+    api.get('/auth/plans', true)
+      .then((data: any) => {
+        if (Array.isArray(data)) {
+          setPlans(data);
+        }
+      })
+      .catch((error: any) => {
+        console.error('Erro ao carregar planos:', error);
+        showError('Não foi possível carregar os planos no momento. Tente novamente.');
+      })
+      .finally(() => setIsLoading(false));
+  }, [mode]);
+
+  const handleSelectPlanContinue = () => {
+    if (!selectedPlan) {
+      showError('Selecione um plano antes de continuar.');
+      return;
+    }
+    setMode('register');
   };
 
   const startCleanSession = (token: string, user: any) => {
@@ -72,7 +108,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const response = await api.post('/auth/register', { name, email, password }, true);
+      const response = await api.post('/auth/register', { name, email, password, planId: Number(selectedPlan) }, true);
 
       if (response.requiresVerification) {
         setMessage({
@@ -148,6 +184,8 @@ const Login: React.FC = () => {
     setMode(newMode);
     setErrorString('');
   };
+
+  const selectedPlanObject = plans.find((plan) => String(plan.id) === selectedPlan);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-corporate-50">
@@ -240,7 +278,7 @@ const Login: React.FC = () => {
                   <span className="text-slate-500 dark:text-slate-400 text-sm">Não tem conta? </span>
                   <button
                     type="button"
-                    onClick={() => switchMode('register')}
+                    onClick={() => switchMode('select-plan')}
                     className="text-sm text-primary hover:text-primary/80 font-medium"
                   >
                     Criar conta
@@ -263,7 +301,16 @@ const Login: React.FC = () => {
             <form onSubmit={handleRegister} className="space-y-6">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Criar Conta</h2>
-                <p className="text-slate-500 dark:text-slate-400">Preencha os dados para se registar</p>
+                <p className="text-slate-500 dark:text-slate-400">Finalize o cadastro com o plano escolhido.</p>
+                <div className="mt-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-4">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Plano selecionado:</p>
+                  <p className="mt-1 text-base font-bold text-slate-900 dark:text-white">{selectedPlanObject?.name || 'Plano selecionado'}</p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    {selectedPlanObject?.type === 'DEMO'
+                      ? 'Demo ativo por 24 horas. Depois disso, o acesso expira automaticamente.'
+                      : 'Plano pago. O acesso só será autorizado após aprovação do administrador.'}
+                  </p>
+                </div>
               </div>
 
               {errorString && (
@@ -318,22 +365,69 @@ const Login: React.FC = () => {
 
               <button
                 type="submit"
+                disabled={isLoading}
                 className="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-colors"
               >
-                Criar Conta
+                {isLoading ? 'A registar...' : 'Finalizar Registro'}
               </button>
 
-              <div className="text-center">
-                <span className="text-slate-500 dark:text-slate-400 text-sm">Já tem conta? </span>
-                <button
-                  type="button"
-                  onClick={() => switchMode('login')}
-                  className="text-sm text-primary hover:text-primary/80 font-medium"
-                >
-                  Entrar
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setMode('select-plan')}
+                className="w-full text-sm text-slate-400 hover:text-slate-600 font-medium"
+              >
+                ← Voltar à escolha de plano
+              </button>
             </form>
+          )}
+
+          {mode === 'select-plan' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Escolha seu Plano</h2>
+                <p className="text-slate-500 dark:text-slate-400">Selecione o plano ideal para sua empresa</p>
+              </div>
+
+              <div className="space-y-3">
+                {plans.length === 0 ? (
+                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 text-sm">
+                    Carregando planos...
+                  </div>
+                ) : (
+                  plans.map((plan) => (
+                    <div
+                      key={plan.id}
+                      onClick={() => setSelectedPlan(String(plan.id))}
+                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedPlan === String(plan.id) ? 'border-primary bg-primary/5 shadow-md' : 'border-slate-100 hover:border-slate-200'}`}
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-bold text-slate-900 dark:text-white">{plan.name}</span>
+                        <span className="text-primary font-black text-sm">{plan.price ? `${plan.price}` : 'Grátis'}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {plan.durationDays ? `${plan.durationDays} dias` : 'Duração não definida'} · {plan.type}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setMode('register')}
+                className="w-full py-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all"
+              >
+                Continuar para cadastro
+              </button>
+
+              <button
+                type="button"
+                onClick={() => switchMode('login')}
+                className="w-full text-sm text-slate-400 hover:text-slate-600 font-medium"
+              >
+                ← Voltar ao login
+              </button>
+            </div>
           )}
 
           {mode === 'confirm' && (

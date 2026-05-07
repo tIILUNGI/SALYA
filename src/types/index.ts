@@ -4,6 +4,31 @@ export interface User {
   email: string;
   phone?: string;
   role?: string;
+  subscriptionStatus?: 'ATIVA' | 'PENDENTE_APROVACAO' | 'EXPIRADA' | 'CANCELADA';
+  subscriptionExpiry?: string;
+  planType?: string;
+}
+
+export type SubscriptionStatus = 'ATIVA' | 'PENDENTE_APROVACAO' | 'EXPIRADA' | 'CANCELADA';
+
+export interface Subscription {
+  id: number;
+  userId: number;
+  planId: number;
+  status: SubscriptionStatus;
+  startDate: string;
+  endDate?: string;
+  createdAt: string;
+}
+
+export interface Plan {
+  id: number;
+  name: string;
+  price: number;
+  durationDays: number;
+  isActive: boolean;
+  type: string;
+  category: 'GRATUITO' | 'PAGO';
 }
 
 export interface Empresa {
@@ -29,6 +54,8 @@ export interface Empresa {
   pais?: string;
   tipoProcessamento?: 'Dias Variáveis' | 'Dias Fixos' | 'DIAS_VARIAVEIS' | 'DIAS_FIXOS';
 
+  user?: User;
+  sharedUsers?: User[];
   createdAt?: string;
   updatedAt?: string;
 }

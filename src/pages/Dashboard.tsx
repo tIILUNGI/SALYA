@@ -169,7 +169,7 @@ const Dashboard: React.FC = () => {
               <YAxis stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <Tooltip />
-              <Area type="monotone" dataKey="total" stroke="#3b82f6" fillOpacity={1} fill="url(#colorTotalDb)" />
+              <Area isAnimationActive={false} type="monotone" dataKey="total" stroke="#3b82f6" fillOpacity={1} fill="url(#colorTotalDb)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -183,8 +183,8 @@ const Dashboard: React.FC = () => {
               <YAxis stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
               <Tooltip />
               <Legend wrapperStyle={{ fontSize: '10px' }} />
-              <Bar dataKey="faltas" fill="#ef4444" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="justificadas" fill="#10b981" radius={[4, 4, 0, 0]} />
+              <Bar isAnimationActive={false} dataKey="faltas" fill="#ef4444" radius={[4, 4, 0, 0]} />
+              <Bar isAnimationActive={false} dataKey="justificadas" fill="#10b981" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

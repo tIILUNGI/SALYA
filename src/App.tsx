@@ -20,6 +20,9 @@ interface User {
   email: string;
   name: string;
   id?: number;
+  subscriptionStatus?: 'ATIVA' | 'PENDENTE_APROVACAO' | 'EXPIRADA' | 'CANCELADA';
+  subscriptionExpiry?: string;
+  planType?: string;
 }
 
 interface AppContextType {
@@ -41,6 +44,7 @@ interface AppContextType {
   setMessage: (msg: { title: string; text: string; type: 'success' | 'error' | 'info' | 'warning' } | null) => void;
   showConfirm: (config: { title: string; text: string; onConfirm: () => void }) => void;
   refreshData: () => Promise<void>;
+  effectivePlan: { tipo: string; status: string } | null;
 }
 
 
@@ -63,6 +67,7 @@ export const AppContext = React.createContext<AppContextType>({
   setMessage: () => {},
   showConfirm: () => {},
   refreshData: async () => {},
+  effectivePlan: null,
 });
 
 
@@ -76,6 +81,7 @@ function App() {
   const [empresa, setEmpresa] = useState<Empresa | null>(null);
   const [empresaId, setEmpresaId] = useState<number | null>(null);
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
+  const [effectivePlan, setEffectivePlan] = useState<{ tipo: string; status: string } | null>(null);
 
 
   const normalizeList = (data: any, key?: string) => {
@@ -135,11 +141,21 @@ function App() {
       if (activeEmpresaId) {
         const colaboradoresData = await api.get(`/trabalhadores?empresaId=${activeEmpresaId}&size=1000`);
         setColaboradores(normalizeList(colaboradoresData, 'colaboradores'));
+
+        // Fetch effective plan
+        try {
+          const planInfo = await api.get(`/empresas/${activeEmpresaId}/plano-efetivo`);
+          setEffectivePlan(planInfo);
+        } catch (e) {
+          setEffectivePlan(null);
+        }
       } else {
         setColaboradores([]);
+        setEffectivePlan(null);
       }
     } catch (error) {
       setColaboradores([]);
+      setEffectivePlan(null);
     } finally {
       setIsLoadingData(false);
     }
@@ -246,7 +262,8 @@ function App() {
       isLoadingData,
       empresas, setEmpresas, empresa, setEmpresa, empresaId, setEmpresaId, 
       colaboradores, setColaboradores, 
-      setMessage: setAppMessage, showConfirm, refreshData
+      setMessage: setAppMessage, showConfirm, refreshData,
+      effectivePlan
     }}>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
@@ -263,7 +280,7 @@ function App() {
 function MainLayout() {
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const { empresa, isConfigured, isLoadingData, refreshData, setMessage } = React.useContext(AppContext);
+  const { user, isAuthenticated, empresa, isConfigured, isLoadingData, refreshData, setMessage } = React.useContext(AppContext);
 
 
   useEffect(() => {
@@ -308,6 +325,9 @@ function MainLayout() {
       />
       
       <div className="flex-1 flex flex-col min-h-screen md:ml-64 w-full md:w-[calc(100%-16rem)]">
+        {/* Subscription Barrier */}
+        <SubscriptionBarrier />
+        
         <Header />
         <main className="flex-1 p-0">
           <Routes>
@@ -342,6 +362,85 @@ function MainLayout() {
         <footer className="mt-auto p-8 border-t border-slate-200 dark:border-slate-800 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
           © 2026 SALYA SOFTWARE SOLUTIONS. TODOS OS DIREITOS RESERVADOS.
         </footer>
+      </div>
+    </div>
+  );
+}
+
+function SubscriptionBarrier() {
+  const { user, effectivePlan } = React.useContext(AppContext);
+  
+  if (!user || user.planType === 'ADMIN') {
+    return null;
+  }
+
+  // Se estivermos num contexto de empresa, o status efetivo manda.
+  // Caso contrário (ex: configurações gerais), o status do usuário manda.
+  const status = effectivePlan ? effectivePlan.status : user.subscriptionStatus;
+
+  if (status === 'ATIVA') {
+    return null;
+  }
+
+  const getStatusInfo = () => {
+    switch (status) {
+      case 'PENDENTE_APROVACAO':
+        return {
+          title: 'Assinatura Pendente',
+          message: 'A subscrição desta entidade está a aguardar ativação. Se você é um colaborador, contacte o proprietário da conta.',
+          icon: 'hourglass_empty',
+          color: 'amber'
+        };
+      case 'EXPIRADA':
+        return {
+          title: 'Assinatura Expirada',
+          message: 'O período de subscrição desta entidade terminou. Por favor, renove o plano para continuar a aceder.',
+          icon: 'event_busy',
+          color: 'rose'
+        };
+      case 'CANCELADA':
+        return {
+          title: 'Acesso Suspenso',
+          message: 'O acesso a esta entidade foi suspenso ou a subscrição foi cancelada.',
+          icon: 'block',
+          color: 'slate'
+        };
+      default:
+        return null;
+    }
+  };
+
+  const info = getStatusInfo();
+  if (!info) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800">
+        <div className="p-10 text-center">
+          <div className={`size-20 rounded-3xl bg-${info.color}-100 dark:bg-${info.color}-500/10 flex items-center justify-center text-${info.color}-600 dark:text-${info.color}-500 mx-auto mb-8 shadow-lg shadow-${info.color}-500/20`}>
+            <span className="material-symbols-outlined text-4xl">{info.icon}</span>
+          </div>
+          <h2 className="text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tight mb-4">{info.title}</h2>
+          <p className="text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
+            {info.message}
+          </p>
+          
+          <div className="flex flex-col gap-3">
+            <button 
+              onClick={() => window.location.href = '/configuracoes'}
+              className="w-full py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-3"
+            >
+              <span className="material-symbols-outlined">upgrade</span>
+              Ver Configurações
+            </button>
+            <button 
+              onClick={() => { localStorage.clear(); window.location.href = '/'; }}
+              className="w-full py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+            >
+              Sair da Conta
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

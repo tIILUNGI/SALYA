@@ -18,15 +18,29 @@ interface HistoricoProcessamento {
   id: number;
   colaboradorId?: number;
   nomeColaborador: string;
+  nifColaborador?: string;
   cargo?: string;
+  iban?: string;
+  banco?: string;
   mes: number;
   ano: number;
+  diasTrabalhados?: number;
+  diasUteis?: number;
+  salarioBaseProporcional?: number;
+  subsidioAlimentacao?: number;
+  subsidioTransporte?: number;
+  subsidioFerias?: number;
+  subsidioNatal?: number;
+  horasExtra?: number;
+  bonus?: number;
   totalBruto: number;
   descontos: number;
   valorINSS?: number;
   valorIRT?: number;
+  percentualIRT?: number;
   valorFaltas?: number;
   salarioLiquido: number;
+  reciboUrl?: string;
   createdAt?: string;
 }
 
@@ -134,6 +148,7 @@ const Processamento: React.FC = () => {
   // Subsidios opcionais
   const [incluirFerias, setIncluirFerias] = useState(false);
   const [incluirNatal, setIncluirNatal] = useState(false);
+  const [localTipoProcessamento, setLocalTipoProcessamento] = useState<'Dias Variáveis' | 'Dias Fixos'>('Dias Variáveis');
 
   // ── Verificar se o período seleccionado é futuro (bloqueado) ────────────────
   const selectedMonthNum = monthToNum(selectedMonth);
@@ -156,9 +171,6 @@ const Processamento: React.FC = () => {
 
   // ── Cálculo de Dias Úteis Reais (Calendário) ───────────────────────────────
   const diasUteisReal = useMemo(() => {
-    const isFixed = empresa?.tipoProcessamento === 'Dias Fixos' || empresa?.tipoProcessamento === 'DIAS_FIXOS';
-    if (isFixed) return 22;
-    
     // Se for variável, calculamos os dias úteis do mês (Seg-Sex) menos feriados
     const month = monthToNum(selectedMonth);
     const year = parseInt(selectedYear, 10);
@@ -181,12 +193,12 @@ const Processamento: React.FC = () => {
   }, [empresa, selectedMonth, selectedYear, holidays]);
 
   // ── Configurações de Processamento ─────────────────────────────────────────
-  const isFixed = empresa?.tipoProcessamento === 'Dias Fixos' || empresa?.tipoProcessamento === 'DIAS_FIXOS';
+  const isFixed = localTipoProcessamento === 'Dias Fixos';
   const baseDays = useMemo(() => isFixed ? 22 : diasUteisReal, [isFixed, diasUteisReal]);
 
   useEffect(() => {
-    setFormDiasTrabalhados(diasUteisReal);
-  }, [diasUteisReal]);
+    setFormDiasTrabalhados(isFixed ? 22 : diasUteisReal);
+  }, [isFixed, diasUteisReal]);
 
   const diasDoMes = useMemo(() => {
     const month = monthToNum(selectedMonth);
@@ -203,11 +215,17 @@ const Processamento: React.FC = () => {
       try {
         const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${selectedYear}/${country.code}`);
         if (response.ok) {
-          const data = await response.json();
-          setHolidays(data);
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const data = await response.json();
+            setHolidays(data);
+          } else {
+            setHolidays([]);
+          }
+        } else {
+          setHolidays([]);
         }
       } catch (error) {
-        console.error('Erro ao carregar feriados:', error);
         setHolidays([]);
       }
     };
@@ -372,6 +390,12 @@ const Processamento: React.FC = () => {
     setFormBonus(0);
     setFormFaltas(0);
     setFormOutrosGanhos([]);
+    
+    // Regime local baseado na empresa
+    const regimeEmpresa = (empresa?.tipoProcessamento === 'Dias Fixos' || empresa?.tipoProcessamento === 'DIAS_FIXOS') 
+      ? 'Dias Fixos' : 'Dias Variáveis';
+    setLocalTipoProcessamento(regimeEmpresa);
+    
     setShowFormModal(true);
   };
 
@@ -408,14 +432,17 @@ const Processamento: React.FC = () => {
     Swal.fire({ title: 'A Processar...', text: 'A gerar recibos padrao. Por favor, aguarde.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     try {
+      const isFixedCompany = (empresa?.tipoProcessamento === 'Dias Fixos' || empresa?.tipoProcessamento === 'DIAS_FIXOS');
+      const bulkBaseDays = isFixedCompany ? 22 : diasUteisReal;
+
       for (const colab of ativosParaProcessar) {
         const dto = {
           trabalhadorId: colab.id,
           mes: monthToNum(selectedMonth),
           ano: parseInt(selectedYear, 10),
           salarioBaseOverride: colab.salarioBase || 0,
-          diasTrabalhados: diasUteisReal,
-          diasUteis: diasUteisReal,
+          diasTrabalhados: bulkBaseDays,
+          diasUteis: bulkBaseDays,
           diasAlimentacao: 1,
           diasTransporte: 1,
           valorDiaAlimentacao: colab.subsidioAlimentacao || 0,
@@ -452,7 +479,7 @@ const Processamento: React.FC = () => {
         ano: parseInt(selectedYear, 10),
         salarioBaseOverride: formSalario,
         diasTrabalhados: formDiasTrabalhados,
-        diasUteis: diasUteisReal,
+        diasUteis: baseDays,
         diasAlimentacao: 1,
         diasTransporte: 1,
         valorDiaAlimentacao: formGanhoAlimentacao,
@@ -528,6 +555,43 @@ const Processamento: React.FC = () => {
 
   const handleRemoveOtherGain = (id: string) => {
     setFormOutrosGanhos((previous) => previous.filter((ganho) => ganho.id !== id));
+  };
+
+  const handleDownloadHistoricalReceipt = (item: HistoricoProcessamento) => {
+    // Reconstruir o snapshot do recibo a partir do item do histórico
+    setReceiptSnapshot({
+      colaborador: {
+        id: item.colaboradorId || 0,
+        nome: item.nomeColaborador,
+        nif: item.nifColaborador || '',
+        cargo: item.cargo || '',
+        salarioBase: item.salarioBaseProporcional || 0, // No histórico salvamos o proporcional, mas para o recibo usamos como base do que foi processado
+        status: 'Ativo',
+        email: '',
+        banco: item.banco,
+        iban: item.iban
+      } as any,
+      mes: numToMonth(item.mes),
+      ano: String(item.ano),
+      dataProcessamento: item.createdAt ? new Date(item.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO'),
+      salarioBase: item.salarioBaseProporcional || 0,
+      diasTrabalhados: item.diasTrabalhados || 22,
+      ganhoAlimentacao: item.subsidioAlimentacao || 0,
+      ganhoTransporte: item.subsidioTransporte || 0,
+      ganhoFerias: item.subsidioFerias || 0,
+      ganhoNatal: item.subsidioNatal || 0,
+      horasExtra: item.horasExtra || 0,
+      bonus: item.bonus || 0,
+      faltas: item.valorFaltas || 0,
+      outrosGanhos: [], // Historico DTO simplified others for now
+      totalBruto: item.totalBruto,
+      valorINSS: item.valorINSS || 0,
+      valorIRT: item.valorIRT || 0,
+      percentualIRT: item.percentualIRT ? item.percentualIRT * 100 : 0,
+      totalDescontos: item.descontos,
+      salarioLiquido: item.salarioLiquido,
+    });
+    setShowReceiptModal(true);
   };
 
 
@@ -624,28 +688,44 @@ const Processamento: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-medium text-slate-500">Dias Trabalhados</label>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isFixed ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-indigo-100 text-indigo-700 border border-indigo-200'}`}>
-                    {isFixed ? 'REGIME FIXO (22)' : 'REGIME VARIÁVEL'}
-                  </span>
-                </div>
-                <div className="relative group">
-                  <input 
-                    type="number" 
-                    readOnly 
-                    value={formDiasTrabalhados} 
-                    className="w-full bg-slate-100 border-none rounded-xl p-4 font-black text-slate-600 text-lg cursor-not-allowed group-hover:bg-slate-200/50 transition-colors"
-                  />
-                  <div className="absolute inset-y-0 right-4 flex items-center">
-                    <span className="material-symbols-outlined text-slate-400 text-base">lock</span>
+                  <label className="block text-xs font-medium text-slate-500">Regime de Cálculo</label>
+                  <div className="flex p-0.5 bg-slate-100 rounded-lg">
+                    <button 
+                      type="button"
+                      onClick={() => setLocalTipoProcessamento('Dias Fixos')}
+                      className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${isFixed ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                      FIXO (22)
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setLocalTipoProcessamento('Dias Variáveis')}
+                      className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${!isFixed ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                      VARIÁVEL
+                    </button>
                   </div>
                 </div>
-                <p className="text-[10px] text-slate-400 font-medium">
-                  {isFixed 
-                    ? 'Fórmula aplicada: Base ÷ 22 × Dias Trabalhados' 
-                    : `Fórmula aplicada: Base ÷ ${formDiasTrabalhados} (Dias Úteis) × Dias Trabalhados`
-                  }
-                </p>
+                <div className="space-y-2 mt-4">
+                  <label className="block text-xs font-medium text-slate-500">Dias Trabalhados</label>
+                  <div className="relative group">
+                    <input 
+                      type="number" 
+                      value={formDiasTrabalhados} 
+                      onChange={(e) => setFormDiasTrabalhados(Number(e.target.value) || 0)}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 font-black text-primary text-lg outline-none focus:ring-2 focus:ring-primary transition-all"
+                    />
+                    <div className="absolute inset-y-0 right-4 flex items-center">
+                      <span className="material-symbols-outlined text-slate-400 text-base">edit</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-medium">
+                    {isFixed 
+                      ? `Fórmula: Salário ÷ 22 × ${formDiasTrabalhados} dias` 
+                      : `Fórmula: Salário ÷ ${diasUteisReal} (Úteis) × ${formDiasTrabalhados} dias`
+                    }
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -1147,6 +1227,7 @@ const Processamento: React.FC = () => {
                           <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Desc.</th>
                           <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Líquido</th>
                           <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase">Data</th>
+                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -1172,6 +1253,15 @@ const Processamento: React.FC = () => {
                             </td>
                             <td className="px-4 py-3 text-right text-sm font-medium text-primary">{formatMoney(item.salarioLiquido)}</td>
                             <td className="px-4 py-3 text-xs text-slate-400">{item.createdAt ? new Date(item.createdAt).toLocaleString('pt-AO') : '-'}</td>
+                            <td className="px-4 py-3 text-center">
+                              <button 
+                                onClick={() => handleDownloadHistoricalReceipt(item)}
+                                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
+                                title="Baixar Recibo"
+                              >
+                                <span className="material-symbols-outlined">download</span>
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>

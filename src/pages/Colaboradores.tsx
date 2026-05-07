@@ -298,7 +298,7 @@ const Colaboradores: React.FC = () => {
     switch (modalTab) {
       case 'Identificacao':
         return (
-          <div className="space-y-5 animate-in fade-in slide-up duration-300">
+          <div className="space-y-5">
             <div className={sectionClass}>
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Identidade do Funcionario</p>
@@ -343,7 +343,7 @@ const Colaboradores: React.FC = () => {
         );
       case 'Documentos':
         return (
-          <div className="space-y-5 animate-in fade-in duration-300">
+          <div className="space-y-5">
             <div className={sectionClass}>
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
                 <div>
@@ -419,7 +419,7 @@ const Colaboradores: React.FC = () => {
         );
       case 'Dados Fiscais':
         return (
-          <div className="space-y-5 animate-in fade-in duration-300">
+          <div className="space-y-5">
             <div className={sectionClass}>
               <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Fiscalidade</p>
               <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Enquadramento Tributario</h4>
@@ -442,7 +442,7 @@ const Colaboradores: React.FC = () => {
         );
       case 'SubsidiosFerias':
         return (
-          <div className="space-y-5 animate-in fade-in duration-300">
+          <div className="space-y-5">
             <div className={sectionClass}>
               <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Ganhos Contratuais</p>
               <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Estrutura de Ganhos</h4>
@@ -473,7 +473,7 @@ const Colaboradores: React.FC = () => {
         );
       case 'RegimeProtecao':
         return (
-          <div className="space-y-5 animate-in fade-in duration-300">
+          <div className="space-y-5">
             <div className={sectionClass}>
               <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Protecao Social</p>
               <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Seguranca e Pagamento</h4>
@@ -504,7 +504,7 @@ const Colaboradores: React.FC = () => {
         );
       case 'InformacaoProfissional':
         return (
-          <div className="space-y-5 animate-in fade-in duration-300">
+          <div className="space-y-5">
             <div className={sectionClass}>
               <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Perfil Profissional</p>
               <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Estrutura Organizacional</h4>
@@ -545,7 +545,7 @@ const Colaboradores: React.FC = () => {
         );
       case 'Contrato':
         return (
-          <div className="space-y-5 animate-in fade-in duration-300">
+          <div className="space-y-5">
             <div className={sectionClass}>
               <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Contrato de Trabalho</p>
               <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Formalizacao e Estado</h4>

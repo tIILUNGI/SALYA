@@ -58,7 +58,7 @@ const Simulacao: React.FC = () => {
   };
 
   return (
-    <div className="p-8 animate-in fade-in slide-up">
+    <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Simulações Salariais</h1>
         <p className="text-sm text-slate-500 mt-1">Crie cenários hipotéticos e veja o impacto financeiro real (INSS + IRT).</p>

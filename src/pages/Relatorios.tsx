@@ -29,7 +29,7 @@ const Relatorios: React.FC = () => {
   }, [empresaId]);
 
   return (
-    <div className="p-8 animate-in fade-in slide-up">
+    <div className="p-8">
       <div className="flex justify-between items-start mb-8">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Relatórios & Gráficos</h1>
