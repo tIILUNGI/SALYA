@@ -210,19 +210,18 @@ const Configuracoes: React.FC = () => {
         const year = new Date().getFullYear();
         const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/${country.code}`);
         if (response.ok) {
-          const contentType = response.headers.get("content-type");
-          if (contentType && contentType.includes("application/json")) {
-            const data = await response.json();
+          const data = await response.json();
+          if (Array.isArray(data)) {
             setHolidays(data);
           } else {
-            console.warn('API de feriados retornou um formato inesperado');
+            console.warn('API de feriados retornou um formato inesperado:', data);
             setHolidays([]);
           }
         } else {
           setHolidays([]);
         }
       } catch (error) {
-        console.error('Erro ao carregar feriados:', error);
+        // Ignorar erro silenciosamente ou mostrar log discreto
         setHolidays([]);
       } finally {
         setHolidaysLoading(false);
@@ -801,12 +800,20 @@ const handleSave = async () => {
                         <div className="size-5 bg-white rounded-full shadow-lg" />
                       </button>
                     </div>
-                    <div className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                    <div className={`flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl transition-all ${!config.processamentoAutomatico ? 'opacity-50' : 'opacity-100'}`}>
                       <div>
                         <p className="font-black text-sm uppercase tracking-tight text-slate-700 dark:text-white">Dia de Processamento</p>
                         <p className="text-xs text-slate-400 mt-1">Dia do mês em que deseja ser notificado</p>
                       </div>
-                      <input type="number" min="1" max="31" value={config.diaProcessamento} onChange={(e) => setConfig({...config, diaProcessamento: Number(e.target.value) || 1})} className="w-20 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg text-center font-black" />
+                      <input 
+                        type="number" 
+                        min="1" 
+                        max="31" 
+                        value={config.diaProcessamento} 
+                        disabled={!config.processamentoAutomatico}
+                        onChange={(e) => setConfig({...config, diaProcessamento: Number(e.target.value) || 1})} 
+                        className={`w-20 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg text-center font-black ${!config.processamentoAutomatico ? 'cursor-not-allowed text-slate-400' : ''}`} 
+                      />
                     </div>
                   </div>
                 </div>
@@ -1013,7 +1020,7 @@ const handleSave = async () => {
                       
                       <div className="flex flex-col gap-1">
                         <p className="text-sm text-slate-500 font-medium italic">Plano Actual:</p>
-                        <h4 className="text-4xl font-black text-primary uppercase tracking-tighter mb-2">{user?.planType || 'DEMO'}</h4>
+                        <h4 className="text-4xl font-black text-primary uppercase tracking-tighter mb-2">{user?.activePlanName || user?.planType || 'DEMO'}</h4>
                         <div className="flex items-center gap-4">
                           <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
                             user?.subscriptionStatus === 'ATIVA' ? 'bg-emerald-100 text-emerald-700' : 
@@ -1068,15 +1075,15 @@ const handleSave = async () => {
                       <div className="mb-8">
                         <div className="flex items-baseline gap-1 mb-2">
                           <span className="text-3xl font-black text-slate-900 dark:text-white">{p.price.toLocaleString()}</span>
-                          <span className="text-xs font-black text-slate-400 uppercase">Kz/mês</span>
+                          <span className="text-xs font-black text-slate-400 uppercase">Kz / {p.durationDays} dias</span>
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed min-h-[3rem]">Ideal para {p.type === 'DEMO' ? 'testar funcionalidades' : p.type === 'BASIC' ? 'pequenas empresas' : p.type === 'PRO' ? 'negócios em crescimento' : 'grandes operações'}.</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed min-h-[3rem]">{p.description || `Plano ${p.name} ideal para as suas necessidades de processamento.`}</p>
                       </div>
 
                       <ul className="space-y-4 mb-10 flex-1">
                         {[
                           'Processamento Ilimitado',
-                          p.type === 'DEMO' ? 'Apenas 24 Horas' : 'Acesso Mensal',
+                          p.type === 'DEMO' ? 'Apenas 24 Horas' : `Acesso por ${p.durationDays} dias`,
                           'Suporte Prioritário',
                           'Relatórios Automáticos'
                         ].map((feat, i) => (

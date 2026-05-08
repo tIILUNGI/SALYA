@@ -121,7 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
   // Se não tiver empresa configurada, mostrar tela de configuração inicial
   if (!empresa) {
     return (
-      <aside className={`w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col fixed h-full z-50 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+      <aside className={`w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="p-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800">
           <div className="bg-primary text-white p-1.5 rounded-lg">
             <span className="material-symbols-outlined">payments</span>
@@ -297,7 +297,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
 
   // Sidebar normal quando tem empresa configurada
   return (
-    <aside className={`w-64 border-r border-corporate-200 bg-white flex flex-col fixed h-full z-50 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+    <aside className={`w-64 border-r border-corporate-200 bg-white flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
       <div className="p-4 flex items-center gap-2 border-b border-corporate-100">
         <div className="bg-primary text-white p-1 rounded">
           <span className="material-symbols-outlined">payments</span>
@@ -317,7 +317,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
           <button
             key={item.id}
             onClick={() => handleNavigate(item.id)}
-            className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors ${
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sm ${
               currentPage === item.id
                 ? 'bg-primary text-white'
                 : 'text-corporate-600 hover:bg-corporate-100'
@@ -340,7 +340,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
         </div>
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-corporate-500 hover:text-rose-600 transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-corporate-500 hover:text-rose-600"
         >
           <span className="material-symbols-outlined text-sm">logout</span>
           Terminar Sessão

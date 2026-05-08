@@ -23,6 +23,7 @@ interface User {
   subscriptionStatus?: 'ATIVA' | 'PENDENTE_APROVACAO' | 'EXPIRADA' | 'CANCELADA';
   subscriptionExpiry?: string;
   planType?: string;
+  activePlanName?: string;
 }
 
 interface AppContextType {
@@ -173,6 +174,27 @@ function App() {
         setIsAuthenticated(false);
         setUser(null);
         clearCompanyState();
+        setIsAuthChecking(false);
+        return;
+      }
+
+      // Check if token is expired (client-side)
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          console.warn("Sessão expirada detectada no carregamento inicial.");
+          setIsAuthenticated(false);
+          setUser(null);
+          clearCompanyState();
+          setIsAuthChecking(false);
+          localStorage.removeItem('salya_token');
+          localStorage.removeItem('token');
+          return;
+        }
+      } catch (e) {
+        // Se o token estiver malformado, tratamos como não autenticado
+        console.error("Token malformado detectado.");
+        setIsAuthenticated(false);
         setIsAuthChecking(false);
         return;
       }

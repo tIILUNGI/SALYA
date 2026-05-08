@@ -104,13 +104,17 @@ const buildErrorFromResponse = (response: Response, responseText: string) => {
 };
 
 const ensureAuthOrRedirect = (response: Response, endpoint: string) => {
-  if (response.status === 401) {
+  if (response.status === 401 || response.status === 403) {
     const isAuthEndpoint = endpoint.startsWith('/auth');
     if (isAuthEndpoint) {
       return;
     }
     clearAuthStorage();
-    window.location.href = '/login';
+    
+    // Only redirect if not already on login page to avoid loops
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
     throw new Error('Sessão expirada');
   }
 };

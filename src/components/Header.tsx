@@ -92,11 +92,8 @@ const Header: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleMarkAllRead = async () => {
-    const backendIds = notifications.filter(n => !n.read && n.tipo === 'backend').map(n => n.id);
     try {
-      for (const id of backendIds) {
-        await api.patch(`/notificacoes/${id}`, { lido: true });
-      }
+      await api.patch(`/notificacoes/lidas?empresaId=${empresaId}`, {});
     } catch {}
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
@@ -132,7 +129,7 @@ const Header: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => { navigate('/processamento'); dismissBanner(); }}
-              className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded text-xs font-medium text-white transition-colors"
+              className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded text-xs font-medium text-white"
             >
               Processar agora
             </button>
@@ -156,13 +153,13 @@ const Header: React.FC = () => {
 
           <div className="relative group">
             {empresa && (
-              <button className="flex items-center gap-2 px-3 py-1.5 bg-corporate-50 rounded border border-corporate-200 hover:bg-corporate-100 transition-all">
+              <button className="flex items-center gap-2 px-3 py-1.5 bg-corporate-50 rounded border border-corporate-200 hover:bg-corporate-100">
                 <span className="material-symbols-outlined text-corporate-500 text-sm">domain</span>
                 <span className="text-sm text-corporate-700 max-w-[120px] truncate">{empresa.nome}</span>
                 <span className="material-symbols-outlined text-corporate-400 text-xs">expand_more</span>
               </button>
             )}
-            <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded shadow-lg border border-corporate-200 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded shadow-lg border border-corporate-200 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50">
               <div className="p-3 border-b border-corporate-100 bg-corporate-50">
                 <h3 className="text-xs font-medium text-corporate-500">Empresas</h3>
               </div>
@@ -171,7 +168,7 @@ const Header: React.FC = () => {
                   <button
                     key={bus.id}
                     onClick={() => { setEmpresa(bus); setEmpresaId(bus.id); }}
-                    className={`w-full flex items-center gap-2 p-3 hover:bg-corporate-50 transition-colors text-left ${empresaId === bus.id ? 'bg-primary/5' : ''}`}
+                    className={`w-full flex items-center gap-2 p-3 hover:bg-corporate-50 text-left ${empresaId === bus.id ? 'bg-primary/5' : ''}`}
                   >
                     <div className={`size-7 rounded flex items-center justify-center ${empresaId === bus.id ? 'bg-primary text-white' : 'bg-corporate-100 text-corporate-400'}`}>
                       <span className="material-symbols-outlined text-sm">{(bus as any).categoria === 'Particular' ? 'home' : 'business'}</span>
@@ -194,7 +191,7 @@ const Header: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-1.5 text-corporate-500 hover:bg-corporate-100 rounded relative transition-colors"
+              className="p-1.5 text-corporate-500 hover:bg-corporate-100 rounded relative"
             >
               <span className={`material-symbols-outlined text-sm ${unreadCount > 0 ? 'text-amber-500' : ''}`}>
                 {unreadCount > 0 ? 'notifications_active' : 'notifications'}
@@ -225,7 +222,7 @@ const Header: React.FC = () => {
                         <div
                           key={notif.id}
                           onClick={() => markAsRead(notif.id, notif.tipo)}
-                          className={`p-4 border-b border-corporate-50 hover:bg-corporate-50 transition-colors cursor-pointer ${!notif.read ? 'bg-primary/5' : ''}`}
+                          className={`p-4 border-b border-corporate-50 hover:bg-corporate-50 cursor-pointer ${!notif.read ? 'bg-primary/5' : ''}`}
                         >
                           <div className="flex justify-between items-start gap-2">
                             <p className={`text-sm ${notif.read ? 'text-corporate-500' : 'text-corporate-800 font-medium'}`}>
