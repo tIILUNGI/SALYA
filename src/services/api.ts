@@ -103,19 +103,45 @@ const buildErrorFromResponse = (response: Response, responseText: string) => {
   return error;
 };
 
-const ensureAuthOrRedirect = (response: Response, endpoint: string) => {
-  if (response.status === 401 || response.status === 403) {
+const SUBSCRIPTION_CODES = ['SUBSCRIPTION_EXPIRED', 'SUBSCRIPTION_PENDING', 'SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_INACTIVE'];
+
+const ensureAuthOrRedirect = async (response: Response, endpoint: string) => {
+  if (response.status === 401) {
     const isAuthEndpoint = endpoint.startsWith('/auth');
-    if (isAuthEndpoint) {
-      return;
-    }
+    if (isAuthEndpoint) return;
     clearAuthStorage();
-    
-    // Only redirect if not already on login page to avoid loops
     if (window.location.pathname !== '/login') {
       window.location.href = '/login';
     }
     throw new Error('Sessão expirada');
+  }
+
+  if (response.status === 403) {
+    const isAuthEndpoint = endpoint.startsWith('/auth');
+    if (isAuthEndpoint) return;
+
+    // Try to read body to detect subscription-specific block
+    const cloned = response.clone();
+    try {
+      const body = await cloned.json();
+      if (body?.code && SUBSCRIPTION_CODES.includes(body.code)) {
+        // Subscription block — keep user logged in, fire event so SubscriptionBarrier shows
+        window.dispatchEvent(new CustomEvent('salya:subscription-blocked', {
+          detail: { status: body.subscriptionStatus, code: body.code, message: body.error }
+        }));
+        throw new Error(body.error || 'Assinatura inactiva');
+      }
+    } catch (e: any) {
+      // If it's our custom throw, re-throw it
+      if (e?.message && !e.message.startsWith('{')) throw e;
+    }
+
+    // Generic 403 = real access denied (IDOR) — clear and redirect
+    clearAuthStorage();
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
+    throw new Error('Acesso negado');
   }
 };
 
@@ -144,7 +170,7 @@ export const api = {
         headers: getHeaders(),
       });
 
-      ensureAuthOrRedirect(response, endpoint);
+      await ensureAuthOrRedirect(response, endpoint);
 
       const { responseText, responseData } = await readResponse(response);
       if (!response.ok) {
@@ -153,7 +179,7 @@ export const api = {
 
       return responseData;
     } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada') {
+      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado') {
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
@@ -168,7 +194,7 @@ export const api = {
         body: JSON.stringify(data),
       });
 
-      ensureAuthOrRedirect(response, endpoint);
+      await ensureAuthOrRedirect(response, endpoint);
 
       const { responseText, responseData } = await readResponse(response);
       if (!response.ok) {
@@ -177,7 +203,7 @@ export const api = {
 
       return responseData;
     } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada') {
+      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado') {
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
@@ -192,7 +218,7 @@ export const api = {
         body: formData,
       });
 
-      ensureAuthOrRedirect(response, endpoint);
+      await ensureAuthOrRedirect(response, endpoint);
 
       const { responseText, responseData } = await readResponse(response);
       if (!response.ok) {
@@ -201,7 +227,7 @@ export const api = {
 
       return responseData;
     } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada') {
+      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado') {
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
@@ -216,7 +242,7 @@ export const api = {
         body: JSON.stringify(data),
       });
 
-      ensureAuthOrRedirect(response, endpoint);
+      await ensureAuthOrRedirect(response, endpoint);
 
       const { responseText, responseData } = await readResponse(response);
       if (!response.ok) {
@@ -225,7 +251,7 @@ export const api = {
 
       return responseData;
     } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada') {
+      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado') {
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
@@ -240,7 +266,7 @@ export const api = {
         body: JSON.stringify(data),
       });
 
-      ensureAuthOrRedirect(response, endpoint);
+      await ensureAuthOrRedirect(response, endpoint);
 
       const { responseText, responseData } = await readResponse(response);
       if (!response.ok) {
@@ -249,7 +275,7 @@ export const api = {
 
       return responseData;
     } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada') {
+      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado') {
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
@@ -263,7 +289,7 @@ export const api = {
         headers: getHeaders(),
       });
 
-      ensureAuthOrRedirect(response, endpoint);
+      await ensureAuthOrRedirect(response, endpoint);
 
       if (!response.ok) {
         const responseText = await response.text();
@@ -272,7 +298,7 @@ export const api = {
 
       return true;
     } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada') {
+      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado') {
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;

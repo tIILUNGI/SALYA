@@ -253,6 +253,40 @@ function App() {
     }
   }, [isAuthenticated, refreshData]);
 
+  // Listen for subscription-blocked events fired by api.ts when backend returns a subscription 403
+  useEffect(() => {
+    const handleSubscriptionBlocked = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { status: string; code: string; message: string };
+      if (detail?.status) {
+        setUser(prev => prev ? { ...prev, subscriptionStatus: detail.status as any } : prev);
+      }
+    };
+    window.addEventListener('salya:subscription-blocked', handleSubscriptionBlocked);
+    return () => window.removeEventListener('salya:subscription-blocked', handleSubscriptionBlocked);
+  }, []);
+  // Re-check subscription status when user returns to the tab (catches plans that expired while idle)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (isAuthenticated) {
+        const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
+        if (token) {
+          // Lightweight check: re-fetch user profile to get fresh subscriptionStatus
+          fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api'}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+              if (data?.subscriptionStatus) {
+                setUser(prev => prev ? { ...prev, subscriptionStatus: data.subscriptionStatus, subscriptionExpiry: data.subscriptionExpiry } : prev);
+              }
+            })
+            .catch(() => {}); // silent
+        }
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [isAuthenticated]);
 
   const showConfirm = async (config: { title: string; text: string; onConfirm: () => void }) => {
     const isConfirmed = await notify.modal.confirm(config.title, config.text);
