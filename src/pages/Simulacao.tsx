@@ -16,7 +16,7 @@ interface SimResult {
 const fmt = (v: number) =>
   Number(v).toLocaleString('pt-AO', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-const Simulacao: React.FC = () => {
+const Simulação: React.FC = () => {
   const { colaboradores } = useContext(AppContext);
   const ativos = colaboradores.filter(c => c.status === 'Ativo');
 
@@ -184,4 +184,4 @@ const Simulacao: React.FC = () => {
   );
 };
 
-export default Simulacao;
+export default Simulação;

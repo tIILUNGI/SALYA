@@ -415,9 +415,11 @@ function MainLayout() {
             <Route path="/configuracoes" element={<Configuracoes />} />
           </Routes>
         </main>
-        <footer className="mt-auto p-8 border-t border-slate-200 dark:border-slate-800 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
-          © 2026 SALYA SOFTWARE SOLUTIONS. TODOS OS DIREITOS RESERVADOS.
-        </footer>
+        <footer className="py-8 text-center opacity-[0.05] pointer-events-none">
+        <p className="text-xs text-slate-400 font-medium tracking-widest">
+          © {new Date().getFullYear()} SALYA PAYROLL • TODOS OS DIREITOS RESERVADOS
+        </p>
+      </footer>
       </div>
     </div>
   );

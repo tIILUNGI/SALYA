@@ -23,7 +23,7 @@ const Landing: React.FC = () => {
     {
       titulo: 'Relatórios & BI',
       descricao: 'Acesse relatórios detalhados de folha de pagamento, histórico de salários por colaborador, e exportação de dados para análises externas.',
-      imagem: '/Relatorios.png'
+      imagem: '/Relatórios.png'
     }
   ];
 

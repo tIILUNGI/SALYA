@@ -13,13 +13,13 @@ interface Documento {
 }
 
 const TABS = [
-  { id: 'Identificacao', label: 'Identificacao', description: 'Dados pessoais e elementos de identificacao do funcionario.' },
+  { id: 'Identificação', label: 'Identificação', description: 'Dados pessoais e elementos de identificação do colaborador.' },
   { id: 'Documentos', label: 'Documentos', description: 'Arquivo digital e validade dos documentos associados.' },
-  { id: 'Dados Fiscais', label: 'Dados Fiscais', description: 'Informacoes tributarias e enquadramento fiscal.' },
-  { id: 'SubsidiosFerias', label: 'Ganhos e Ferias', description: 'Valores fixos de salario, ganhos mensais e ganhos sazonais.' },
-  { id: 'RegimeProtecao', label: 'Regime de Protecao', description: 'Seguranca social, conta bancaria e centro de custo.' },
-  { id: 'InformacaoProfissional', label: 'Informacao Profissional', description: 'Funcao, departamento e posicionamento interno.' },
-  { id: 'Contrato', label: 'Contrato', description: 'Condicoes contratuais, datas relevantes e estado atual.' }
+  { id: 'Dados Fiscais', label: 'Dados Fiscais', description: 'Informações tributárias e enquadramento fiscal.' },
+  { id: 'SubsidiosFerias', label: 'Ganhos e Férias', description: 'Valores fixos de salário, ganhos mensais e ganhos sazonais.' },
+  { id: 'RegimeProtecao', label: 'Regime de Proteção', description: 'Segurança social, conta bancária e centro de custo.' },
+  { id: 'InformaçãoProfissional', label: 'Informação Profissional', description: 'Função, departamento e posicionamento interno.' },
+  { id: 'Contrato', label: 'Contrato', description: 'Condições contratuais, datas relevantes e estado atual.' }
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -60,9 +60,9 @@ const createEmptyForm = (empresaId?: number): Partial<Colaborador> => ({
 const parseMoneyInput = (value: string) => Number(value.replace(/[^\d]/g, '')) || 0;
 const formatMoneyInput = (value?: number | null) => (value ?? 0).toLocaleString('pt-AO');
 const formatMoneyDisplay = (value?: number | null) => `${(value ?? 0).toLocaleString('pt-AO')} Kz`;
-const formatText = (value?: string | null) => value && value.trim() ? value : 'Nao definido';
+const formatText = (value?: string | null) => value && value.trim() ? value : 'Não definido';
 const formatDateDisplay = (value?: string | null) => {
-  if (!value) return 'Nao definido';
+  if (!value) return 'Não definido';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString('pt-AO');
@@ -73,7 +73,7 @@ const Colaboradores: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<FilterStatus>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalTab, setModalTab] = useState<TabId>('Identificacao');
+  const [modalTab, setModalTab] = useState<TabId>('Identificação');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [detailsColab, setDetailsColab] = useState<Colaborador | null>(null);
   const [documentos, setDocumentos] = useState<Documento[]>([]);
@@ -116,6 +116,22 @@ const Colaboradores: React.FC = () => {
     }
   }, [editingId, fetchDocumentos, isModalOpen, modalTab]);
 
+  // Lógica de cálculo automático de fim de contrato
+  useEffect(() => {
+    if (formData.tipoContrato === 'Contrato a Termo Certo' && formData.duracaoMeses && formData.dataAdmissao) {
+      const admissionDate = new Date(formData.dataAdmissao);
+      if (!isNaN(admissionDate.getTime())) {
+        const endDate = new Date(admissionDate);
+        endDate.setMonth(endDate.getMonth() + formData.duracaoMeses);
+        endDate.setDate(endDate.getDate() - 1);
+        const dateStr = endDate.toISOString().split('T')[0];
+        if (formData.fimContrato !== dateStr) {
+          setFormData(prev => ({ ...prev, fimContrato: dateStr }));
+        }
+      }
+    }
+  }, [formData.dataAdmissao, formData.duracaoMeses, formData.tipoContrato, formData.fimContrato]);
+
   const filteredColaboradores = colaboradores.filter((colaborador) => {
     const isFromCompany = !empresaId || !colaborador.empresaId || colaborador.empresaId === empresaId;
     const matchesSearch =
@@ -137,7 +153,7 @@ const Colaboradores: React.FC = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingId(null);
-    setModalTab('Identificacao');
+    setModalTab('Identificação');
     resetDocumentState();
   };
 
@@ -151,7 +167,7 @@ const Colaboradores: React.FC = () => {
     }
 
     resetDocumentState();
-    setModalTab('Identificacao');
+    setModalTab('Identificação');
     setIsModalOpen(true);
   };
 
@@ -178,7 +194,7 @@ const Colaboradores: React.FC = () => {
 
   const handleAddDocumento = async () => {
     if (!editingId) {
-      setMessage({ title: 'Atencao', text: 'Guarde primeiro o funcionario para poder anexar documentos.', type: 'warning' });
+      setMessage({ title: 'Atenção', text: 'Guarde primeiro o colaborador para poder anexar documentos.', type: 'warning' });
       return;
     }
 
@@ -296,18 +312,18 @@ const Colaboradores: React.FC = () => {
     const sectionClass = "rounded-xl border border-corporate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-sm";
 
     switch (modalTab) {
-      case 'Identificacao':
+      case 'Identificação':
         return (
           <div className="space-y-5">
             <div className={sectionClass}>
               <div>
-                <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Identidade do Funcionario</p>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Identidade do Colaborador</p>
                 <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Dados Principais</h4>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
                 <div className="md:col-span-2">
                   <label className={labelClass}>Nome Completo</label>
-                  <input required type="text" value={formData.nome || ''} onChange={(e) => setFormData({ ...formData, nome: e.target.value })} className={inputClass} placeholder="Nome do funcionario" />
+                  <input required type="text" value={formData.nome || ''} onChange={(e) => setFormData({ ...formData, nome: e.target.value })} className={inputClass} placeholder="Nome do colaborador" />
                 </div>
                 <div>
                   <label className={labelClass}>Numero Colaborador</label>
@@ -348,7 +364,7 @@ const Colaboradores: React.FC = () => {
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
                 <div>
                   <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Arquivo Digital</p>
-                  <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Documentos do Funcionario</h4>
+                  <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Documentos do Colaborador</h4>
                 </div>
                 <button type="button" onClick={() => setShowDocForm(!showDocForm)} className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-medium flex items-center gap-2 self-start lg:self-auto hover:bg-primary/90 transition-colors">
                   <span className="material-symbols-outlined text-sm">{showDocForm ? 'close' : 'add'}</span>
@@ -358,15 +374,15 @@ const Colaboradores: React.FC = () => {
 
               {!editingId && (
                 <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
-                  Guarde primeiro os dados do funcionario para desbloquear o arquivo documental.
+                  Guarde primeiro os dados do colaborador para desbloquear o arquivo documental.
                 </div>
               )}
 
               {showDocForm && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-corporate-50 dark:bg-slate-900 p-5 rounded-xl border border-corporate-200 dark:border-slate-800 mt-5">
                   <div className="space-y-2">
-                    <label className={labelClass}>Titulo do Ficheiro</label>
-                    <input type="text" value={docForm.titulo} onChange={(e) => setDocForm({ ...docForm, titulo: e.target.value })} className={inputClass} placeholder="Ex: Copia BI" />
+                    <label className={labelClass}>Título do Ficheiro</label>
+                    <input type="text" value={docForm.titulo} onChange={(e) => setDocForm({ ...docForm, titulo: e.target.value })} className={inputClass} placeholder="Ex: Cópia BI" />
                   </div>
                   <div className="space-y-2">
                     <label className={labelClass}>Tipo de Documento</label>
@@ -422,10 +438,10 @@ const Colaboradores: React.FC = () => {
           <div className="space-y-5">
             <div className={sectionClass}>
               <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Fiscalidade</p>
-              <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Enquadramento Tributario</h4>
+              <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Enquadramento Tributário</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
                 <div>
-                  <label className={labelClass}>NIF (Numero de Contribuinte)</label>
+                  <label className={labelClass}>NIF (Número de Contribuinte)</label>
                   <input type="text" value={formData.nif || ''} onChange={(e) => setFormData({ ...formData, nif: e.target.value })} className={inputClass} placeholder="000000000" />
                 </div>
                 <div>
@@ -447,12 +463,12 @@ const Colaboradores: React.FC = () => {
               <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Ganhos Contratuais</p>
               <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Estrutura de Ganhos</h4>
               <div className="p-5 bg-corporate-50 rounded-xl border border-corporate-200 mt-5">
-                <label className={labelClass}>Salario Base Mensal (KZ)</label>
+                <label className={labelClass}>Salário Base Mensal (KZ)</label>
                 <input type="text" value={formatMoneyInput(formData.salarioBase)} onChange={(e) => setFormData({ ...formData, salarioBase: parseMoneyInput(e.target.value) })} className="w-full bg-transparent border-none outline-none font-semibold text-primary text-3xl tracking-tight" placeholder="0" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
                 <div className="space-y-2">
-                  <label className={labelClass}>Ganho Alimentacao</label>
+                  <label className={labelClass}>Ganho Alimentação</label>
                   <input type="text" value={formatMoneyInput(formData.subsidioAlimentacao)} onChange={(e) => setFormData({ ...formData, subsidioAlimentacao: parseMoneyInput(e.target.value) })} className={inputClass} />
                 </div>
                 <div className="space-y-2">
@@ -460,7 +476,7 @@ const Colaboradores: React.FC = () => {
                   <input type="text" value={formatMoneyInput(formData.subsidioTransporte)} onChange={(e) => setFormData({ ...formData, subsidioTransporte: parseMoneyInput(e.target.value) })} className={inputClass} />
                 </div>
                 <div className="space-y-2">
-                  <label className={labelClass}>Ganho de Ferias</label>
+                  <label className={labelClass}>Ganho de Férias</label>
                   <input type="text" value={formatMoneyInput(formData.subsidioFerias)} onChange={(e) => setFormData({ ...formData, subsidioFerias: parseMoneyInput(e.target.value) })} className={inputClass} />
                 </div>
                 <div className="space-y-2">
@@ -475,11 +491,11 @@ const Colaboradores: React.FC = () => {
         return (
           <div className="space-y-5">
             <div className={sectionClass}>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Protecao Social</p>
-              <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Seguranca e Pagamento</h4>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Proteção Social</p>
+              <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Segurança e Pagamento</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
                 <div className="space-y-2">
-                  <label className={labelClass}>Numero INSS</label>
+                  <label className={labelClass}>Número INSS</label>
                   <input type="text" value={formData.inss || ''} onChange={(e) => setFormData({ ...formData, inss: e.target.value })} className={inputClass} placeholder="00000000" />
                 </div>
                 <div className="space-y-2">
@@ -491,7 +507,7 @@ const Colaboradores: React.FC = () => {
                   <input type="text" value={formData.banco || ''} onChange={(e) => setFormData({ ...formData, banco: e.target.value })} className={inputClass} placeholder="Banco de pagamento" />
                 </div>
                 <div className="space-y-2">
-                  <label className={labelClass}>Regime de Seguranca Social</label>
+                  <label className={labelClass}>Regime de Segurança Social</label>
                   <input type="text" value={formData.regimeSegurancaSocial || ''} onChange={(e) => setFormData({ ...formData, regimeSegurancaSocial: e.target.value })} className={inputClass} placeholder="Ex: Normal" />
                 </div>
                 <div className="space-y-2">
@@ -502,7 +518,7 @@ const Colaboradores: React.FC = () => {
             </div>
           </div>
         );
-      case 'InformacaoProfissional':
+      case 'InformaçãoProfissional':
         return (
           <div className="space-y-5">
             <div className={sectionClass}>
@@ -510,7 +526,7 @@ const Colaboradores: React.FC = () => {
               <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Estrutura Organizacional</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
                 <div className="space-y-2">
-                  <label className={labelClass}>Cargo / Funcao</label>
+                  <label className={labelClass}>Cargo / Função</label>
                   <input required type="text" value={formData.cargo || ''} onChange={(e) => setFormData({ ...formData, cargo: e.target.value })} className={inputClass} placeholder="Ex: Analista" />
                 </div>
                 <div className="space-y-2">
@@ -521,22 +537,22 @@ const Colaboradores: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div className="space-y-2">
                   <label className={labelClass}>Email</label>
-                  <input type="email" value={formData.email || ''} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={inputClass} placeholder="funcionario@empresa.ao" />
+                  <input type="email" value={formData.email || ''} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={inputClass} placeholder="colaborador@empresa.ao" />
                 </div>
                 <div className="space-y-2">
                   <label className={labelClass}>Telefone</label>
                   <input type="text" value={formData.telefone || ''} onChange={(e) => setFormData({ ...formData, telefone: e.target.value })} className={inputClass} placeholder="923456789" />
                 </div>
                 <div className="space-y-2">
-                  <label className={labelClass}>Endereco</label>
+                  <label className={labelClass}>Endereço</label>
                   <input type="text" value={formData.endereco || ''} onChange={(e) => setFormData({ ...formData, endereco: e.target.value })} className={inputClass} placeholder="Morada principal" />
                 </div>
                 <div className="space-y-2">
-                  <label className={labelClass}>Municipio</label>
+                  <label className={labelClass}>Município</label>
                   <input type="text" value={formData.municipio || ''} onChange={(e) => setFormData({ ...formData, municipio: e.target.value })} className={inputClass} />
                 </div>
                 <div className="space-y-2">
-                  <label className={labelClass}>Provincia</label>
+                  <label className={labelClass}>Província</label>
                   <input type="text" value={formData.provincia || ''} onChange={(e) => setFormData({ ...formData, provincia: e.target.value })} className={inputClass} />
                 </div>
               </div>
@@ -548,10 +564,10 @@ const Colaboradores: React.FC = () => {
           <div className="space-y-5">
             <div className={sectionClass}>
               <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Contrato de Trabalho</p>
-              <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Formalizacao e Estado</h4>
+              <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Formalização e Estado</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
                 <div className="space-y-2">
-                  <label className={labelClass}>Data Admissao</label>
+                  <label className={labelClass}>Data Admissão</label>
                   <input required type="date" value={formData.dataAdmissao || ''} onChange={(e) => setFormData({ ...formData, dataAdmissao: e.target.value })} className={inputClass} />
                 </div>
                 <div className="space-y-2">
@@ -560,10 +576,29 @@ const Colaboradores: React.FC = () => {
                     <option value="Contrato por Tempo Indeterminado">Contrato por Tempo Indeterminado</option>
                     <option value="Contrato a Termo Certo">Contrato a Termo Certo</option>
                     <option value="Contrato a Termo Incerto">Contrato a Termo Incerto</option>
-                    <option value="Estagiario">Estagiario</option>
+                    <option value="Estagiário">Estagiário</option>
                     <option value="Prestador">Prestador</option>
                   </select>
                 </div>
+                {formData.tipoContrato === 'Contrato a Termo Certo' && (
+                  <div className="space-y-2">
+                    <label className={labelClass}>Duração do Contrato</label>
+                    <select 
+                      value={formData.duracaoMeses || ''} 
+                      onChange={(e) => setFormData({ ...formData, duracaoMeses: Number(e.target.value) })} 
+                      className={inputClass}
+                    >
+                      <option value="">Selecionar duração...</option>
+                      <option value="3">3 Meses</option>
+                      <option value="6">6 Meses</option>
+                      <option value="9">9 Meses</option>
+                      <option value="12">12 Meses</option>
+                      <option value="18">18 Meses</option>
+                      <option value="24">24 Meses</option>
+                      <option value="36">36 Meses</option>
+                    </select>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <label className={labelClass}>Fim de Contrato</label>
                   <input type="date" value={formData.fimContrato || ''} onChange={(e) => setFormData({ ...formData, fimContrato: e.target.value })} className={inputClass} />
@@ -587,7 +622,7 @@ const Colaboradores: React.FC = () => {
 
   const detailsSections = detailsColab ? [
     {
-      title: 'Identificacao',
+      title: 'Identificação',
       items: [
         ['Nome Completo', formatText(detailsColab.nome)],
         ['Numero Colaborador', formatText(detailsColab.numeroColaborador)],
@@ -611,18 +646,18 @@ const Colaboradores: React.FC = () => {
     {
       title: 'Ganhos',
       items: [
-        ['Salario Base', formatMoneyDisplay(detailsColab.salarioBase)],
-        ['Ganho Alimentacao', formatMoneyDisplay(detailsColab.subsidioAlimentacao)],
+        ['Salário Base', formatMoneyDisplay(detailsColab.salarioBase)],
+        ['Ganho Alimentação', formatMoneyDisplay(detailsColab.subsidioAlimentacao)],
         ['Ganho Transporte', formatMoneyDisplay(detailsColab.subsidioTransporte)],
-        ['Ganho de Ferias', formatMoneyDisplay(detailsColab.subsidioFerias)],
+        ['Ganho de Férias', formatMoneyDisplay(detailsColab.subsidioFerias)],
         ['Ganho de Natal', formatMoneyDisplay(detailsColab.subsidioNatal)],
       ],
     },
     {
       title: 'Protecao e Pagamento',
       items: [
-        ['Numero INSS', formatText(detailsColab.inss)],
-        ['Regime de Seguranca Social', formatText(detailsColab.regimeSegurancaSocial)],
+        ['Número INSS', formatText(detailsColab.inss)],
+        ['Regime de Segurança Social', formatText(detailsColab.regimeSegurancaSocial)],
         ['IBAN', formatText(detailsColab.iban)],
         ['Banco', formatText(detailsColab.banco)],
         ['Centro de Custo', formatText(detailsColab.centroCusto)],
@@ -633,9 +668,9 @@ const Colaboradores: React.FC = () => {
       items: [
         ['Email', formatText(detailsColab.email)],
         ['Telefone', formatText(detailsColab.telefone)],
-        ['Endereco', formatText(detailsColab.endereco)],
-        ['Municipio', formatText(detailsColab.municipio)],
-        ['Provincia', formatText(detailsColab.provincia)],
+        ['Endereço', formatText(detailsColab.endereco)],
+        ['Município', formatText(detailsColab.municipio)],
+        ['Província', formatText(detailsColab.provincia)],
       ],
     },
   ] : [];
@@ -648,7 +683,7 @@ const Colaboradores: React.FC = () => {
             <div className="w-1.5 h-8 bg-primary rounded-full"></div>
             <h1 className="text-3xl font-black text-slate-800 dark:text-white">Recursos Humanos</h1>
           </div>
-          <p className="text-slate-500 text-xs font-bold opacity-60 ml-4">Gestao de Colaboradores e Fichas Individuais</p>
+          <p className="text-slate-500 text-xs font-bold opacity-60 ml-4">Gestão de Colaboradores e Fichas Individuais</p>
         </div>
         <button onClick={() => handleOpenModal()} className="px-8 h-12 bg-primary text-white text-[10px] font-black rounded-xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center gap-3">
           <span className="material-symbols-outlined text-[18px]">person_add</span>
@@ -689,7 +724,7 @@ const Colaboradores: React.FC = () => {
         <table className="w-full text-left">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100">
-              <th className="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Funcionario</th>
+              <th className="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Colaborador</th>
               <th className="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Contrato / NIF</th>
               <th className="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wide text-right">Status</th>
               <th className="px-6 py-4"></th>
@@ -744,7 +779,7 @@ const Colaboradores: React.FC = () => {
               <div className="p-5 flex items-center justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-medium uppercase tracking-wider text-corporate-500">Ficha Corporativa</p>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">{editingId ? 'Atualizar Funcionario' : 'Novo Funcionario'}</h2>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">{editingId ? 'Atualizar Colaborador' : 'Novo Colaborador'}</h2>
                 </div>
                 <button onClick={handleCloseModal} className="size-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center">
                   <span className="material-symbols-outlined">close</span>

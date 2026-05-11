@@ -32,7 +32,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
     { id: 'alertas', label: 'Alertas', icon: 'notifications_active' },
-    { id: 'colaboradores', label: 'Funcionários', icon: 'group' },
+    { id: 'colaboradores', label: 'Colaboradores', icon: 'group' },
     { id: 'processamento', label: 'Processamento', icon: 'account_balance_wallet' },
     { id: 'configuracoes', label: 'Configurações', icon: 'settings' },
   ];

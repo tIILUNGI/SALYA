@@ -6,7 +6,7 @@ import Swal from 'sweetalert2';
 import { countries } from '../data/countries';
 
 
-interface ConfiguracaoEmpresa {
+interface ConfiguraçãoEmpresa {
   id: number;
   nome: string;
   nif: string;
@@ -72,8 +72,8 @@ const parseTaxInputValue = (value: string, fallback = 0) => {
   return Number.isFinite(parsedValue) ? parsedValue : fallback;
 };
 
-// Função para mapear empresa da API para ConfiguracaoEmpresa
-const mapEmpresaToConfig = (emp: any): ConfiguracaoEmpresa => ({
+// Função para mapear empresa da API para ConfiguraçãoEmpresa
+const mapEmpresaToConfig = (emp: any): ConfiguraçãoEmpresa => ({
   id: emp.id || Date.now(),
   nome: emp.nome || '',
   nif: emp.nif || '',
@@ -97,13 +97,13 @@ const mapEmpresaToConfig = (emp: any): ConfiguracaoEmpresa => ({
   tipoProcessamento: emp.tipoProcessamento || 'Dias Variáveis'
 });
 
-const Configuracoes: React.FC = () => {
+const Configurações: React.FC = () => {
   const { user, empresa, setEmpresa, isConfigured, setIsConfigured, empresas, empresaId, setEmpresaId, refreshData, setMessage } = useContext(AppContext);
 
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(empresas && empresas.length > 1 ? 'gestao' : 'empresa');
   
-  const emptyConfig: ConfiguracaoEmpresa = {
+  const emptyConfig: ConfiguraçãoEmpresa = {
     id: Date.now(),
     nome: '',
     nif: '',
@@ -127,7 +127,7 @@ const Configuracoes: React.FC = () => {
     tipoProcessamento: 'Dias Variáveis'
   };
 
-  const [config, setConfig] = useState<ConfiguracaoEmpresa>(
+  const [config, setConfig] = useState<ConfiguraçãoEmpresa>(
     empresa ? mapEmpresaToConfig(empresa) : { ...emptyConfig }
   );
   const [setupStep, setSetupStep] = useState(!empresa ? 'choice' : 'form');
@@ -1128,4 +1128,4 @@ const handleSave = async () => {
   );
 };
 
-export default Configuracoes;
+export default Configurações;

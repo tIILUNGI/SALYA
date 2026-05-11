@@ -3,7 +3,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { api } from '../services/api';
 import { AppContext } from '../App';
 
-const Relatorios: React.FC = () => {
+const Relatórios: React.FC = () => {
   const { empresaId } = useContext(AppContext);
   const [chartProcessamento, setChartProcessamento] = useState<any[]>([]);
   const [chartAbsentismo, setChartAbsentismo] = useState<any[]>([]);
@@ -88,4 +88,4 @@ const Relatorios: React.FC = () => {
   );
 };
 
-export default Relatorios;
+export default Relatórios;

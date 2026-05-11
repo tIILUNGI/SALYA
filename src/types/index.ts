@@ -96,6 +96,7 @@ export interface Colaborador {
   subsidioNatal?: number;
   regimeSegurancaSocial?: string;
   centroCusto?: string;
+  duracaoMeses?: number;
 }
 
 export interface Ferias {

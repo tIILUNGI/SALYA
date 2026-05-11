@@ -14,7 +14,7 @@ interface OutroGanhoInput {
   valor: number;
 }
 
-interface HistoricoProcessamento {
+interface HistóricoProcessamento {
   id: number;
   colaboradorId?: number;
   nomeColaborador: string;
@@ -126,12 +126,12 @@ const Processamento: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR.toString());
   const [showFormModal, setShowFormModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [showHistoricoModal, setShowHistoricoModal] = useState(false);
+  const [showHistóricoModal, setShowHistóricoModal] = useState(false);
   const [selectedColab, setSelectedColab] = useState<Colaborador | null>(null);
   const [receiptSnapshot, setReceiptSnapshot] = useState<ReceiptSnapshot | null>(null);
-  const [historico, setHistorico] = useState<HistoricoProcessamento[]>([]);
-  const [historicoLoading, setHistoricoLoading] = useState(false);
-  const [historicoError, setHistoricoError] = useState('');
+  const [historico, setHistórico] = useState<HistóricoProcessamento[]>([]);
+  const [historicoLoading, setHistóricoLoading] = useState(false);
+  const [historicoError, setHistóricoError] = useState('');
   const [selectedHistoryPeriod, setSelectedHistoryPeriod] = useState('');
   const [holidays, setHolidays] = useState<any[]>([]);
 
@@ -330,31 +330,31 @@ const Processamento: React.FC = () => {
     return historico.filter((item) => `${item.ano}-${String(item.mes).padStart(2, '0')}` === selectedHistoryPeriod);
   }, [historico, selectedHistoryPeriod]);
 
-  const loadHistorico = useCallback(async () => {
+  const loadHistórico = useCallback(async () => {
     if (!empresaId) return;
 
-    setHistoricoLoading(true);
-    setHistoricoError('');
+    setHistóricoLoading(true);
+    setHistóricoError('');
     try {
       const data = await api.get(`/processamentos/historico?empresaId=${empresaId}`);
-      setHistorico(Array.isArray(data) ? data : []);
+      setHistórico(Array.isArray(data) ? data : []);
     } catch (error: any) {
-      setHistorico([]);
-      setHistoricoError(error?.message || 'Nao foi possivel carregar o historico.');
+      setHistórico([]);
+      setHistóricoError(error?.message || 'Nao foi possivel carregar o historico.');
     } finally {
-      setHistoricoLoading(false);
+      setHistóricoLoading(false);
     }
   }, [empresaId]);
 
   useEffect(() => {
-    loadHistorico();
-  }, [loadHistorico]);
+    loadHistórico();
+  }, [loadHistórico]);
 
   useEffect(() => {
-    if (showHistoricoModal) {
-      loadHistorico();
+    if (showHistóricoModal) {
+      loadHistórico();
     }
-  }, [loadHistorico, showHistoricoModal]);
+  }, [loadHistórico, showHistóricoModal]);
 
   const resetProcessingForm = () => {
     setFormSalario(0);
@@ -418,7 +418,7 @@ const Processamento: React.FC = () => {
 
     const result = await Swal.fire({
       title: 'Processamento em Lote',
-      text: `Deseja processar o salario de todos os ${ativosParaProcessar.length} funcionarios ativos não processados para ${selectedMonth}/${selectedYear}?`,
+      text: `Deseja processar o salario de todos os ${ativosParaProcessar.length} colaboradors ativos não processados para ${selectedMonth}/${selectedYear}?`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Sim, Processar Todos',
@@ -458,7 +458,7 @@ const Processamento: React.FC = () => {
         await api.post('/processamentos/processar-salario', dto);
       }
 
-      await loadHistorico();
+      await loadHistórico();
       Swal.fire('Sucesso', 'Processamento concluido!', 'success');
     } catch {
       Swal.fire('Erro', 'Ocorreu um erro no processamento.', 'error');
@@ -519,7 +519,7 @@ const Processamento: React.FC = () => {
         salarioLiquido: typeof result.salarioLiquido === 'number' && Number.isFinite(result.salarioLiquido) ? result.salarioLiquido : 0,
       });
 
-      await loadHistorico();
+      await loadHistórico();
       setShowFormModal(false);
       setShowReceiptModal(true);
     } catch (error: any) {
@@ -557,7 +557,7 @@ const Processamento: React.FC = () => {
     setFormOutrosGanhos((previous) => previous.filter((ganho) => ganho.id !== id));
   };
 
-  const handleDownloadHistoricalReceipt = (item: HistoricoProcessamento) => {
+  const handleDownloadHistoricalReceipt = (item: HistóricoProcessamento) => {
     // Reconstruir o snapshot do recibo a partir do item do histórico
     setReceiptSnapshot({
       colaborador: {
@@ -583,7 +583,7 @@ const Processamento: React.FC = () => {
       horasExtra: item.horasExtra || 0,
       bonus: item.bonus || 0,
       faltas: item.valorFaltas || 0,
-      outrosGanhos: [], // Historico DTO simplified others for now
+      outrosGanhos: [], // Histórico DTO simplified others for now
       totalBruto: item.totalBruto,
       valorINSS: item.valorINSS || 0,
       valorIRT: item.valorIRT || 0,
@@ -719,16 +719,9 @@ const Processamento: React.FC = () => {
                       <span className="material-symbols-outlined text-slate-400 text-base">edit</span>
                     </div>
                   </div>
-                  <p className="text-[10px] text-slate-400 font-medium">
-                    {isFixed 
-                      ? `Fórmula: Salário ÷ 22 × ${formDiasTrabalhados} dias` 
-                      : `Fórmula: Salário ÷ ${diasUteisReal} (Úteis) × ${formDiasTrabalhados} dias`
-                    }
-                  </p>
-                </div>
+                    </div>
+                  </div>
               </div>
-            </div>
-
             <div className="p-5 bg-slate-50 rounded-2xl space-y-4">
               <h4 className="text-sm font-medium text-slate-600">Ganhos</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -960,16 +953,12 @@ const Processamento: React.FC = () => {
                       </div>
                       <span className="font-medium text-rose-500">-{formatMoney(irtEstimado.valor)}</span>
                     </div>
-                    <div className="text-[10px] text-slate-500">IRT = parcela fixa + (MC - excesso) × taxa</div>
                   </div>
 
                   {/* Matéria Colectável (informativo) */}
                   <div className="flex justify-between text-[10px] text-slate-400">
                     <span>Matéria Colectável</span>
                     <span>{formatMoney(materiaColectavel)}</span>
-                  </div>
-                  <div className="text-[10px] text-slate-500 leading-snug">
-                    MC = Salário + Alimentação tributável + Transporte tributável + extras - INSS
                   </div>
 
                   {/* Retenção Férias */}
@@ -1176,8 +1165,8 @@ const Processamento: React.FC = () => {
   };
 
 
-  const renderHistoricoModal = () => {
-    if (!showHistoricoModal) return null;
+  const renderHistóricoModal = () => {
+    if (!showHistóricoModal) return null;
 
     return (
       <div className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-[105] p-4 backdrop-blur-sm">
@@ -1187,7 +1176,7 @@ const Processamento: React.FC = () => {
               <h3 className="text-base font-medium text-slate-700">Histórico de Processamentos</h3>
               <p className="text-sm text-slate-400">{empresa?.nome || '-'}</p>
             </div>
-            <button onClick={() => setShowHistoricoModal(false)} className="text-slate-400 hover:text-slate-600">
+            <button onClick={() => setShowHistóricoModal(false)} className="text-slate-400 hover:text-slate-600">
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
@@ -1299,7 +1288,7 @@ const Processamento: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <button onClick={() => setShowHistoricoModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-all">
+          <button onClick={() => setShowHistóricoModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-all">
             Histórico
           </button>
           <button onClick={handleBulkProcess} disabled={isProcessingBulk || periodoLocked} className={`px-6 py-2.5 rounded-xl text-sm font-medium transition-all ${periodoLocked ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary/80'}`}>
@@ -1316,7 +1305,7 @@ const Processamento: React.FC = () => {
       {renderMainContent()}
       {renderFormModal()}
       {renderReceiptModal()}
-      {renderHistoricoModal()}
+      {renderHistóricoModal()}
     </div>
   );
 };
