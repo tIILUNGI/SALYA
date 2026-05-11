@@ -442,22 +442,22 @@ function SubscriptionBarrier() {
     switch (status) {
       case 'PENDENTE_APROVACAO':
         return {
-          title: 'Assinatura Pendente',
-          message: 'A subscrição desta entidade está a aguardar ativação. Se você é um colaborador, contacte o proprietário da conta.',
+          title: 'Assinatura Pendente de Aprovação',
+          message: 'A sua subscrição está aguardando aprovação do administrador. Você não poderá acessar o sistema até que seja aprovado. Entre em contacto com o suporte se necessário.',
           icon: 'hourglass_empty',
           color: 'amber'
         };
       case 'EXPIRADA':
         return {
           title: 'Assinatura Expirada',
-          message: 'O período de subscrição desta entidade terminou. Por favor, renove o plano para continuar a aceder.',
+          message: 'O período de subscrição terminou. Por favor, renove o plano para continuar a aceder.',
           icon: 'event_busy',
           color: 'rose'
         };
       case 'CANCELADA':
         return {
           title: 'Acesso Suspenso',
-          message: 'O acesso a esta entidade foi suspenso ou a subscrição foi cancelada.',
+          message: 'O acesso foi suspenso ou a subscrição foi cancelada.',
           icon: 'block',
           color: 'slate'
         };
@@ -473,7 +473,13 @@ function SubscriptionBarrier() {
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800">
         <div className="p-10 text-center">
-          <div className={`size-20 rounded-3xl bg-${info.color}-100 dark:bg-${info.color}-500/10 flex items-center justify-center text-${info.color}-600 dark:text-${info.color}-500 mx-auto mb-8 shadow-lg shadow-${info.color}-500/20`}>
+          <div 
+            className="size-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg transition-all"
+            style={{ 
+              backgroundColor: info.color === 'amber' ? 'rgb(254 243 199)' : info.color === 'rose' ? 'rgb(255 228 230)' : 'rgb(241 245 249)',
+              color: info.color === 'amber' ? 'rgb(180 83 9)' : info.color === 'rose' ? 'rgb(225 29 72)' : 'rgb(71 85 105)'
+            }}
+          >
             <span className="material-symbols-outlined text-4xl">{info.icon}</span>
           </div>
           <h2 className="text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tight mb-4">{info.title}</h2>
