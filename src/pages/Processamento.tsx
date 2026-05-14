@@ -351,6 +351,30 @@ const Processamento: React.FC = () => {
   }, [loadHistórico]);
 
   useEffect(() => {
+    const hashParts = window.location.hash.split('?');
+    if (hashParts.length < 2) return;
+    
+    const params = new URLSearchParams(hashParts[1]);
+    const pColabId = params.get('colaboradorId');
+    const pMes = params.get('mes');
+    const pAno = params.get('ano');
+
+    if (pMes) {
+      const monthName = numToMonth(parseInt(pMes, 10));
+      if (MONTHS.includes(monthName)) setSelectedMonth(monthName);
+    }
+    if (pAno) setSelectedYear(pAno);
+    
+    if (pColabId && ativos.length > 0) {
+      const colab = ativos.find(c => c.id === parseInt(pColabId, 10));
+      if (colab) {
+        setTimeout(() => handleStartProcessar(colab), 500);
+      }
+    }
+  }, [ativos]);
+
+
+  useEffect(() => {
     if (showHistóricoModal) {
       loadHistórico();
     }

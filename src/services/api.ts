@@ -1,7 +1,7 @@
 import { notify } from '../utils/notifications';
 
 // api.ts
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://api.salya.ilungi.digital/api';
 
 const TOKEN_STORAGE_KEYS = ['salya_token', 'token'] as const;
 const AUTH_STORAGE_KEYS = ['salya_token', 'token', 'salya_user', 'salya_empresaId', 'salya_empresa'] as const;
@@ -122,18 +122,26 @@ const ensureAuthOrRedirect = async (response: Response, endpoint: string) => {
 
     // Try to read body to detect subscription-specific block
     const cloned = response.clone();
+    let isSubscriptionBlock = false;
+    let subscriptionError: Error | null = null;
+
     try {
       const body = await cloned.json();
       if (body?.code && SUBSCRIPTION_CODES.includes(body.code)) {
-        // Subscription block — keep user logged in, fire event so SubscriptionBarrier shows
+        isSubscriptionBlock = true;
+        // Dispatch event so SubscriptionBarrier shows — keep user logged in
         window.dispatchEvent(new CustomEvent('salya:subscription-blocked', {
           detail: { status: body.subscriptionStatus, code: body.code, message: body.error }
         }));
-        throw new Error(body.error || 'Assinatura inactiva');
+        subscriptionError = new Error(body.error || 'Assinatura inactiva');
+        (subscriptionError as any).isSubscriptionBlock = true;
       }
-    } catch (e: any) {
-      // If it's our custom throw, re-throw it
-      if (e?.message && !e.message.startsWith('{')) throw e;
+    } catch {
+      // Body is not JSON or parsing failed — treat as generic 403
+    }
+
+    if (isSubscriptionBlock && subscriptionError) {
+      throw subscriptionError;
     }
 
     // Generic 403 = real access denied (IDOR) — clear and redirect
@@ -179,7 +187,7 @@ export const api = {
 
       return responseData;
     } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado') {
+      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
@@ -203,7 +211,7 @@ export const api = {
 
       return responseData;
     } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado') {
+      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
@@ -227,7 +235,7 @@ export const api = {
 
       return responseData;
     } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado') {
+      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
@@ -251,7 +259,7 @@ export const api = {
 
       return responseData;
     } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado') {
+      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
@@ -275,7 +283,7 @@ export const api = {
 
       return responseData;
     } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado') {
+      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
@@ -298,7 +306,7 @@ export const api = {
 
       return true;
     } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado') {
+      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
