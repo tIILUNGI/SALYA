@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api } from '../services/api';
@@ -101,7 +101,12 @@ const Configurações: React.FC = () => {
   const { user, empresa, setEmpresa, isConfigured, setIsConfigured, empresas, empresaId, setEmpresaId, refreshData, setMessage } = useContext(AppContext);
 
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(empresas && empresas.length > 1 ? 'gestao' : 'empresa');
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab) return tab;
+    return empresas && empresas.length > 1 ? 'gestao' : 'empresa';
+  });
   
   const emptyConfig: ConfiguraçãoEmpresa = {
     id: Date.now(),
@@ -179,25 +184,47 @@ const Configurações: React.FC = () => {
     fetchTaxas();
   }, []);
 
+  const fetchInvitationFailedRef = useRef(false);
+
+  // Reset the guard when subscription is approved (status becomes ATIVA)
+  useEffect(() => {
+    if (user?.subscriptionStatus === 'ATIVA') {
+      fetchInvitationFailedRef.current = false;
+    }
+  }, [user?.subscriptionStatus]);
+
   const fetchInvitations = async () => {
+    // Don't attempt if subscription is blocked — avoids infinite loop
+    if (fetchInvitationFailedRef.current) return;
+
+    const blockedStatuses = ['PENDENTE_APROVACAO', 'EXPIRADA', 'CANCELADA'];
+    if (user?.subscriptionStatus && blockedStatuses.includes(user.subscriptionStatus)) return;
+
     setLoadingInvitations(true);
     try {
-      const data = await api.get('/empresas/convites/pendentes');
+      // Use silentError=true to suppress toast notifications on 403 subscription errors
+      const data = await api.get('/empresas/convites/pendentes', true);
       setInvitations(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar convites:', error);
+    } catch (error: any) {
+      // If subscription is blocked, mark flag so we don't retry continuously
+      if (error?.isSubscriptionBlock || error?.message?.includes('pendente') || error?.message?.includes('assinatura')) {
+        fetchInvitationFailedRef.current = true;
+      }
     } finally {
       setLoadingInvitations(false);
     }
   };
 
   useEffect(() => {
+    // Only refetch invitations when user ID changes (login/switch), NOT on every status change
     fetchInvitations();
     if (empresas && empresas.length > 0 && !selectedEmpresaId) {
       const myEmp = empresas.find(e => e.user?.id === user?.id);
       if (myEmp) setSelectedEmpresaId(myEmp.id);
     }
-  }, [empresas, user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresas, user?.id]);  // <-- use user?.id, NOT user object (status changes don't retrigger)
+
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -1040,10 +1067,25 @@ const handleSave = async () => {
                     </div>
 
                     <div className="flex flex-col gap-4">
-                      {user?.subscriptionStatus !== 'ATIVA' && (
+                      {user?.subscriptionStatus === 'EXPIRADA' && (
+                        <div className="p-6 rounded-3xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 max-w-sm animate-pulse">
+                          <div className="flex items-center gap-2 mb-2 text-rose-600">
+                            <span className="material-symbols-outlined text-lg">error</span>
+                            <p className="text-sm font-black uppercase tracking-tight">Assinatura Expirada</p>
+                          </div>
+                          <p className="text-xs text-rose-700 dark:text-rose-400 font-medium leading-relaxed">
+                            O seu acesso está bloqueado. Escolha um dos planos abaixo para solicitar uma nova assinatura e reactivar a sua conta.
+                          </p>
+                        </div>
+                      )}
+                      {user?.subscriptionStatus === 'PENDENTE_APROVACAO' && (
                         <div className="p-6 rounded-3xl bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 max-w-sm">
+                           <div className="flex items-center gap-2 mb-2 text-amber-600">
+                            <span className="material-symbols-outlined text-lg">hourglass_top</span>
+                            <p className="text-sm font-black uppercase tracking-tight">Pendente de Aprovação</p>
+                          </div>
                           <p className="text-xs text-amber-800 dark:text-amber-400 font-medium leading-relaxed">
-                            <span className="font-black">Atenção:</span> O seu acesso está limitado. Actualize ou aguarde a aprovação para continuar a usar todas as funcionalidades.
+                            Já solicitou uma nova assinatura. Por favor, aguarde que o administrador valide o pagamento para libertar o seu acesso.
                           </p>
                         </div>
                       )}
@@ -1119,6 +1161,38 @@ const handleSave = async () => {
                     Falar com Consultor
                   </button>
                 </div>
+
+                {user?.subscriptionStatus === 'EXPIRADA' && (
+                  <div className="p-10 rounded-[2.5rem] border-2 border-dashed border-primary/30 bg-primary/5 space-y-6">
+                    <div className="flex items-center gap-4">
+                      <div className="size-12 rounded-2xl bg-primary text-white flex items-center justify-center">
+                        <span className="material-symbols-outlined">payments</span>
+                      </div>
+                      <div>
+                        <h4 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Instruções de Pagamento</h4>
+                        <p className="text-sm text-slate-500">Siga os passos abaixo para reactivar a sua conta imediatamente.</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+                        <div className="text-primary font-black text-2xl mb-2">01</div>
+                        <h5 className="font-bold text-slate-800 dark:text-white mb-2">Escolha o Plano</h5>
+                        <p className="text-xs text-slate-500 leading-relaxed">Selecione o plano desejado acima e clique em "Escolher Plano" para registar o seu interesse.</p>
+                      </div>
+                      <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+                        <div className="text-primary font-black text-2xl mb-2">02</div>
+                        <h5 className="font-bold text-slate-800 dark:text-white mb-2">Efectue o Pagamento</h5>
+                        <p className="text-xs text-slate-500 leading-relaxed">Transfira o valor correspondente para o IBAN: <span className="font-black text-slate-800 dark:text-white">AO06 0040 0000 7845 1254 1014 5</span> (Salya Services).</p>
+                      </div>
+                      <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+                        <div className="text-primary font-black text-2xl mb-2">03</div>
+                        <h5 className="font-bold text-slate-800 dark:text-white mb-2">Envie o Comprovativo</h5>
+                        <p className="text-xs text-slate-500 leading-relaxed">Envie o comprovativo para <span className="font-black text-primary">pagamentos@salya.com</span> ou via WhatsApp para o suporte.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

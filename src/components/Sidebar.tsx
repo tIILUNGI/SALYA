@@ -34,6 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
     { id: 'alertas', label: 'Alertas', icon: 'notifications_active' },
     { id: 'colaboradores', label: 'Colaboradores', icon: 'group' },
     { id: 'processamento', label: 'Processamento', icon: 'account_balance_wallet' },
+    { id: 'processamento-atraso', label: 'Salários em Atraso', icon: 'history' },
     { id: 'configuracoes', label: 'Configurações', icon: 'settings' },
   ];
 
@@ -151,6 +152,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
               <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@salya.com'}</p>
             </div>
           </div>
+          <button 
+            onClick={() => handleNavigate('profile')}
+            className="w-full mt-2 flex items-center gap-2 px-3 py-2 text-sm text-slate-500 hover:text-primary transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">person</span>
+            Meu Perfil
+          </button>
           <button 
             onClick={handleLogout}
             className="w-full mt-3 flex items-center gap-2 px-3 py-2 text-sm text-slate-500 hover:text-rose-500 transition-colors"
@@ -336,6 +344,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
           </div>
           <div className="overflow-hidden">
             <p className="text-sm font-medium text-corporate-700 truncate">{user?.name || 'Admin'}</p>
+            <button 
+              onClick={() => handleNavigate('profile')}
+              className="text-[10px] text-primary hover:underline font-bold uppercase tracking-widest"
+            >
+              Ver Perfil
+            </button>
           </div>
         </div>
         <button 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { api } from '../services/api';
 import { AppContext } from '../App';
+import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 interface AlertaItem {
@@ -8,6 +9,7 @@ interface AlertaItem {
   tipo: 'Contrato' | 'Documento' | 'Salário';
   mensagem: string;
   colaborador?: string;
+  colaboradorId?: number;
   dataLimite?: string;
   severidade: 'Crítica' | 'Alta' | 'Média';
   status: 'Pendente' | 'Resolvido';
@@ -20,6 +22,7 @@ const severidadeBadge: Record<string, string> = {
 };
 
 const Alertas: React.FC = () => {
+  const navigate = useNavigate();
   const { colaboradores, empresaId } = useContext(AppContext);
 
   const [alertas, setAlertas] = useState<AlertaItem[]>([]);
@@ -46,6 +49,7 @@ const Alertas: React.FC = () => {
               tipo: 'Contrato',
               mensagem: `Contrato expira em ${diasRestantes} dia(s)`,
               colaborador: c.nome,
+              colaboradorId: c.id,
               dataLimite: c.fimContrato,
               severidade: diasRestantes <= 7 ? 'Crítica' : 'Alta',
               status: 'Pendente',
@@ -56,6 +60,7 @@ const Alertas: React.FC = () => {
               tipo: 'Contrato',
               mensagem: 'Contrato expirado',
               colaborador: c.nome,
+              colaboradorId: c.id,
               dataLimite: c.fimContrato,
               severidade: 'Crítica',
               status: 'Pendente',
@@ -99,27 +104,91 @@ const Alertas: React.FC = () => {
   }, [colaboradores, empresaId]);
 
 
-  const handleResolver = (id: number) => {
-    Swal.fire({
-      title: 'Resolver Alerta',
-      text: 'Tem a certeza que deseja marcar este alerta como resolvido?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sim, resolver',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#22c55e',
-      cancelButtonColor: '#64748b',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setAlertas(prev => prev.map(a => a.id === id ? { ...a, status: 'Resolvido' } : a));
-        Swal.fire({
-          title: 'Resolvido',
-          text: 'Alerta marcado como resolvido!',
-          icon: 'success',
+  const handleResolver = async (alerta: AlertaItem) => {
+    if (alerta.tipo === 'Contrato') {
+      const { value: action } = await Swal.fire({
+        title: 'Resolver Contrato',
+        text: `Como deseja resolver o contrato de ${alerta.colaborador}?`,
+        icon: 'info',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Renovar Contrato',
+        denyButtonText: 'Rescindir Contrato',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#22c55e',
+        denyButtonColor: '#ef4444',
+      });
+
+      if (action === true) { // Renovar
+        const { value: novaData } = await Swal.fire({
+          title: 'Renovar Contrato',
+          input: 'date',
+          inputLabel: 'Nova data de fim de contrato',
+          inputValue: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+          showCancelButton: true,
+          confirmButtonText: 'Confirmar Renovação',
           confirmButtonColor: '#22c55e',
         });
+
+        if (novaData) {
+          try {
+            await api.post(`/trabalhadores/${alerta.colaboradorId}/renovar-contrato?empresaId=${empresaId}`, { novoFimContrato: novaData });
+            setAlertas(prev => prev.map(a => a.id === alerta.id ? { ...a, status: 'Resolvido' } : a));
+            Swal.fire('Sucesso', 'Contrato renovado com sucesso!', 'success');
+          } catch (error: any) {
+            Swal.fire('Erro', error.message || 'Não foi possível renovar o contrato.', 'error');
+          }
+        }
+      } else if (action === false) { // Rescindir (deny button)
+        const result = await Swal.fire({
+          title: 'Rescindir Contrato',
+          text: `Tem a certeza que deseja rescindir o contrato de ${alerta.colaborador}? Esta acção é irreversível.`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Sim, Rescindir',
+          confirmButtonColor: '#ef4444',
+          cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
+          try {
+            await api.post(`/trabalhadores/${alerta.colaboradorId}/rescindir-contrato?empresaId=${empresaId}`, {});
+            setAlertas(prev => prev.map(a => a.id === alerta.id ? { ...a, status: 'Resolvido' } : a));
+            Swal.fire('Rescindido', 'O contrato foi rescindido.', 'success');
+          } catch (error) {
+            Swal.fire('Erro', 'Não foi possível rescindir o contrato.', 'error');
+          }
+        }
       }
-    });
+    } else if (alerta.tipo === 'Salário') {
+      Swal.fire({
+        title: 'Processamento Pendente',
+        text: 'Deseja ir para a página de salários em atraso para liquidar as pendências?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ir para Salários em Atraso',
+        confirmButtonColor: '#6366f1',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate('/processamento-atraso');
+        }
+      });
+    } else {
+      // Documento ou genérico
+      Swal.fire({
+        title: 'Marcar como Resolvido',
+        text: 'Deseja marcar este alerta como resolvido manualmente?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, resolver',
+        confirmButtonColor: '#22c55e',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setAlertas(prev => prev.map(a => a.id === alerta.id ? { ...a, status: 'Resolvido' } : a));
+          Swal.fire('Resolvido', 'Alerta marcado como resolvido!', 'success');
+        }
+      });
+    }
   };
 
   const filtered = alertas.filter(a => a.status === activeTab);
@@ -200,7 +269,7 @@ const Alertas: React.FC = () => {
                   <td className="p-6 text-right">
                     {alerta.status === 'Pendente' && (
                       <button
-                        onClick={() => handleResolver(alerta.id)}
+                        onClick={() => handleResolver(alerta)}
                         className="text-[10px] font-black bg-emerald-50 text-emerald-600 px-4 py-2 rounded-lg hover:bg-emerald-500 hover:text-white transition-all uppercase tracking-widest"
                       >
                         Resolver
