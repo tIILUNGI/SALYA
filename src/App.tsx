@@ -382,7 +382,7 @@ function MainLayout() {
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, isAuthenticated, empresa, isConfigured, isLoadingData, refreshData, setMessage } = React.useContext(AppContext);
+  const { empresa, isConfigured, isLoadingData, refreshData, setMessage } = React.useContext(AppContext);
 
 
   useEffect(() => {

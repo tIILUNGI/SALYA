@@ -6,7 +6,7 @@ import Swal from 'sweetalert2';
 
 interface AlertaItem {
   id: number;
-  tipo: 'Contrato' | 'Documento';
+  tipo: 'Contrato' | 'Documento' | 'Salário';
   mensagem: string;
   colaborador?: string;
   colaboradorId?: number;
@@ -217,11 +217,54 @@ const Alertas: React.FC = () => {
         <div className="glass-card p-16 flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
+      ) : (
+        <div className="space-y-4">
+          {filtered.length === 0 ? (
+            <div className="glass-card p-12 text-center">
+              <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">check_circle</span>
+              <p className="text-slate-500">Nenhum alerta {activeTab.toLowerCase()}.</p>
+            </div>
+          ) : (
+            filtered.map((alerta) => (
+              <div key={alerta.id} className="glass-card p-5 hover:shadow-md transition-all">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-4">
+                    <div className={`size-10 rounded-full flex items-center justify-center ${
+                      alerta.severidade === 'Crítica' ? 'bg-red-100 text-red-600' :
+                      alerta.severidade === 'Alta' ? 'bg-amber-100 text-amber-600' :
+                      'bg-blue-100 text-blue-600'
+                    }`}>
+                      <span className="material-symbols-outlined">
+                        {alerta.tipo === 'Contrato' ? 'description' : 'assignment'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 dark:text-white">{alerta.mensagem}</p>
+                      {alerta.colaborador && (
+                        <p className="text-sm text-slate-500">Colaborador: {alerta.colaborador}</p>
+                      )}
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`text-xs font-bold uppercase px-2 py-1 rounded ${severidadeBadge[alerta.severidade]}`}>
+                          {alerta.severidade}
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          {new Date(alerta.dataLimite || Date.now()).toLocaleDateString('pt-AO')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleResolver(alerta)}
+                    className="px-4 py-2 text-sm font-bold text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                  >
+                    Resolver
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
-    </div>
-  );
-};
     </div>
   );
 };

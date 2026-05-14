@@ -20,11 +20,11 @@ const Landing: React.FC = () => {
       descricao: 'Gere recibos salariais profissionais para impressão ou download em PDF. Cada recibo contém todos os detalhes do salário: vencimentos, descontos e líquidos.',
       imagem: '/Recibos .jpeg'
     },
-    {
-      titulo: 'Relatórios & BI',
-      descricao: 'Acesse relatórios detalhados de folha de pagamento, histórico de salários por colaborador, e exportação de dados para análises externas.',
-      imagem: '/Relatórios.png'
-    }
+        {
+          titulo: 'Relatórios & BI',
+          descricao: 'Acesse relatórios detalhados de folha de pagamento, histórico de salários por colaborador, e exportação de dados para análises externas.',
+          imagem: '/Relatorios.png'
+        }
   ];
 
   const scrollToSection = (id: string) => {

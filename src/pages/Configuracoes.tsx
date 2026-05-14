@@ -151,7 +151,6 @@ const Configurações: React.FC = () => {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [selectedEmpresaId, setSelectedEmpresaId] = useState<number | ''>('');
   const [plans, setPlans] = useState<any[]>([]);
-  const [loadingPlans, setLoadingPlans] = useState(false);
 
 
   // Sincronizar quando a empresa mudar via switcher
@@ -257,20 +256,17 @@ const Configurações: React.FC = () => {
     fetchHolidays();
   }, [config.pais]);
 
-  useEffect(() => {
-    const fetchPlans = async () => {
-      setLoadingPlans(true);
-      try {
-        const data = await api.get('/plans');
-        setPlans(data);
-      } catch (error) {
-        console.error('Erro ao carregar planos:', error);
-      } finally {
-        setLoadingPlans(false);
-      }
-    };
-    fetchPlans();
-  }, []);
+   useEffect(() => {
+     const fetchPlans = async () => {
+       try {
+         const data = await api.get('/plans');
+         setPlans(data);
+       } catch (error) {
+         console.error('Erro ao carregar planos:', error);
+       }
+     };
+     fetchPlans();
+   }, []);
 
   const handleUpgradePlan = async (planId: number, planName: string) => {
     const result = await Swal.fire({
@@ -1171,9 +1167,7 @@ const handleSave = async () => {
           </div>
         )}
       </div>
-    );
-  };
-};
-};
+     );
+    };
 
 export default Configurações;

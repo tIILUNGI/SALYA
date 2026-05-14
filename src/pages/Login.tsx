@@ -55,15 +55,7 @@ const Login: React.FC = () => {
         showError('Não foi possível carregar os planos no momento. Tente novamente.');
       })
       .finally(() => setIsLoading(false));
-  }, [mode]);
-
-  const handleSelectPlanContinue = () => {
-    if (!selectedPlan) {
-      showError('Selecione um plano antes de continuar.');
-      return;
-    }
-    setMode('register');
-  };
+   }, [mode]);
 
   const startCleanSession = (token: string, user: any) => {
     clearAuthStorage();
