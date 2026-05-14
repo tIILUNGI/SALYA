@@ -11,10 +11,12 @@ const Dashboard: React.FC = () => {
     totalProcessamentos: 0,
     custoTotalAproximado: 0
   });
-  const [alertas, setAlertas] = useState({
+  const [alertas, setAlertas] = useState<{
+    contratosExpirando: number;
+    documentosExpirando: number;
+  }>({
     contratosExpirando: 0,
     documentosExpirando: 0,
-    salariosPendentes: 0
   });
   const [chartProcessamento, setChartProcessamento] = useState<any[]>([]);
   const [chartAbsentismo, setChartAbsentismo] = useState<any[]>([]);
@@ -96,13 +98,13 @@ const Dashboard: React.FC = () => {
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Processamentos Emitidos</p>
                 <h3 className="text-3xl font-black text-slate-800 dark:text-white">{stats.totalProcessamentos}</h3>
               </div>
-              <div className="size-12 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
-                <span className="material-symbols-outlined text-amber-500">receipt_long</span>
-              </div>
+            <div className="size-12 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
+              <span className="material-symbols-outlined text-amber-500">receipt_long</span>
             </div>
           </div>
+        </div>
 
-          <div className="glass-card p-6 border-l-4 border-l-indigo-500">
+        <div className="glass-card p-6 border-l-4 border-l-indigo-500">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Custo Estimado (AOA)</p>
@@ -126,31 +128,23 @@ const Dashboard: React.FC = () => {
           Alertas de Compliance
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 rounded-xl border border-red-500/20 bg-red-50 dark:bg-red-500/10 flex items-start gap-4">
-            <span className="material-symbols-outlined text-red-500">warning</span>
-            <div>
-              <p className="font-bold text-red-700 dark:text-red-400">{alertas.contratosExpirando} contratos expirando</p>
-              <p className="text-xs text-red-600/70 dark:text-red-400/70">Nos próximos 30 dias</p>
-            </div>
-          </div>
-          
-          <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 flex items-start gap-4">
-            <span className="material-symbols-outlined text-amber-500">description</span>
-            <div>
-              <p className="font-bold text-amber-700 dark:text-amber-400">{alertas.documentosExpirando} documentos vencem</p>
-              <p className="text-xs text-amber-600/70 dark:text-amber-400/70">Validades nos próximos 30 dias</p>
-            </div>
-          </div>
-          
-          <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/10 flex items-start gap-4">
-            <span className="material-symbols-outlined text-indigo-500">account_balance_wallet</span>
-            <div>
-              <p className="font-bold text-indigo-700 dark:text-indigo-400">{alertas.salariosPendentes} Salários Pendentes</p>
-              <p className="text-xs text-indigo-600/70 dark:text-indigo-400/70">Aguardando processamento este mês</p>
-            </div>
-          </div>
-        </div>
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+           <div className="p-4 rounded-xl border border-red-500/20 bg-red-50 dark:bg-red-500/10 flex items-start gap-4">
+             <span className="material-symbols-outlined text-red-500">warning</span>
+             <div>
+               <p className="font-bold text-red-700 dark:text-red-400">{alertas.contratosExpirando} contratos expirando</p>
+               <p className="text-xs text-red-600/70 dark:text-red-400/70">Nos próximos 30 dias</p>
+             </div>
+           </div>
+           
+           <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 flex items-start gap-4">
+             <span className="material-symbols-outlined text-amber-500">description</span>
+             <div>
+               <p className="font-bold text-amber-700 dark:text-amber-400">{alertas.documentosExpirando} documentos vencem</p>
+               <p className="text-xs text-amber-600/70 dark:text-amber-400/70">Validades nos próximos 30 dias</p>
+             </div>
+           </div>
+         </div>
       </div>
 
       {/* Gráficos */}

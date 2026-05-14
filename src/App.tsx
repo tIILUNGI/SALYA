@@ -247,11 +247,11 @@ function App() {
     }
   }, [empresa]);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      refreshData();
-    }
-  }, [isAuthenticated, refreshData]);
+   useEffect(() => {
+     if (isAuthenticated) {
+       refreshData();
+     }
+   }, [isAuthenticated, refreshData]);
 
   // Listen for subscription-blocked events fired by api.ts when backend returns a subscription 403
   useEffect(() => {
@@ -312,15 +312,15 @@ function App() {
     );
   }
 
-  return (
-    <AppContext.Provider value={{ 
-      user, setUser, isAuthenticated, setIsAuthenticated, isConfigured, setIsConfigured,
-      isLoadingData,
-      empresas, setEmpresas, empresa, setEmpresa, empresaId, setEmpresaId, 
-      colaboradores, setColaboradores, 
-      setMessage: setAppMessage, showConfirm, refreshData,
-      effectivePlan
-    }}>
+   return (
+     <AppContext.Provider value={{ 
+       user, setUser, isAuthenticated, setIsAuthenticated, isConfigured, setIsConfigured,
+       isLoadingData,
+       empresas, setEmpresas, empresa, setEmpresa, empresaId, setEmpresaId, 
+       colaboradores, setColaboradores, 
+       setMessage: setAppMessage, showConfirm, refreshData,
+       effectivePlan
+     }}>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -336,6 +336,7 @@ function App() {
 function MainLayout() {
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, isAuthenticated, empresa, isConfigured, isLoadingData, refreshData, setMessage } = React.useContext(AppContext);
 
 
@@ -371,21 +372,23 @@ function MainLayout() {
     }
   };
 
-  return (
-    <div className="flex min-h-screen bg-background-light dark:bg-background-dark">
-      {/* Sidebar - passa a função de callback */}
-      <Sidebar 
-        currentPage={currentPage} 
-        setCurrentPage={setCurrentPage}
-        onCompanyCreated={handleCompanyCreated}
-      />
-      
-      <div className="flex-1 flex flex-col min-h-screen md:ml-64 w-full md:w-[calc(100%-16rem)]">
-        {/* Subscription Barrier */}
-        <SubscriptionBarrier />
-        
-        <Header />
-        <main className="flex-1 p-0">
+   return (
+     <div className="flex min-h-screen bg-background-light dark:bg-background-dark">
+       {/* Sidebar - passa as props de controle */}
+       <Sidebar 
+         currentPage={currentPage} 
+         setCurrentPage={setCurrentPage}
+         onCompanyCreated={handleCompanyCreated}
+         sidebarOpen={sidebarOpen}
+         setSidebarOpen={setSidebarOpen}
+       />
+       
+       <div className="flex-1 flex flex-col min-h-screen md:ml-64 w-full md:w-[calc(100%-16rem)]">
+         {/* Subscription Barrier */}
+         <SubscriptionBarrier />
+         
+         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+         <main className="flex-1 p-0">
           <Routes>
             <Route path="/" element={<Navigate to={hasEmpresa ? "/dashboard" : "/configuracoes"} replace />} />
             <Route 

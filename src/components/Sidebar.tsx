@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api, clearAuthStorage } from '../services/api';
@@ -12,9 +12,44 @@ interface SidebarProps {
   setSidebarOpen?: (v: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompanyCreated, sidebarOpen, setSidebarOpen }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompanyCreated, sidebarOpen = false, setSidebarOpen }) => {
   const navigate = useNavigate();
   const { user, setUser, setIsAuthenticated, empresa, setEmpresa, setEmpresaId, setEmpresas, empresas, setIsConfigured, setColaboradores, refreshData, setMessage } = useContext(AppContext);
+
+  // Scroll lock quando sidebar aberta no mobile
+  useEffect(() => {
+    const updateBodyOverflow = () => {
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768; // md breakpoint
+      if (sidebarOpen && isMobile) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    };
+
+    updateBodyOverflow();
+
+    const handleResize = () => {
+      updateBodyOverflow();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      document.body.style.overflow = '';
+    };
+  }, [sidebarOpen]);
+
+  // Fechar com tecla ESC
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && sidebarOpen && setSidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [sidebarOpen, setSidebarOpen]);
 
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [newCompany, setNewCompany] = useState({
@@ -121,7 +156,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
   // Se não tiver empresa configurada, mostrar tela de configuração inicial
   if (!empresa) {
     return (
-      <aside className={`w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+      <>
+        {/* Backdrop para mobile */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setSidebarOpen && setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+        <aside className={`w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="p-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800">
           <div className="bg-primary text-white p-1.5 rounded-lg">
             <span className="material-symbols-outlined">payments</span>
@@ -291,13 +335,23 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
             </div>
           </div>
         )}
-      </aside>
+        </aside>
+      </>
     );
   }
 
   // Sidebar normal quando tem empresa configurada
   return (
-    <aside className={`w-64 border-r border-corporate-200 bg-white flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+    <>
+      {/* Backdrop para mobile */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setSidebarOpen && setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <aside className={`w-64 border-r border-corporate-200 bg-white flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
       <div className="p-4 flex items-center gap-2 border-b border-corporate-100">
         <div className="bg-primary text-white p-1 rounded">
           <span className="material-symbols-outlined">payments</span>
@@ -317,7 +371,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
           <button
             key={item.id}
             onClick={() => handleNavigate(item.id)}
-            className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sm ${
+            className={`w-full flex items-center gap-2 px-3 py-3 sm:py-2 rounded text-sm min-h-[44px] ${
               currentPage === item.id
                 ? 'bg-primary text-white'
                 : 'text-corporate-600 hover:bg-corporate-100'
@@ -347,7 +401,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
         </button>
       </div>
     </aside>
-  );
+  />
 };
 
 export default Sidebar;

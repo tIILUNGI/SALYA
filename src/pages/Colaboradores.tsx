@@ -720,57 +720,57 @@ const Colaboradores: React.FC = () => {
         </div>
       </div>
 
-      <div className="glass-card overflow-hidden">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100">
-              <th className="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Colaborador</th>
-              <th className="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Contrato / NIF</th>
-              <th className="px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wide text-right">Status</th>
-              <th className="px-6 py-4"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {filteredColaboradores.map((colaborador) => (
-              <tr key={colaborador.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs">
-                      {colaborador.nome.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-800 dark:text-white">{colaborador.nome}</p>
-                      <p className="text-xs font-medium text-primary">{colaborador.cargo}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{colaborador.tipoContrato}</p>
-                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">{colaborador.nif || 'NIF nao registado'}</p>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${colaborador.status === 'Ativo' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : colaborador.status === 'Afastado' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
-                    {colaborador.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex justify-end gap-2 no-print">
-                    <button onClick={() => handleOpenDetails(colaborador)} className="size-8 bg-slate-100 text-slate-500 rounded-md hover:text-slate-800 hover:bg-slate-200 transition-colors flex items-center justify-center" title="Visualizar dados">
-                      <span className="material-symbols-outlined text-base">visibility</span>
-                    </button>
-                    <button onClick={() => handleOpenModal(colaborador)} className="size-8 bg-slate-100 text-slate-500 rounded-md hover:text-primary hover:bg-primary/10 transition-colors flex items-center justify-center" title="Editar">
-                      <span className="material-symbols-outlined text-base">edit</span>
-                    </button>
-                    <button onClick={() => handleDelete(colaborador.id)} className="size-8 bg-rose-50 text-rose-500 rounded-md hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center" title="Eliminar">
-                      <span className="material-symbols-outlined text-base">delete</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+       <div className="glass-card overflow-x-auto">
+         <table className="min-w-full text-left">
+           <thead>
+             <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100">
+               <th className="px-3 sm:px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wide whitespace-nowrap">Colaborador</th>
+               <th className="px-3 sm:px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wide whitespace-nowrap hidden md:table-cell">Contrato / NIF</th>
+               <th className="px-3 sm:px-6 py-4 text-xs font-medium text-slate-500 uppercase tracking-wide text-right whitespace-nowrap">Status</th>
+               <th className="px-3 sm:px-6 py-4 text-center whitespace-nowrap">Ações</th>
+             </tr>
+           </thead>
+           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+             {filteredColaboradores.map((colaborador) => (
+               <tr key={colaborador.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
+                 <td className="px-3 sm:px-6 py-4">
+                   <div className="flex items-center gap-3">
+                     <div className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs">
+                       {colaborador.nome.substring(0, 2).toUpperCase()}
+                     </div>
+                     <div>
+                       <p className="text-sm font-medium text-slate-800 dark:text-white">{colaborador.nome}</p>
+                       <p className="text-xs font-medium text-primary">{colaborador.cargo}</p>
+                     </div>
+                   </div>
+                 </td>
+                 <td className="px-3 sm:px-6 py-4 hidden md:table-cell">
+                   <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{colaborador.tipoContrato}</p>
+                   <p className="text-[10px] text-slate-400 font-mono mt-0.5">{colaborador.nif || 'NIF nao registado'}</p>
+                 </td>
+                 <td className="px-3 sm:px-6 py-4 text-right">
+                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${colaborador.status === 'Ativo' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : colaborador.status === 'Afastado' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                     {colaborador.status}
+                   </span>
+                 </td>
+                 <td className="px-3 sm:px-6 py-4 text-center">
+                   <div className="flex justify-end gap-2 no-print">
+                     <button onClick={() => handleOpenDetails(colaborador)} className="size-8 bg-slate-100 text-slate-500 rounded-md hover:text-slate-800 hover:bg-slate-200 transition-colors flex items-center justify-center min-h-[44px] min-w-[44px]" title="Visualizar dados">
+                       <span className="material-symbols-outlined text-base">visibility</span>
+                     </button>
+                     <button onClick={() => handleOpenModal(colaborador)} className="size-8 bg-slate-100 text-slate-500 rounded-md hover:text-primary hover:bg-primary/10 transition-colors flex items-center justify-center min-h-[44px] min-w-[44px]" title="Editar">
+                       <span className="material-symbols-outlined text-base">edit</span>
+                     </button>
+                     <button onClick={() => handleDelete(colaborador.id)} className="size-8 bg-rose-50 text-rose-500 rounded-md hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center min-h-[44px] min-w-[44px]" title="Eliminar">
+                       <span className="material-symbols-outlined text-base">delete</span>
+                     </button>
+                   </div>
+                 </td>
+               </tr>
+             ))}
+           </tbody>
+         </table>
+       </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">

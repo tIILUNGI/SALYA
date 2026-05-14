@@ -492,14 +492,14 @@ const handleSave = async () => {
     }
   };
 
-  const tabs = [
-    { id: 'empresa', label: 'Dados da Entidade', icon: 'business' },
-    { id: 'impostos', label: 'Taxas de Impostos', icon: 'percent' },
-    { id: 'processamento', label: 'Notificações', icon: 'notifications' },
-    { id: 'gestao', label: 'Minhas Entidades', icon: 'account_tree' },
-    { id: 'acesso', label: 'Gestão de Acesso', icon: 'group' },
-    { id: 'assinatura', label: 'Plano e Assinatura', icon: 'card_membership' },
-  ];
+   const tabs = [
+     { id: 'empresa', label: 'Dados da Entidade', icon: 'business' },
+     { id: 'impostos', label: 'Taxas de Impostos', icon: 'percent' },
+     { id: 'processamento', label: 'Notificações', icon: 'notifications' },
+     { id: 'gestao', label: 'Minhas Entidades', icon: 'account_tree' },
+     { id: 'acesso', label: 'Gestão de Acesso', icon: 'group' },
+     { id: 'assinatura', label: 'Plano e Assinatura', icon: 'card_membership' },
+   ];
 
   return (
     <div className="p-8">
@@ -553,16 +553,20 @@ const handleSave = async () => {
       ) : (
         <div className="flex gap-8">
           <aside className="w-64 shrink-0">
-            <nav className="space-y-1">
-              {tabs
-                .filter(tab => !isCreatingNew || tab.id === 'empresa')
-                .map(tab => (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-primary/10 text-primary font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-                  <span className="material-symbols-outlined">{tab.icon}</span>
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
+             <nav className="space-y-1">
+               {tabs
+                 .filter(tab => {
+                   if (isCreatingNew) return tab.id === 'empresa';
+                   if (tab.id === 'features' && user?.planType !== 'ADMIN') return false;
+                   return true;
+                 })
+                 .map(tab => (
+                 <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-primary/10 text-primary font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                   <span className="material-symbols-outlined">{tab.icon}</span>
+                   {tab.label}
+                 </button>
+               ))}
+             </nav>
           </aside>
           <div className="flex-1">
             {activeTab === 'empresa' && (
@@ -1119,13 +1123,13 @@ const handleSave = async () => {
                     Falar com Consultor
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+                </div>
+              )}
+            </div>
+         </div>
+       )}
+     </div>
+   );
 };
 
 export default Configurações;

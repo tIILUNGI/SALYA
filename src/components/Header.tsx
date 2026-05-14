@@ -12,7 +12,7 @@ interface LocalNotification {
   tipo: 'processamento' | 'info' | 'alerta' | 'backend';
 }
 
-const Header: React.FC = () => {
+const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const { empresa, setEmpresa, empresaId, setEmpresaId, empresas } = useContext(AppContext);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -142,6 +142,17 @@ const Header: React.FC = () => {
 
       <header className="h-14 border-b border-corporate-200 bg-white sticky top-0 z-10 px-6 flex items-center justify-between">
         <div className="flex items-center gap-4 flex-1">
+          {/* Botão menu mobile */}
+          {onMenuClick && (
+            <button
+              onClick={onMenuClick}
+              className="md:hidden p-2 text-corporate-500 hover:bg-corporate-100 rounded-lg"
+              aria-label="Abrir menu"
+            >
+              <span className="material-symbols-outlined text-xl">menu</span>
+            </button>
+          )}
+
           <div className="max-w-sm w-full relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-corporate-400 text-sm">search</span>
             <input
@@ -153,7 +164,7 @@ const Header: React.FC = () => {
 
           <div className="relative group">
             {empresa && (
-              <button className="flex items-center gap-2 px-3 py-1.5 bg-corporate-50 rounded border border-corporate-200 hover:bg-corporate-100">
+              <button className="flex items-center gap-2 px-3 py-2 bg-corporate-50 rounded border border-corporate-200 hover:bg-corporate-100 min-h-[44px]">
                 <span className="material-symbols-outlined text-corporate-500 text-sm">domain</span>
                 <span className="text-sm text-corporate-700 max-w-[120px] truncate">{empresa.nome}</span>
                 <span className="material-symbols-outlined text-corporate-400 text-xs">expand_more</span>
@@ -191,7 +202,7 @@ const Header: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-1.5 text-corporate-500 hover:bg-corporate-100 rounded relative"
+              className="p-2 text-corporate-500 hover:bg-corporate-100 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center relative"
             >
               <span className={`material-symbols-outlined text-sm ${unreadCount > 0 ? 'text-amber-500' : ''}`}>
                 {unreadCount > 0 ? 'notifications_active' : 'notifications'}

@@ -623,38 +623,38 @@ const Processamento: React.FC = () => {
         </div>
       </div>
 
-      <div className="glass-card overflow-hidden">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-100">
-              <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase">Colaborador</th>
-              <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase text-right">Salário Base</th>
-              <th className="px-6 py-4"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {ativos.map((colaborador) => (
-              <tr key={colaborador.id} className="hover:bg-slate-50 transition-all">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="size-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-medium">{colaborador.nome.substring(0, 2).toUpperCase()}</div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-700">{colaborador.nome}</p>
-                      <p className="text-xs text-slate-400">{colaborador.cargo}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-right text-sm font-medium text-slate-600">{formatMoney(colaborador.salarioBase || 0)}</td>
-                <td className="px-6 py-4 text-center">
-                  <button onClick={() => handleStartProcessar(colaborador)} disabled={periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id)} className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id) ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary/90'}`}>
-                    {colaboradoresProcessadosNoPeriodo.has(colaborador.id) ? 'Processado' : 'Processar'}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+       <div className="glass-card overflow-x-auto">
+         <table className="min-w-full text-left">
+           <thead>
+             <tr className="bg-slate-50 border-b border-slate-100">
+               <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Colaborador</th>
+               <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase text-right whitespace-nowrap">Salário Base</th>
+               <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase text-center whitespace-nowrap">Ação</th>
+             </tr>
+           </thead>
+           <tbody className="divide-y divide-slate-100">
+             {ativos.map((colaborador) => (
+               <tr key={colaborador.id} className="hover:bg-slate-50 transition-all">
+                 <td className="px-4 sm:px-6 py-4">
+                   <div className="flex items-center gap-3">
+                     <div className="size-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-medium">{colaborador.nome.substring(0, 2).toUpperCase()}</div>
+                     <div>
+                       <p className="text-sm font-medium text-slate-700">{colaborador.nome}</p>
+                       <p className="text-xs text-slate-400">{colaborador.cargo}</p>
+                     </div>
+                   </div>
+                 </td>
+                 <td className="px-4 sm:px-6 py-4 text-right text-sm font-medium text-slate-600 whitespace-nowrap">{formatMoney(colaborador.salarioBase || 0)}</td>
+                 <td className="px-4 sm:px-6 py-4 text-center">
+                   <button onClick={() => handleStartProcessar(colaborador)} disabled={periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id)} className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id) ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary/90'}`}>
+                     {colaboradoresProcessadosNoPeriodo.has(colaborador.id) ? 'Processado' : 'Processar'}
+                   </button>
+                 </td>
+               </tr>
+             ))}
+           </tbody>
+         </table>
+       </div>
     </div>
   );
   const renderFormModal = () => {
@@ -1043,7 +1043,8 @@ const Processamento: React.FC = () => {
     return (
       <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[110] p-4 backdrop-blur-sm">
         <div className="bg-white rounded-[40px] max-w-[220mm] w-full max-h-[95vh] overflow-hidden shadow-2xl relative flex flex-col">
-          <div className="flex-1 overflow-y-auto p-8 bg-slate-100">
+          {/* Modal Header omitted for brevity */}
+          <div className="flex-1 overflow-x-auto overflow-y-auto p-4 sm:p-8 bg-slate-100">
             <div id="recibo-para-impressao" style={{ 
               width: '210mm', 
               minHeight: '297mm', 
@@ -1054,7 +1055,9 @@ const Processamento: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               fontFamily: 'Arial, sans-serif',
-              color: '#000'
+              color: '#000',
+              /* Ensure print dimensions, allow screen scaling */
+              maxWidth: '100%'
             }}>
               
               {/* Cabeçalho Empresa */}
@@ -1206,46 +1209,46 @@ const Processamento: React.FC = () => {
                 {historicoPorPeriodo.length === 0 ? (
                   <div className="py-12 text-center text-sm text-slate-400">Nenhum processamento registado para o periodo selecionado.</div>
                 ) : (
-                  <div className="rounded-xl border border-slate-100 overflow-hidden">
-                    <table className="w-full text-left">
+                  <div className="rounded-xl border border-slate-100 overflow-x-auto">
+                    <table className="min-w-full text-left">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-100">
-                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase">Colaborador</th>
-                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase">Período</th>
-                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Bruto</th>
-                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Desc.</th>
-                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right">Líquido</th>
-                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase">Data</th>
-                          <th className="px-4 py-3 text-xs font-medium text-slate-400 uppercase text-center">Ações</th>
+                          <th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Colaborador</th>
+                          <th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Período</th>
+                          <th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right whitespace-nowrap">Bruto</th>
+                          <th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right whitespace-nowrap">Desc.</th>
+                          <th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right whitespace-nowrap">Líquido</th>
+                          <th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Data</th>
+                          <th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase text-center whitespace-nowrap">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {historicoPorPeriodo.map((item) => (
                           <tr key={item.id} className="hover:bg-slate-50 transition-all">
-                            <td className="px-4 py-3">
+                            <td className="px-2 sm:px-4 py-3">
                               <p className="text-sm font-medium text-slate-700">{item.nomeColaborador}</p>
                               <p className="text-xs text-slate-400">{item.cargo || '-'}</p>
                             </td>
-                            <td className="px-4 py-3">
-                              <span className="px-2 py-1 rounded text-xs bg-slate-100 text-slate-500">
+                            <td className="px-2 sm:px-4 py-3">
+                              <span className="px-2 py-1 rounded text-xs bg-slate-100 text-slate-500 whitespace-nowrap">
                                 {numToMonth(item.mes)}/{item.ano}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-right text-sm font-medium text-slate-600">{formatMoney(item.totalBruto)}</td>
-                            <td className="px-4 py-3 text-right text-sm font-medium text-slate-500">
+                            <td className="px-2 sm:px-4 py-3 text-right text-sm font-medium text-slate-600 whitespace-nowrap">{formatMoney(item.totalBruto)}</td>
+                            <td className="px-2 sm:px-4 py-3 text-right text-sm font-medium text-slate-500 whitespace-nowrap">
                               <div>{formatMoney(item.descontos)}</div>
-                              <div className="text-[10px] text-slate-400 mt-1 space-y-0.5">
+                              <div className="text-[10px] text-slate-400 mt-1 space-y-0.5 hidden sm:block">
                                 <div>INSS: {formatMoney(item.valorINSS)}</div>
                                 <div>IRT: {formatMoney(item.valorIRT)}</div>
                                 <div>Faltas: {formatMoney(item.valorFaltas)}</div>
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-right text-sm font-medium text-primary">{formatMoney(item.salarioLiquido)}</td>
-                            <td className="px-4 py-3 text-xs text-slate-400">{item.createdAt ? new Date(item.createdAt).toLocaleString('pt-AO') : '-'}</td>
-                            <td className="px-4 py-3 text-center">
+                            <td className="px-2 sm:px-4 py-3 text-right text-sm font-medium text-primary whitespace-nowrap">{formatMoney(item.salarioLiquido)}</td>
+                            <td className="px-2 sm:px-4 py-3 text-xs text-slate-400 whitespace-nowrap">{item.createdAt ? new Date(item.createdAt).toLocaleString('pt-AO') : '-'}</td>
+                            <td className="px-2 sm:px-4 py-3 text-center">
                               <button 
                                 onClick={() => handleDownloadHistoricalReceipt(item)}
-                                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
+                                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
                                 title="Baixar Recibo"
                               >
                                 <span className="material-symbols-outlined">download</span>

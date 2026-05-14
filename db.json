@@ -23,11 +23,10 @@
       "taxaAGT": 2.0
     }
   ],
-  "alertas_resumo": {
-    "documentosExpirando": 1,
-    "salariosPendentes": 5,
-    "contratosExpirando": 0
-  },
+   "alertas_resumo": {
+     "documentosExpirando": 1,
+     "contratosExpirando": 0
+   },
   "trabalhadores": [
     {
       "id": 1,

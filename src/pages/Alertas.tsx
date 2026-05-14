@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 
 interface AlertaItem {
   id: number;
-  tipo: 'Contrato' | 'Documento' | 'Salário';
+  tipo: 'Contrato' | 'Documento';
   mensagem: string;
   colaborador?: string;
   dataLimite?: string;
@@ -69,27 +69,18 @@ const Alertas: React.FC = () => {
         if (empresaId) {
           const resumo = await api.get(`/alertas/resumo?empresaId=${empresaId}`);
           
-          if (resumo.documentosExpirando > 0) {
-            lista.push({
-              id: idCounter++,
-              tipo: 'Documento',
-              mensagem: `${resumo.documentosExpirando} documento(s) com validade a expirar nos próximos 30 dias`,
-              severidade: 'Alta',
-              status: 'Pendente',
-            });
-          }
-          if (resumo.salariosPendentes > 0) {
-            lista.push({
-              id: idCounter++,
-              tipo: 'Salário',
-              mensagem: `${resumo.salariosPendentes} processamento(s) salarial(ais) pendente(s) este mês`,
-              severidade: 'Média',
-              status: 'Pendente',
-            });
-          }
-        }
-      } catch (error) { 
-      }
+           if (resumo.documentosExpirando > 0) {
+             lista.push({
+               id: idCounter++,
+               tipo: 'Documento',
+               mensagem: `${resumo.documentosExpirando} documento(s) com validade a expirar nos próximos 30 dias`,
+               severidade: 'Alta',
+               status: 'Pendente',
+             });
+           }
+         }
+       } catch (error) { 
+       }
 
       setAlertas(lista);
       setLoading(false);
@@ -157,62 +148,62 @@ const Alertas: React.FC = () => {
         <div className="glass-card p-16 flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-      ) : (
-        <div className="glass-card overflow-hidden">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Severidade</th>
-                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tipo</th>
-                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Colaborador</th>
-                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mensagem</th>
-                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Limite</th>
-                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Acção</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-12 text-center">
-                    <span className="material-symbols-outlined text-4xl text-slate-200 block mb-3">check_circle</span>
-                    <p className="text-slate-400 text-sm font-bold">Nenhum alerta nesta categoria.</p>
-                  </td>
-                </tr>
-              ) : filtered.map(alerta => (
-                <tr key={alerta.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
-                  <td className="p-6">
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${severidadeBadge[alerta.severidade] || 'bg-slate-100 text-slate-500'}`}>
-                      {alerta.severidade}
-                    </span>
-                  </td>
-                  <td className="p-6">
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                      alerta.tipo === 'Contrato' ? 'bg-purple-50 text-purple-600' :
-                      alerta.tipo === 'Documento' ? 'bg-blue-50 text-blue-600' :
-                      'bg-indigo-50 text-indigo-600'
-                    }`}>{alerta.tipo}</span>
-                  </td>
-                  <td className="p-6 text-sm font-bold text-slate-700 dark:text-slate-300">{alerta.colaborador || '—'}</td>
-                  <td className="p-6 text-sm text-slate-600 dark:text-slate-400">{alerta.mensagem}</td>
-                  <td className="p-6 text-xs text-slate-500">
-                    {alerta.dataLimite ? new Date(alerta.dataLimite).toLocaleDateString('pt-AO') : '—'}
-                  </td>
-                  <td className="p-6 text-right">
-                    {alerta.status === 'Pendente' && (
-                      <button
-                        onClick={() => handleResolver(alerta.id)}
-                        className="text-[10px] font-black bg-emerald-50 text-emerald-600 px-4 py-2 rounded-lg hover:bg-emerald-500 hover:text-white transition-all uppercase tracking-widest"
-                      >
-                        Resolver
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+       ) : (
+         <div className="glass-card overflow-x-auto">
+           <table className="min-w-full text-left">
+             <thead>
+               <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                 <th className="p-3 sm:p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Severidade</th>
+                 <th className="p-3 sm:p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Tipo</th>
+                 <th className="p-3 sm:p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap hidden md:table-cell">Colaborador</th>
+                 <th className="p-3 sm:p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mensagem</th>
+                 <th className="p-3 sm:p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap hidden sm:table-cell">Data Limite</th>
+                 <th className="p-3 sm:p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">Acção</th>
+               </tr>
+             </thead>
+             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+               {filtered.length === 0 ? (
+                 <tr>
+                   <td colSpan={6} className="p-12 text-center">
+                     <span className="material-symbols-outlined text-4xl text-slate-200 block mb-3">check_circle</span>
+                     <p className="text-slate-400 text-sm font-bold">Nenhum alerta nesta categoria.</p>
+                   </td>
+                 </tr>
+               ) : filtered.map(alerta => (
+                 <tr key={alerta.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
+                   <td className="p-3 sm:p-6">
+                     <span className={`px-3 py-1 rounded-full text-[9xs] sm:text-[9px] font-black uppercase tracking-widest ${severidadeBadge[alerta.severidade] || 'bg-slate-100 text-slate-500'}`}>
+                       {alerta.severidade}
+                     </span>
+                   </td>
+                   <td className="p-3 sm:p-6">
+                     <span className={`px-3 py-1 rounded-full text-[9xs] sm:text-[9px] font-black uppercase tracking-widest ${
+                       alerta.tipo === 'Contrato' ? 'bg-purple-50 text-purple-600' :
+                       alerta.tipo === 'Documento' ? 'bg-blue-50 text-blue-600' :
+                       'bg-indigo-50 text-indigo-600'
+                     }`}>{alerta.tipo}</span>
+                   </td>
+                   <td className="p-3 sm:p-6 text-sm font-bold text-slate-700 dark:text-slate-300 hidden md:table-cell">{alerta.colaborador || '—'}</td>
+                   <td className="p-3 sm:p-6 text-sm text-slate-600 dark:text-slate-400">{alerta.mensagem}</td>
+                   <td className="p-3 sm:p-6 text-xs text-slate-500 hidden sm:table-cell">
+                     {alerta.dataLimite ? new Date(alerta.dataLimite).toLocaleDateString('pt-AO') : '—'}
+                   </td>
+                   <td className="p-3 sm:p-6 text-right">
+                     {alerta.status === 'Pendente' && (
+                       <button
+                         onClick={() => handleResolver(alerta.id)}
+                         className="text-[10px] font-black bg-emerald-50 text-emerald-600 px-3 sm:px-4 py-2 rounded-lg hover:bg-emerald-500 hover:text-white transition-all uppercase tracking-widest min-h-[44px]"
+                       >
+                         Resolver
+                       </button>
+                     )}
+                   </td>
+                 </tr>
+               ))}
+             </tbody>
+           </table>
+         </div>
+       )}
     </div>
   );
 };
