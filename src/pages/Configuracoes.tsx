@@ -1,8 +1,9 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
+
 import { AppContext } from '../App';
 import { api } from '../services/api';
-import Swal from 'sweetalert2';
 import { countries } from '../data/countries';
 
 
@@ -256,17 +257,17 @@ const Configurações: React.FC = () => {
     fetchHolidays();
   }, [config.pais]);
 
-   useEffect(() => {
-     const fetchPlans = async () => {
-       try {
-         const data = await api.get('/plans');
-         setPlans(data);
-       } catch (error) {
-         console.error('Erro ao carregar planos:', error);
-       }
-     };
-     fetchPlans();
-   }, []);
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const data = await api.get('/plans');
+        setPlans(data);
+      } catch (error) {
+        console.error('Erro ao carregar planos:', error);
+      }
+    };
+    fetchPlans();
+  }, []);
 
   const handleUpgradePlan = async (planId: number, planName: string) => {
     const result = await Swal.fire({
@@ -306,7 +307,7 @@ const Configurações: React.FC = () => {
     setActiveTab('empresa');
   };
 
-const handleSave = async () => {
+  const handleSave = async () => {
     if (!config.nome || !config.nif) {
       setMessage({
         title: 'ERRO!',
@@ -705,30 +706,30 @@ const handleSave = async () => {
                         {countries.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
                       </select>
                     </div>
-                    <div className="md:col-span-1">
-                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Província</label>
-                       <input type="text" value={config.provincia} onChange={(e) => setConfig({...config, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
-                    </div>
-                    <div className="md:col-span-2">
-                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Endereço</label>
-                       <input type="text" value={config.endereco} onChange={(e) => setConfig({...config, endereco: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
-                    </div>
-                    <div>
-                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Município</label>
-                       <input type="text" value={config.municipio} onChange={(e) => setConfig({...config, municipio: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
-                    </div>
-                    <div>
-                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Província</label>
-                       <input type="text" value={config.provincia} onChange={(e) => setConfig({...config, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
-                    </div>
-                    <div>
-                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Telefone</label>
-                       <input type="text" value={config.telefone} onChange={(e) => setConfig({...config, telefone: e.target.value.replace(/[^0-9+]/g, '').slice(0, 13)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder="+244912345678" />
-                    </div>
-                    <div>
-                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">E-mail</label>
-                       <input type="email" value={config.email} onChange={(e) => setConfig({...config, email: e.target.value})} onBlur={(e) => { if (e.target.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value)) { setConfig({...config, email: ''}); }}} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder="exemplo@email.com" />
-                    </div>
+                      <div className="md:col-span-1">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Província</label>
+                        <input type="text" value={config.provincia} onChange={(e) => setConfig({...config, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Endereço</label>
+                        <input type="text" value={config.endereco} onChange={(e) => setConfig({...config, endereco: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Município</label>
+                        <input type="text" value={config.municipio} onChange={(e) => setConfig({...config, municipio: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Província</label>
+                        <input type="text" value={config.provincia} onChange={(e) => setConfig({...config, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Telefone</label>
+                        <input type="text" value={config.telefone} onChange={(e) => setConfig({...config, telefone: e.target.value.replace(/[^0-9+]/g, '').slice(0, 13)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder="+244912345678" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">E-mail</label>
+                        <input type="email" value={config.email} onChange={(e) => setConfig({...config, email: e.target.value})} onBlur={(e) => { if (e.target.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value)) { setConfig({...config, email: ''}); }}} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder="exemplo@email.com" />
+                      </div>
                   </div>
                 </div>
 
@@ -1167,7 +1168,7 @@ const handleSave = async () => {
           </div>
         )}
       </div>
-     );
+      );
     };
 
 export default Configurações;

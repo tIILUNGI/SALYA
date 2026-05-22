@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
+
 import { api } from '../services/api';
 import { AppContext } from '../App';
 
@@ -29,56 +30,74 @@ const Relatórios: React.FC = () => {
   }, [empresaId]);
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-start mb-8">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Relatórios & Gráficos</h1>
-          <p className="text-sm text-slate-500 mt-1">Análises detalhadas, mapas de absentismo e métricas departamentais.</p>
+    <div className="p-8 max-w-7xl mx-auto space-y-10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Relatórios & Insights</h1>
+          <p className="text-sm font-medium text-slate-500">Acompanhe as métricas de desempenho e custos em tempo real.</p>
         </div>
-        <button className="bg-primary text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
-          <span className="material-symbols-outlined text-sm">download</span>
-          Exportar Relatório Geral
-        </button>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <button className="flex-1 md:flex-none px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold text-xs text-slate-600 dark:text-slate-300 shadow-soft hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+            <span className="material-symbols-outlined text-base">calendar_today</span>
+            Últimos 12 Meses
+          </button>
+          <button className="flex-1 md:flex-none px-6 py-3 bg-primary text-white rounded-2xl font-bold text-xs shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center justify-center gap-2">
+            <span className="material-symbols-outlined text-base">download</span>
+            Exportar BI
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="glass-card p-6 h-[400px]">
-          <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Evolução de Custos Salariais (Anual)</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-card">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Folha de Pagamento Anual</h3>
+            <div className="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold">+12% vs ano ant.</div>
+          </div>
           {loading ? (
-            <div className="h-[80%] flex items-center justify-center text-xs text-slate-400">A carregar...</div>
+            <div className="h-[300px] flex items-center justify-center text-xs text-slate-400 font-bold uppercase tracking-widest animate-pulse">Analizando Dados...</div>
           ) : (
-            <ResponsiveContainer width="100%" height="80%">
-              <AreaChart data={chartProcessamento} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={chartProcessamento} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
                     <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
+                <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} fontWeight="bold" tickLine={false} axisLine={false} tickMargin={10} />
+                <YAxis stroke="#cbd5e1" fontSize={10} fontWeight="bold" tickLine={false} axisLine={false} tickMargin={10} />
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <Tooltip />
-                <Area type="monotone" dataKey="total" stroke="#3b82f6" fillOpacity={1} fill="url(#colorTotal)" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                />
+                <Area type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
               </AreaChart>
             </ResponsiveContainer>
           )}
         </div>
 
-        <div className="glass-card p-6 h-[400px]">
-          <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Taxa de Absentismo por Departamento</h3>
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-card">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Absentismo por Dept.</h3>
+            <span className="material-symbols-outlined text-slate-300">more_horiz</span>
+          </div>
           {loading ? (
-            <div className="h-[80%] flex items-center justify-center text-xs text-slate-400">A carregar...</div>
+            <div className="h-[300px] flex items-center justify-center text-xs text-slate-400 font-bold uppercase tracking-widest animate-pulse">Calculando Taxas...</div>
           ) : (
-            <ResponsiveContainer width="100%" height="80%">
-              <BarChart data={chartAbsentismo} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartAbsentismo} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9"/>
-                <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="#cbd5e1" fontSize={10} tickLine={false} axisLine={false} />
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: '10px' }} />
-                <Bar dataKey="faltas" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="justificadas" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} fontWeight="bold" tickLine={false} axisLine={false} tickMargin={10} />
+                <YAxis stroke="#cbd5e1" fontSize={10} fontWeight="bold" tickLine={false} axisLine={false} tickMargin={10} />
+                <Tooltip 
+                   contentStyle={{ backgroundColor: '#fff', borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                   itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '20px' }} iconType="circle" />
+                <Bar dataKey="faltas" fill="#ef4444" radius={[6, 6, 0, 0]} barSize={20} />
+                <Bar dataKey="justificadas" fill="#10b981" radius={[6, 6, 0, 0]} barSize={20} />
               </BarChart>
             </ResponsiveContainer>
           )}

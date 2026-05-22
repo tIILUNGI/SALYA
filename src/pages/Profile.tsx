@@ -1,7 +1,8 @@
 import React, { useState, useContext, useEffect } from 'react';
+import Swal from 'sweetalert2';
+
 import { AppContext } from '../App';
 import { api, getApiErrorMessage } from '../services/api';
-import Swal from 'sweetalert2';
 
 const Profile: React.FC = () => {
   const { user, setUser } = useContext(AppContext);

@@ -15,7 +15,7 @@ import Profile from './pages/Profile';
 import ResetPassword from './pages/ResetPassword';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import { Colaborador,Empresa  } from './types';
+import { Colaborador, Empresa } from './types';
 import { api } from './services/api';
 import { notify } from './utils/notifications';
 

@@ -1,7 +1,8 @@
 import React, { useState, useContext, useEffect } from 'react';
+import Swal from 'sweetalert2';
+
 import { AppContext } from '../App';
 import { api } from '../services/api';
-import Swal from 'sweetalert2';
 
 interface PendenciaSalario {
   colaboradorId: number;

@@ -6,25 +6,25 @@ const Landing: React.FC = () => {
 
   const funcionalidades = [
     {
-      titulo: 'Colaboradores',
-      descricao: 'Gerencie os dados dos seus colaboradores: cadastro, informações pessoais, contacto, função e departamento. Tenha total controle sobre a sua base de funcionários.',
+      titulo: 'Gestão de Colaboradores',
+      descricao: 'Controle completo sobre dados pessoais, contratuais e histórico profissional da sua equipa em um ambiente centralizado.',
       imagem: '/Colaborador.png'
     },
     {
-      titulo: 'Processamento Salarial',
-      descricao: 'Calcule salários com precisão, aplicando deduções de IRT (Imposto sobre o Rendimento do Trabalho) e INSS (Instituto Nacional de Segurança Social). Processe em lote de forma rápida.',
+      titulo: 'Folha de Pagamento Profissional',
+      descricao: 'Cálculos automatizados de IRT e INSS em conformidade total com a legislação angolana e o Decreto Presidencial.',
       imagem: '/Processamento.png'
     },
     {
-      titulo: 'Geração de Recibos',
-      descricao: 'Gere recibos salariais profissionais para impressão ou download em PDF. Cada recibo contém todos os detalhes do salário: vencimentos, descontos e líquidos.',
+      titulo: 'Geração de Recibos em PDF',
+      descricao: 'Emita recibos de vencimento detalhados e profissionais com apenas um clique, prontos para partilha digital segura.',
       imagem: '/Recibos .jpeg'
     },
-        {
-          titulo: 'Relatórios & BI',
-          descricao: 'Acesse relatórios detalhados de folha de pagamento, histórico de salários por colaborador, e exportação de dados para análises externas.',
-          imagem: '/Relatorios.png'
-        }
+    {
+      titulo: 'Relatórios & Business Intelligence',
+      descricao: 'Aceda a métricas precisas sobre a sua folha de pagamento e exporte relatórios mensais fundamentais para a sua gestão.',
+      imagem: '/Relatorios.png'
+    }
   ];
 
   const scrollToSection = (id: string) => {
@@ -32,100 +32,166 @@ const Landing: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white font-app">
-      <header className="border-b border-corporate-200 sticky top-0 bg-white z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary text-white p-1.5 rounded">
-              <span className="material-symbols-outlined">payments</span>
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 font-app selection:bg-primary/10 selection:text-primary">
+      <header className="border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/')}>
+            <div className="bg-primary text-white p-2 rounded-xl shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+              <span className="material-symbols-outlined text-xl">payments</span>
             </div>
-            <h1 className="text-xl font-semibold text-corporate-800">SALYA</h1>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">SALYA</h1>
+            </div>
           </div>
-          <div className="flex items-center gap-6">
-            <nav className="hidden lg:flex items-center gap-6">
-              <button onClick={() => scrollToSection('sobre')} className="text-sm text-corporate-500 hover:text-primary transition-colors">Sobre</button>
-              <button onClick={() => scrollToSection('funcionalidades')} className="text-sm text-corporate-500 hover:text-primary transition-colors">Funcionalidades</button>
-              <button onClick={() => scrollToSection('porque-usar')} className="text-sm text-corporate-500 hover:text-primary transition-colors">Vantagens</button>
+          <div className="flex items-center gap-8">
+            <nav className="hidden lg:flex items-center gap-8">
+              <button onClick={() => scrollToSection('sobre')} className="text-sm font-semibold text-slate-500 hover:text-primary transition-colors">Sobre</button>
+              <button onClick={() => scrollToSection('funcionalidades')} className="text-sm font-semibold text-slate-500 hover:text-primary transition-colors">Funcionalidades</button>
+              <button onClick={() => scrollToSection('porque-usar')} className="text-sm font-semibold text-slate-500 hover:text-primary transition-colors">Vantagens</button>
             </nav>
-            <button onClick={() => navigate('/login')} className="px-6 py-2 bg-primary text-white text-sm font-medium rounded hover:bg-primary/90 transition-colors">
-              Entrar
-            </button>
+            <div className="flex items-center gap-3">
+              <button onClick={() => navigate('/login')} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:text-primary transition-colors">
+                Entrar
+              </button>
+              <button onClick={() => navigate('/login')} className="px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-xl shadow-soft hover:shadow-lg hover:bg-primary/90 transition-all">
+                Começar Agora
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-semibold text-corporate-800 mb-6">
-            Gestão de <br/> <span className="text-primary">Recibos Salariais</span>
+      <section className="relative py-24 px-6 overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full -z-10 opacity-30">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px]" />
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-400/20 rounded-full blur-[120px]" />
+        </div>
+        
+        <div className="max-w-4xl mx-auto text-center space-y-8">
+          <h2 className="text-5xl md:text-7xl font-bold text-slate-900 dark:text-white leading-[1.1] tracking-tight">
+            Gestão Moderna de <br/> <span className="text-primary italic">Folha de Pagamento</span>
           </h2>
+          <p className="text-lg text-slate-500 max-w-2xl mx-auto font-medium">
+            Simplifique a sua folha de pagamento, automatize cálculos de IRT e INSS e emita recibos profissionais em segundos com a SALYA.
+          </p>
           
-          <button 
-            onClick={() => navigate('/login')}
-            className="px-10 py-3 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            Começar Agora
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
+            <button 
+              onClick={() => navigate('/login')}
+              className="w-full sm:w-auto px-10 py-4 bg-primary text-white text-base font-bold rounded-2xl shadow-xl shadow-primary/30 hover:scale-105 transition-all"
+            >
+              Começar conta gratuita
+            </button>
+            <button 
+              onClick={() => scrollToSection('funcionalidades')}
+              className="w-full sm:w-auto px-10 py-4 bg-white dark:bg-slate-800 text-slate-700 dark:text-white text-base font-bold rounded-2xl shadow-soft border border-slate-100 dark:border-slate-700 hover:bg-slate-50 transition-all"
+            >
+              Explorar Funcionalidades
+            </button>
+          </div>
         </div>
       </section>
 
-      <section className="py-16 px-6 bg-corporate-50">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded border border-corporate-200 shadow-card">
-              <span className="material-symbols-outlined text-3xl text-primary mb-4">calculate</span>
-              <h4 className="text-base font-medium text-corporate-800 mb-2">Cálculo Automático</h4>
-              <p className="text-sm text-corporate-500">Processamento preciso de IRT e INSS com as taxas atualizadas conforme a lei vigente.</p>
+      <section className="py-16 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="group bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-card hover:border-primary/30 transition-all">
+              <div className="size-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-3xl text-primary">calculate</span>
+              </div>
+              <h4 className="text-xl font-bold text-slate-800 dark:text-white mb-3 tracking-tight">Cálculos Automatizados</h4>
+              <p className="text-sm text-slate-500 leading-relaxed">Processamento preciso de IRT e INSS com as taxas oficiais da AGT sempre atualizadas conforme a lei vigente.</p>
             </div>
-            <div className="bg-white p-6 rounded border border-corporate-200 shadow-card">
-              <span className="material-symbols-outlined text-3xl text-primary mb-4">description</span>
-              <h4 className="text-base font-medium text-corporate-800 mb-2">Recibos em PDF</h4>
-              <p className="text-sm text-corporate-500">Geração instantânea de recibos profissionais prontos para impressão ou envio digital.</p>
+            <div className="group bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-card hover:border-primary/30 transition-all">
+              <div className="size-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-3xl text-primary">description</span>
+              </div>
+              <h4 className="text-xl font-bold text-slate-800 dark:text-white mb-3 tracking-tight">Recibos Profissionais</h4>
+              <p className="text-sm text-slate-500 leading-relaxed">Geração instantânea de recibos profissionais em PDF, organizados e prontos para envio digital seguro.</p>
             </div>
-            <div className="bg-white p-6 rounded border border-corporate-200 shadow-card">
-              <span className="material-symbols-outlined text-3xl text-primary mb-4">groups</span>
-              <h4 className="text-base font-medium text-corporate-800 mb-2">Gestão de Equipa</h4>
-              <p className="text-sm text-corporate-500">Controlo total sobre perfis, documentos e histórico profissional de cada colaborador.</p>
+            <div className="group bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-card hover:border-primary/30 transition-all">
+              <div className="size-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-3xl text-primary">groups</span>
+              </div>
+              <h4 className="text-xl font-bold text-slate-800 dark:text-white mb-3 tracking-tight">Liderança de Equipa</h4>
+              <p className="text-sm text-slate-500 leading-relaxed">Controlo digital sobre perfis, cargos e histórico profissional de cada colaborador em um ambiente integrado.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-16 px-6 bg-white" id="sobre">
-        <div className="max-w-4xl mx-auto">
-          <h3 className="text-center text-lg font-medium text-corporate-500 mb-8">Sobre o Sistema</h3>
-          <div className="space-y-6 text-center md:text-left">
-            <p className="text-lg text-corporate-600">
-              O <strong className="text-corporate-800">SALYA</strong> é um sistema desenvolvido especificamente para o mercado angolano, simplificando a emissão de recibos e a gestão salarial.
+      <section className="py-24 px-6 bg-slate-900 overflow-hidden" id="sobre">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-16">
+          <div className="flex-1 space-y-8">
+            <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.3em]">A Plataforma</h3>
+            <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight tracking-tight">
+              A Solução de <span className="text-primary italic">Folha de Pagamento</span> Líder em Angola.
+            </h2>
+            <p className="text-lg text-slate-400 leading-relaxed font-medium">
+              O SALYA foi desenhado especificamente para as necessidades das PME's angolanas, removendo a complexidade técnica e burocrática da folha de pagamento.
             </p>
-            <div className="grid md:grid-cols-2 gap-8 pt-4">
-              <div className="space-y-3">
-                <h5 className="font-medium text-primary">Para quem serve?</h5>
-                <p className="text-sm text-corporate-500">Ideal para PME's em Angola que precisam de uma solução simples, moderna e eficiente para gerir a sua folha de pagamento.</p>
+            <div className="grid grid-cols-2 gap-6 pt-4">
+              <div className="space-y-3 p-6 bg-white/5 rounded-2xl border border-white/10">
+                <h5 className="font-bold text-primary text-sm uppercase tracking-wider">Conformidade</h5>
+                <p className="text-xs text-slate-400 leading-relaxed">Cálculos baseados nas últimas tabelas de IRT e diretrizes da AGT.</p>
               </div>
-              <div className="space-y-3">
-                <h5 className="font-medium text-primary">O que faz?</h5>
-                <p className="text-sm text-corporate-500">Gere dados, calcula impostos (IRT/INSS) e emite recibos oficiais em conformidade com as diretrizes fiscais de Angola.</p>
+              <div className="space-y-3 p-6 bg-white/5 rounded-2xl border border-white/10">
+                <h5 className="font-bold text-primary text-sm uppercase tracking-wider">Segurança</h5>
+                <p className="text-xs text-slate-400 leading-relaxed">Dados cifrados e infraestrutura robusta para proteção da sua empresa.</p>
               </div>
             </div>
+          </div>
+          <div className="flex-1 relative w-full lg:w-auto">
+             <div className="size-64 bg-primary/20 rounded-full blur-[100px] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+             <div className="relative z-10 p-10 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[3rem] shadow-2xl space-y-8">
+                <div className="flex items-center gap-5 group">
+                   <div className="size-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <span className="material-symbols-outlined text-emerald-400">verified</span>
+                   </div>
+                   <div>
+                      <p className="text-white font-bold tracking-tight">Processamento em Lote</p>
+                      <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Eficiência Operacional</p>
+                   </div>
+                </div>
+                <div className="flex items-center gap-5 group">
+                   <div className="size-12 rounded-2xl bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <span className="material-symbols-outlined text-blue-400">description</span>
+                   </div>
+                   <div>
+                      <p className="text-white font-bold tracking-tight">Recibos Oficiais</p>
+                      <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Padrão Corporativo</p>
+                   </div>
+                </div>
+                <div className="flex items-center gap-5 group">
+                   <div className="size-12 rounded-2xl bg-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <span className="material-symbols-outlined text-amber-400">analytics</span>
+                   </div>
+                   <div>
+                      <p className="text-white font-bold tracking-tight">Dashboards de BI</p>
+                      <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Dados Inteligentes</p>
+                   </div>
+                </div>
+             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-16 px-6 bg-white" id="funcionalidades">
-        <div className="max-w-5xl mx-auto">
-          <h3 className="text-2xl font-semibold text-corporate-800 mb-10 text-center">Funcionalidades</h3>
-          <div className="space-y-8">
+      <section className="py-24 px-6 bg-white dark:bg-slate-900" id="funcionalidades">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-20 space-y-4">
+            <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.3em]">Funcionalidades</h3>
+            <h2 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">Potencialize a sua Gestão</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             {funcionalidades.map((func, index) => (
-              <div key={index} data-index={index} className="func-item">
-                <div className={`flex flex-col ${index % 2 === 1 ? 'md:flex-row-reverse' : 'md:flex-row'} gap-8 items-center p-6 bg-corporate-50 rounded border border-corporate-200`}>
-                  <div className="flex-1 w-full">
-                    <img src={func.imagem} alt={func.titulo} className="w-full h-48 object-cover rounded" />
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <h4 className="text-lg font-medium text-corporate-800">{func.titulo}</h4>
-                    <p className="text-sm text-corporate-500">{func.descricao}</p>
-                  </div>
+              <div key={index} className="group flex flex-col gap-8 p-1 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 hover:border-primary/20 transition-all overflow-hidden shadow-soft">
+                <div className="relative h-72 overflow-hidden rounded-[2.2rem]">
+                  <img src={func.imagem} alt={func.titulo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 text-transparent" />
+                </div>
+                <div className="px-8 pb-10 space-y-4">
+                  <h4 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{func.titulo}</h4>
+                  <p className="text-slate-500 leading-relaxed font-medium">{func.descricao}</p>
                 </div>
               </div>
             ))}
@@ -133,41 +199,22 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-16 px-6 bg-corporate-800" id="porque-usar">
-        <div className="max-w-4xl mx-auto">
-          <h3 className="text-xl font-medium text-white mb-8 text-center">Vantagens</h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-corporate-700 p-6 rounded border border-corporate-600">
-              <h4 className="text-base font-medium mb-2 flex items-center gap-2 text-white"><span className="material-symbols-outlined text-primary">gavel</span> Conformidade Legal</h4>
-              <p className="text-sm text-corporate-300">O SALYA garante conformidade com o Decreto Presidencial e a Lei Geral do Trabalho.</p>
-            </div>
-            <div className="bg-corporate-700 p-6 rounded border border-corporate-600">
-              <h4 className="text-base font-medium mb-2 flex items-center gap-2 text-white"><span className="material-symbols-outlined text-primary">speed</span> Agilidade Total</h4>
-              <p className="text-sm text-corporate-300">O processamento em lote permite liquidar salários em segundos.</p>
-            </div>
-            <div className="bg-corporate-700 p-6 rounded border border-corporate-600">
-              <h4 className="text-base font-medium mb-2 flex items-center gap-2 text-white"><span className="material-symbols-outlined text-primary">savings</span> Redução de Custos</h4>
-              <p className="text-sm text-corporate-300">Digitalize os processos e elimine papelada com uma solução centralizada.</p>
-            </div>
-            <div className="bg-corporate-700 p-6 rounded border border-corporate-600">
-              <h4 className="text-base font-medium mb-2 flex items-center gap-2 text-white"><span className="material-symbols-outlined text-primary">verified</span> Segurança de Dados</h4>
-              <p className="text-sm text-corporate-300">Dados armazenados com criptografia e backups periódicos.</p>
-            </div>
+      <footer className="py-16 px-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
+          <div className="flex flex-col items-center md:items-start gap-4">
+             <div className="flex items-center gap-3">
+               <div className="bg-primary text-white p-1.5 rounded-xl shadow-lg shadow-primary/20"><span className="material-symbols-outlined text-sm">payments</span></div>
+               <span className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">SALYA</span>
+             </div>
+             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest leading-relaxed">© 2026 SALYA</p>
           </div>
-        </div>
-      </section>
 
-      <footer className="py-8 px-6 bg-white border-t border-corporate-200">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-           <div className="flex items-center gap-2 text-corporate-500">
-             <div className="bg-primary text-white size-6 rounded flex items-center justify-center"><span className="material-symbols-outlined text-xs">payments</span></div>
-             <span className="text-sm font-medium">SALYA</span>
-           </div>
-      
-           <div className="flex gap-4">
-             <button className="text-xs text-corporate-400 hover:text-primary">Termos</button>
-             <button className="text-xs text-corporate-400 hover:text-primary">Privacidade</button>
-           </div>
+          <div className="flex flex-wrap justify-center gap-x-10 gap-y-4">
+             <button className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Produtos</button>
+             <button className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Termos de Uso</button>
+             <button className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Privacidade</button>
+             <button className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Suporte</button>
+          </div>
         </div>
       </footer>
     </div>

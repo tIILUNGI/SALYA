@@ -1,10 +1,12 @@
 import React, { useState, useContext, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
+import html2pdf from 'html2pdf.js';
+
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
 import { api } from '../services/api';
 import { taxasIRT } from '../data/mockData';
-import html2pdf from 'html2pdf.js';
-import Swal from 'sweetalert2';
 import { countries } from '../data/countries';
 
 
@@ -169,28 +171,28 @@ const Processamento: React.FC = () => {
   const natal = incluirNatal ? formGanhoNatal : 0;
 
 
-  // ── Cálculo de Dias Úteis Reais (Calendário) ───────────────────────────────
+   // ── Cálculo de Dias Úteis Reais (Calendário) ───────────────────────────────
    const diasUteisReal = useMemo(() => {
-     // Se for variável, calculamos os dias úteis do mês (Seg-Sex) menos feriados
-     const month = monthToNum(selectedMonth);
-     const year = parseInt(selectedYear, 10);
-     const daysInMonth = new Date(year, month, 0).getDate();
-     let workDays = 0;
+        // Se for variável, calculamos os dias úteis do mês (Seg-Sex) menos feriados
+        const month = monthToNum(selectedMonth);
+        const year = parseInt(selectedYear, 10);
+        const daysInMonth = new Date(year, month, 0).getDate();
+        let workDays = 0;
 
-     for (let day = 1; day <= daysInMonth; day++) {
-       const date = new Date(year, month - 1, day);
-       const isWeekend = date.getDay() === 0 || date.getDay() === 6; // Dom ou Sáb
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = new Date(year, month - 1, day);
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6; // Dom ou Sáb
 
-       if (!isWeekend) {
-         const dateStr = date.toISOString().split('T')[0];
-         const isHoliday = holidays.some(h => h.date === dateStr);
-         if (!isHoliday) {
-           workDays++;
-         }
-       }
-     }
-     return workDays || 22; // Fallback para 22 se der erro
-   }, [selectedMonth, selectedYear, holidays]); // empresa removida (não é usada)
+          if (!isWeekend) {
+            const dateStr = date.toISOString().split('T')[0];
+            const isHoliday = holidays.some(h => h.date === dateStr);
+            if (!isHoliday) {
+              workDays++;
+            }
+          }
+        }
+        return workDays || 22; // Fallback para 22 se der erro
+      }, [selectedMonth, selectedYear, holidays]); // empresa removida (não é usada)
 
   // ── Configurações de Processamento ─────────────────────────────────────────
   const isFixed = localTipoProcessamento === 'Dias Fixos';
@@ -330,49 +332,49 @@ const Processamento: React.FC = () => {
     return historico.filter((item) => `${item.ano}-${String(item.mes).padStart(2, '0')}` === selectedHistoryPeriod);
   }, [historico, selectedHistoryPeriod]);
 
-   const loadHistórico = useCallback(async () => {
-     if (!empresaId) return;
+  const loadHistórico = useCallback(async () => {
+    if (!empresaId) return;
 
-     setHistóricoLoading(true);
-     setHistóricoError('');
-     try {
-       const data = await api.get(`/processamentos/historico?empresaId=${empresaId}`);
-       setHistórico(Array.isArray(data) ? data : []);
-     } catch (error: any) {
-       setHistórico([]);
-       setHistóricoError(error?.message || 'Nao foi possivel carregar o historico.');
-     } finally {
-       setHistóricoLoading(false);
-     }
-   }, [empresaId]);
+    setHistóricoLoading(true);
+    setHistóricoError('');
+    try {
+      const data = await api.get(`/processamentos/historico?empresaId=${empresaId}`);
+      setHistórico(Array.isArray(data) ? data : []);
+    } catch (error: any) {
+      setHistórico([]);
+      setHistóricoError(error?.message || 'Nao foi possivel carregar o historico.');
+    } finally {
+      setHistóricoLoading(false);
+    }
+  }, [empresaId]);
 
-   const handleStartProcessar = useCallback((colab: Colaborador) => {
-     if (periodoLocked) return;
-     if (colaboradoresProcessadosNoPeriodo.has(colab.id)) {
-       setMessage({ title: 'Aviso', text: 'Este colaborador já foi processado para o mês selecionado.', type: 'warning' });
-       return;
-     }
-     setSelectedColab(colab);
-     setFormSalario(colab.salarioBase || 0);
-     // formDiasTrabalhados será sincronizado pelo useEffect
-     setFormGanhoAlimentacao(colab.subsidioAlimentacao || 0);
-     setFormGanhoTransporte(colab.subsidioTransporte || 0);
-     setFormGanhoFerias(0);
-     setFormGanhoNatal(0);
-     setIncluirFerias(false);
-     setIncluirNatal(false);
-     setFormHorasExtra(0);
-     setFormBonus(0);
-     setFormFaltas(0);
-     setFormOutrosGanhos([]);
+  const handleStartProcessar = useCallback((colab: Colaborador) => {
+    if (periodoLocked) return;
+    if (colaboradoresProcessadosNoPeriodo.has(colab.id)) {
+      setMessage({ title: 'Aviso', text: 'Este colaborador já foi processado para o mês selecionado.', type: 'warning' });
+      return;
+    }
+    setSelectedColab(colab);
+    setFormSalario(colab.salarioBase || 0);
+    // formDiasTrabalhados será sincronizado pelo useEffect
+    setFormGanhoAlimentacao(colab.subsidioAlimentacao || 0);
+    setFormGanhoTransporte(colab.subsidioTransporte || 0);
+    setFormGanhoFerias(0);
+    setFormGanhoNatal(0);
+    setIncluirFerias(false);
+    setIncluirNatal(false);
+    setFormHorasExtra(0);
+    setFormBonus(0);
+    setFormFaltas(0);
+    setFormOutrosGanhos([]);
 
-     // Regime local baseado na empresa
-     const regimeEmpresa = (empresa?.tipoProcessamento === 'Dias Fixos' || empresa?.tipoProcessamento === 'DIAS_FIXOS')
-       ? 'Dias Fixos' : 'Dias Variáveis';
-     setLocalTipoProcessamento(regimeEmpresa);
+    // Regime local baseado na empresa
+    const regimeEmpresa = (empresa?.tipoProcessamento === 'Dias Fixos' || empresa?.tipoProcessamento === 'DIAS_FIXOS')
+      ? 'Dias Fixos' : 'Dias Variáveis';
+    setLocalTipoProcessamento(regimeEmpresa);
 
-     setShowFormModal(true);
-    }, [periodoLocked, colaboradoresProcessadosNoPeriodo, empresa, setMessage, setSelectedColab, setFormSalario, setFormGanhoAlimentacao, setFormGanhoTransporte, setFormGanhoFerias, setFormGanhoNatal, setIncluirFerias, setIncluirNatal, setFormHorasExtra, setFormBonus, setFormFaltas, setFormOutrosGanhos, setLocalTipoProcessamento, setShowFormModal]);
+    setShowFormModal(true);
+  }, [periodoLocked, colaboradoresProcessadosNoPeriodo, empresa, setMessage, setSelectedColab, setFormSalario, setFormGanhoAlimentacao, setFormGanhoTransporte, setFormGanhoFerias, setFormGanhoNatal, setIncluirFerias, setIncluirNatal, setFormHorasExtra, setFormBonus, setFormFaltas, setFormOutrosGanhos, setLocalTipoProcessamento, setShowFormModal]);
 
    const resetProcessingForm = () => {
      setFormSalario(0);

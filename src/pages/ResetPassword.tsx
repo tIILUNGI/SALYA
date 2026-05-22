@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { api, getApiErrorMessage } from '../services/api';
 import Swal from 'sweetalert2';
+
+import { api, getApiErrorMessage } from '../services/api';
 
 const ResetPassword: React.FC = () => {
   const navigate = useNavigate();

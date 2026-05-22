@@ -1,7 +1,8 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import { AppContext } from '../App';
 import { api } from '../services/api';
-import { useNavigate } from 'react-router-dom';
 
 interface LocalNotification {
   id: string;
@@ -140,56 +141,56 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
         </div>
       )}
 
-      <header className="h-14 border-b border-corporate-200 bg-white sticky top-0 z-10 px-6 flex items-center justify-between">
+<header className="h-16 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40 px-6 flex items-center justify-between">
         <div className="flex items-center gap-4 flex-1">
           {/* Botão menu mobile */}
           {onMenuClick && (
             <button
               onClick={onMenuClick}
-              className="md:hidden p-2 text-corporate-500 hover:bg-corporate-100 rounded-lg"
+              className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
               aria-label="Abrir menu"
             >
               <span className="material-symbols-outlined text-xl">menu</span>
             </button>
           )}
 
-          <div className="max-w-sm w-full relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-corporate-400 text-sm">search</span>
+          <div className="max-w-md w-full relative hidden md:block">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
             <input
-              className="w-full pl-9 pr-4 py-1.5 bg-corporate-100 border-none rounded text-sm outline-none"
-              placeholder="Pesquisar..."
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-400"
+              placeholder="Pesquisar por funcionalidades ou dados..."
               type="text"
             />
           </div>
 
-          <div className="relative group">
+          <div className="relative group ml-4">
             {empresa && (
-              <button className="flex items-center gap-2 px-3 py-2 bg-corporate-50 rounded border border-corporate-200 hover:bg-corporate-100 min-h-[44px]">
-                <span className="material-symbols-outlined text-corporate-500 text-sm">domain</span>
-                <span className="text-sm text-corporate-700 max-w-[120px] truncate">{empresa.nome}</span>
-                <span className="material-symbols-outlined text-corporate-400 text-xs">expand_more</span>
+              <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-primary/30 transition-all min-h-[44px]">
+                <span className="material-symbols-outlined text-primary text-xl">business_center</span>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 lg:max-w-[200px] truncate">{empresa.nome}</span>
+                <span className="material-symbols-outlined text-slate-400 text-lg">expand_more</span>
               </button>
             )}
-            <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded shadow-lg border border-corporate-200 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50">
-              <div className="p-3 border-b border-corporate-100 bg-corporate-50">
-                <h3 className="text-xs font-medium text-corporate-500">Empresas</h3>
+            <div className="absolute left-0 top-full mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all z-50">
+              <div className="p-4 border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alternar Entidade</h3>
               </div>
-              <div className="max-h-48 overflow-y-auto">
+              <div className="max-h-64 overflow-y-auto">
                 {empresas.map((bus) => (
                   <button
                     key={bus.id}
                     onClick={() => { setEmpresa(bus); setEmpresaId(bus.id); }}
-                    className={`w-full flex items-center gap-2 p-3 hover:bg-corporate-50 text-left ${empresaId === bus.id ? 'bg-primary/5' : ''}`}
+                    className={`w-full flex items-center gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left ${empresaId === bus.id ? 'bg-primary/5' : ''}`}
                   >
-                    <div className={`size-7 rounded flex items-center justify-center ${empresaId === bus.id ? 'bg-primary text-white' : 'bg-corporate-100 text-corporate-400'}`}>
-                      <span className="material-symbols-outlined text-sm">{(bus as any).categoria === 'Particular' ? 'home' : 'business'}</span>
+                    <div className={`size-8 rounded-lg flex items-center justify-center ${empresaId === bus.id ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                      <span className="material-symbols-outlined text-lg">{(bus as any).categoria === 'Particular' ? 'person' : 'apartment'}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-xs truncate ${empresaId === bus.id ? 'text-primary font-medium' : 'text-corporate-700'}`}>{bus.nome}</p>
-                      <p className="text-[10px] text-corporate-400">NIF: {bus.nif}</p>
+                      <p className={`text-xs truncate ${empresaId === bus.id ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-300'}`}>{bus.nome}</p>
+                      <p className="text-[10px] text-slate-400">NIF: {bus.nif}</p>
                     </div>
                     {empresaId === bus.id && (
-                      <span className="material-symbols-outlined text-primary text-sm">check</span>
+                      <div className="size-2 rounded-full bg-primary" />
                     )}
                   </button>
                 ))}
@@ -198,76 +199,94 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 text-corporate-500 hover:bg-corporate-100 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center relative"
-            >
-              <span className={`material-symbols-outlined text-sm ${unreadCount > 0 ? 'text-amber-500' : ''}`}>
-                {unreadCount > 0 ? 'notifications_active' : 'notifications'}
-              </span>
+        <div className="flex items-center gap-2">
+          {/* Action Icons from model */}
+          <div className="flex items-center gap-1 mr-2 px-2 border-r border-slate-100 dark:border-slate-800">
+            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">
+              <span className="material-symbols-outlined text-xl">language</span>
             </button>
+            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">
+              <span className="material-symbols-outlined text-xl">dark_mode</span>
+            </button>
+            
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all relative"
+              >
+                <span className={`material-symbols-outlined text-xl ${unreadCount > 0 ? 'text-amber-500' : ''}`}>
+                  {unreadCount > 0 ? 'notifications_active' : 'notifications'}
+                </span>
+                {unreadCount > 0 && (
+                  <span className="absolute top-2 right-2 size-2 bg-red-500 border-2 border-white dark:border-slate-900 rounded-full" />
+                )}
+              </button>
 
-            {showNotifications && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded shadow-lg border border-corporate-200 overflow-hidden z-50">
-                  <div className="p-4 border-b border-corporate-100 flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-medium text-corporate-700">Notificações</h3>
-                      <p className="text-xs text-corporate-400">{unreadCount} não lidas</p>
+              {showNotifications && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                  <div className="absolute right-0 top-full mt-3 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-50">
+                    <div className="p-5 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-800 dark:text-white">Notificações</h3>
+                        <p className="text-[10px] text-slate-400 mt-0.5">{unreadCount} mensagens não lidas</p>
+                      </div>
+                      {notifications.length > 0 && (
+                        <button onClick={handleMarkAllRead} className="text-[10px] font-bold text-primary uppercase hover:underline">
+                          Marcar tudo
+                        </button>
+                      )}
                     </div>
-                    {notifications.length > 0 && (
-                      <button onClick={handleMarkAllRead} className="text-xs text-primary hover:underline">
-                        Marcar tudo
-                      </button>
-                    )}
-                  </div>
 
-                  <div className="max-h-64 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <div className="p-8 text-center text-sm text-corporate-400">Sem notificações</div>
-                    ) : (
-                      notifications.map(notif => (
-                        <div
-                          key={notif.id}
-                          onClick={() => markAsRead(notif.id, notif.tipo)}
-                          className={`p-4 border-b border-corporate-50 hover:bg-corporate-50 cursor-pointer ${!notif.read ? 'bg-primary/5' : ''}`}
-                        >
-                          <div className="flex justify-between items-start gap-2">
-                            <p className={`text-sm ${notif.read ? 'text-corporate-500' : 'text-corporate-800 font-medium'}`}>
-                              {notif.title}
-                            </p>
-                            <span className="text-[10px] text-corporate-400 shrink-0">{notif.time}</span>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="py-12 px-6 text-center">
+                          <div className="size-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span className="material-symbols-outlined text-slate-300">notifications_off</span>
                           </div>
-                          <p className="text-xs text-corporate-500 mt-1">{notif.message}</p>
-                          {notif.tipo === 'processamento' && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); navigate('/processamento'); setShowNotifications(false); }}
-                              className="mt-2 text-xs text-primary hover:underline"
-                            >
-                              Ir para Processamento
-                            </button>
-                          )}
+                          <p className="text-xs text-slate-400 font-medium">Tudo limpo por aqui!</p>
                         </div>
-                      ))
+                      ) : (
+                        notifications.map(notif => (
+                          <div
+                            key={notif.id}
+                            onClick={() => markAsRead(notif.id, notif.tipo)}
+                            className={`p-4 border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/30 cursor-pointer transition-colors ${!notif.read ? 'bg-primary/5' : ''}`}
+                          >
+                            <div className="flex justify-between items-start gap-4">
+                              <p className={`text-xs leading-relaxed ${notif.read ? 'text-slate-500' : 'text-slate-800 dark:text-slate-200 font-semibold'}`}>
+                                {notif.title}
+                              </p>
+                              <span className="text-[9px] font-medium text-slate-400 shrink-0 uppercase">{notif.time}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">{notif.message}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {notifications.some(n => n.tipo === 'backend') && (
+                      <div className="p-3 bg-slate-50 dark:bg-slate-800/50 text-center">
+                        <button onClick={handleClearAll} className="text-[10px] font-bold text-rose-500 uppercase hover:underline">
+                          Limpar Histórico
+                        </button>
+                      </div>
                     )}
                   </div>
-
-                  {notifications.some(n => n.tipo === 'backend') && (
-                    <div className="p-3 border-t border-corporate-100 text-center">
-                      <button onClick={handleClearAll} className="text-xs text-rose-500 hover:underline">
-                        Limpar notificações
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
 
-          <span className="text-xs text-corporate-400 hidden lg:block">{currentDate}</span>
+          <div className="flex items-center gap-3 pl-2 group cursor-pointer" onClick={() => navigate('/profile')}>
+            <div className="hidden lg:block text-right">
+              <p className="text-xs font-bold text-slate-800 dark:text-white">Admin</p>
+              <p className="text-[10px] text-slate-400 font-medium uppercase">Gestor de RH</p>
+            </div>
+            <div className="size-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary font-bold text-sm shadow-sm group-hover:shadow-md transition-all">
+              BC
+            </div>
+          </div>
         </div>
       </header>
     </>

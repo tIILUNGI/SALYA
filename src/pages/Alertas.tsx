@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { api } from '../services/api';
-import { AppContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+
+import { api } from '../services/api';
+import { AppContext } from '../App';
 
 interface AlertaItem {
   id: number;

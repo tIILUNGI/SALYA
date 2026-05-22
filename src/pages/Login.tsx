@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api, clearAuthStorage, getApiErrorMessage, setAuthToken } from '../services/api';
 
-
 type ViewMode = 'login' | 'register' | 'select-plan' | 'confirm' | 'forgot';
 
 type Plan = {
@@ -18,7 +17,7 @@ type Plan = {
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const {
-    setIsAuthenticated, setUser, setMessage, setEmpresa, setEmpresaId, setEmpresas, setIsConfigured, setColaboradores
+    setIsAuthenticated, setUser, setEmpresa, setEmpresaId, setEmpresas, setIsConfigured, setColaboradores, setMessage
   } = useContext(AppContext);
 
   const [mode, setMode] = useState<ViewMode>('login');
@@ -52,10 +51,10 @@ const Login: React.FC = () => {
       })
       .catch((error: any) => {
         console.error('Erro ao carregar planos:', error);
-        showError('Não foi possível carregar os planos no momento. Tente novamente.');
+        showError('Não foi possível carregar os planos no momento.');
       })
       .finally(() => setIsLoading(false));
-   }, [mode]);
+    }, [mode]);
 
   const startCleanSession = (token: string, user: any) => {
     clearAuthStorage();
@@ -128,14 +127,12 @@ const Login: React.FC = () => {
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
-    setErrorString('');
     setIsLoading(true);
     try {
       const response = await api.post('/auth/verify-email', { email, code: confirmCode }, true);
-      const { token, user } = response;
-
-      startCleanSession(token, user);
-      navigate('/dashboard');
+      setMessage({ title: 'Sucesso', text: 'Email verificado! Pode fazer login.', type: 'success' });
+      setMode('login');
+      console.log(response);
     } catch (error: any) {
       showError(getApiErrorMessage(error));
     } finally {
@@ -143,32 +140,18 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleResendCode = async () => {
-    setErrorString('');
-    try {
-      await api.post('/auth/resend-code', { email });
-      setMessage({
-        title: 'Código Enviado',
-        type: 'success',
-        text: 'Um novo código de verificação foi enviado para o seu email.'
-      });
-    } catch (error: any) {
-      setErrorString(error.message || 'Erro ao reenviar código');
-    }
-  };
-
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorString('');
+    if (isLoading) return;
+    setIsLoading(true);
     try {
-      await api.post('/auth/forgot-password', { email });
-      setMessage({ 
-        title: 'Sucesso', 
-        text: 'Email de recuperação enviado (caso exista conta).', 
-        type: 'success' 
-      });
+      await api.post('/auth/forgot-password', { email }, true);
+      setMessage({ title: 'Email Enviado', text: 'Se o email existir, receberá instruções de recuperação.', type: 'info' });
+      setMode('login');
     } catch (error: any) {
-      setErrorString(error.message || 'Erro ao recuperar password');
+      showError(getApiErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -177,343 +160,252 @@ const Login: React.FC = () => {
     setErrorString('');
   };
 
-  const selectedPlanObject = plans.find((plan) => String(plan.id) === selectedPlan);
-
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-corporate-50">
-      <div className="relative flex h-auto w-full max-w-[900px] flex-col md:flex-row bg-white rounded shadow-lg overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50/50 dark:bg-slate-950 font-app selection:bg-primary/10 selection:text-primary">
+      <div className="relative flex h-auto w-full max-w-[1000px] flex-col md:flex-row bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800">
+        
         {/* Left Side - Branding */}
-        <div className="hidden md:flex md:w-1/2 bg-primary flex-col justify-center items-center p-10 text-white relative">
-          <div className="relative z-10 text-center">
-            <div className="mb-6">
-              <span className="material-symbols-outlined text-6xl">payments</span>
+        <div className="hidden md:flex md:w-[45%] bg-primary flex-col justify-between p-12 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-400/20 rounded-full -ml-10 -mb-10 blur-2xl" />
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-16 group">
+               <div className="bg-white/10 backdrop-blur-md p-2 rounded-2xl border border-white/20">
+                  <span className="material-symbols-outlined text-2xl">payments</span>
+               </div>
+               <h1 className="text-2xl font-bold tracking-tight">SALYA</h1>
             </div>
-            <h1 className="text-3xl font-semibold mb-3">SALYA</h1>
-            <p className="text-base opacity-90">Sistema de Gestão de Recibo Salarial</p>
+            
+            <div className="space-y-6">
+               <h2 className="text-4xl font-bold leading-tight tracking-tight">Gestão de <span className="italic font-serif opacity-80">Folha de Pagamento</span> em Angola.</h2>
+               <p className="text-blue-100/70 text-lg leading-relaxed font-medium">
+                  Controle salários, IRT e INSS com a plataforma mais rápida do mercado.
+               </p>
+            </div>
+          </div>
+
+          <div className="relative z-10">
+             <button 
+               onClick={() => navigate('/')} 
+               className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-xl text-xs font-bold transition-all"
+             >
+                <span className="material-symbols-outlined text-sm">west</span>
+                Voltar à Página Inicial
+             </button>
           </div>
         </div>
 
         {/* Right Side - Forms */}
-        <div className="w-full md:w-1/2 p-8 md:p-10">
-          {/* Mobile Logo */}
-          <div className="flex md:hidden items-center gap-2 mb-6">
-            <span className="material-symbols-outlined text-primary text-2xl">payments</span>
-            <h1 className="text-xl font-semibold text-primary">SALYA</h1>
-          </div>
-
+        <div className="w-full md:w-[55%] p-10 md:p-16 flex flex-col justify-center bg-white dark:bg-slate-900">
+          
+          {/* LOGIN MODE */}
           {mode === 'login' && (
-            <form onSubmit={handleLogin} className="space-y-5">
+            <form onSubmit={handleLogin} className="space-y-8">
               <div>
-                <h2 className="text-xl font-medium text-corporate-800 mb-1">Bem-vindo</h2>
-                <p className="text-sm text-corporate-500">Entre na sua conta</p>
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Acesso ao Sistema</h2>
+                <p className="text-sm font-medium text-slate-500">Gestão simplificada da sua folha de pagamento.</p>
               </div>
 
               {errorString && (
-                <div className={`p-3 bg-red-50 border border-red-200 rounded flex items-center gap-2 ${shake ? 'animate-shake' : ''}`}>
-                  <span className="material-symbols-outlined text-red-500 text-sm">error</span>
-                  <p className="text-sm text-red-600">{errorString}</p>
+                <div className={`p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-2xl flex items-center gap-3 ${shake ? 'animate-shake' : ''}`}>
+                  <span className="material-symbols-outlined text-red-500 text-lg">error</span>
+                  <p className="text-xs font-bold text-red-600 dark:text-red-400">{errorString}</p>
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Palavra-passe</label>
-                <div className="relative">
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">E-mail Corporativo</label>
                   <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 pr-12 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="exemplo@empresa.ao"
+                    className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary/30 transition-all font-medium dark:text-white outline-none"
                     required
-                    disabled={isLoading}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                  >
-                    <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
-                  </button>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2 ml-1">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Senha</label>
+                    <button type="button" onClick={() => switchMode('forgot')} className="text-[10px] font-bold text-primary hover:underline uppercase tracking-widest">Esqueceu?</button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-5 py-4 pr-14 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary/30 transition-all font-medium dark:text-white outline-none"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-xl">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 bg-primary hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all flex items-center justify-center gap-2"
+                className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 hover:bg-primary/95 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50"
               >
                 {isLoading ? (
-                  <><span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> A verificar...</>
-                ) : 'Entrar'}
-              </button>
-
-              <div className="text-center space-y-2">
-                <button
-                  type="button"
-                  onClick={() => switchMode('forgot')}
-                  className="text-sm text-primary hover:text-primary/80 font-medium"
-                >
-                  Esqueceu a palavra-passe?
-                </button>
-                <div>
-                  <span className="text-slate-500 dark:text-slate-400 text-sm">Não tem conta? </span>
-                  <button
-                    type="button"
-                    onClick={() => switchMode('select-plan')}
-                    className="text-sm text-primary hover:text-primary/80 font-medium"
-                  >
-                    Criar conta
-                  </button>
-                </div>
-                <div className="pt-4 border-t border-slate-100 mt-4">
-                  <button 
-                    type="button"
-                    onClick={() => navigate('/')}
-                    className="text-sm text-slate-400 hover:text-slate-600 font-medium"
-                  >
-                    ← Voltar à página inicial
-                  </button>
-                </div>
-              </div>
-            </form>
-          )}
-
-          {mode === 'register' && (
-            <form onSubmit={handleRegister} className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Criar Conta</h2>
-                <p className="text-slate-500 dark:text-slate-400">Finalize o cadastro com o plano escolhido.</p>
-                <div className="mt-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-4">
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Plano selecionado:</p>
-                  <p className="mt-1 text-base font-bold text-slate-900 dark:text-white">{selectedPlanObject?.name || 'Plano selecionado'}</p>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    {selectedPlanObject?.type === 'DEMO'
-                      ? 'Demo ativo por 24 horas. Depois disso, o acesso expira automaticamente.'
-                      : 'Plano pago. O acesso só será autorizado após aprovação do administrador.'}
-                  </p>
-                </div>
-              </div>
-
-              {errorString && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
-                  <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errorString}</p>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Nome</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Palavra-passe</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Confirmar Palavra-passe</label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-colors"
-              >
-                {isLoading ? 'A registar...' : 'Finalizar Registro'}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMode('select-plan')}
-                className="w-full text-sm text-slate-400 hover:text-slate-600 font-medium"
-              >
-                ← Voltar à escolha de plano
-              </button>
-            </form>
-          )}
-
-          {mode === 'select-plan' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Escolha seu Plano</h2>
-                <p className="text-slate-500 dark:text-slate-400">Selecione o plano ideal para sua empresa</p>
-              </div>
-
-              <div className="space-y-3">
-                {plans.length === 0 ? (
-                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 text-sm">
-                    Carregando planos...
-                  </div>
+                  <div className="size-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
                 ) : (
-                  plans.map((plan) => (
-                    <div
-                      key={plan.id}
-                      onClick={() => setSelectedPlan(String(plan.id))}
-                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedPlan === String(plan.id) ? 'border-primary bg-primary/5 shadow-md' : 'border-slate-100 hover:border-slate-200'}`}
-                    >
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-slate-900 dark:text-white">{plan.name}</span>
-                        <span className="text-primary font-black text-sm">{plan.price ? `${plan.price}` : 'Grátis'}</span>
-                      </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {plan.durationDays ? `${plan.durationDays} dias` : 'Duração não definida'} · {plan.type}
-                      </p>
-                    </div>
-                  ))
+                  <>Entrar no Dashboard <span className="material-symbols-outlined text-lg">east</span></>
                 )}
+              </button>
+
+              <div className="text-center pt-8 border-t border-slate-100 dark:border-slate-800 mt-6 md:hidden">
+                 <button onClick={() => navigate('/')} className="text-xs font-bold text-slate-400 flex items-center gap-2 justify-center"><span className="material-symbols-outlined text-sm">west</span> Volatar ao Início</button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setMode('register')}
-                className="w-full py-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all"
-              >
-                Continuar para cadastro
-              </button>
+              <div className="text-center pt-8 md:pt-4">
+                <p className="text-sm font-medium text-slate-500">
+                  Novo na Salya? 
+                  <button type="button" onClick={() => switchMode('select-plan')} className="ml-1.5 text-primary font-bold hover:underline">Configurar Conta</button>
+                </p>
+              </div>
+            </form>
+          )}
 
-              <button
-                type="button"
-                onClick={() => switchMode('login')}
-                className="w-full text-sm text-slate-400 hover:text-slate-600 font-medium"
-              >
-                ← Voltar ao login
-              </button>
+          {/* SELECT PLAN MODE */}
+          {mode === 'select-plan' && (
+            <div className="space-y-8 animate-fadeIn">
+               <div>
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Escolha o seu Plano</h2>
+                <p className="text-sm font-medium text-slate-500">Soluções adaptadas ao tamanho da sua equipa.</p>
+              </div>
+
+              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                {plans.map(p => (
+                  <div 
+                    key={p.id} 
+                    onClick={() => setSelectedPlan(String(p.id))} 
+                    className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${selectedPlan === String(p.id) ? 'border-primary bg-primary/5 shadow-soft' : 'border-slate-50 hover:border-slate-100 dark:border-slate-800'}`}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-bold text-slate-800 dark:text-white">{p.name}</span>
+                      <span className="text-primary font-black uppercase text-xs">{p.price || 'Consultar'}</span>
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{p.type}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => switchMode('register')} 
+                  disabled={!selectedPlan}
+                  className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 hover:bg-primary/95 transition-all disabled:opacity-50"
+                >
+                  Continuar para Registo
+                </button>
+                <button onClick={() => switchMode('login')} className="w-full py-3 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest">Cancelar</button>
+              </div>
             </div>
           )}
 
-          {mode === 'confirm' && (
-            <form onSubmit={handleConfirm} className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Confirmar Email</h2>
-                <p className="text-slate-500 dark:text-slate-400">Introduza o código de verificação enviado por email</p>
-              </div>
-
-              {errorString && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
-                  <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errorString}</p>
+          {/* REGISTER MODE */}
+          {mode === 'register' && (
+             <form onSubmit={handleRegister} className="space-y-6 animate-fadeIn">
+                <div>
+                  <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Criar Conta</h2>
+                  <p className="text-sm font-medium text-slate-500">Preencha os dados do gestor principal.</p>
                 </div>
-              )}
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Código de Confirmação</label>
-                <input
-                  type="text"
-                  value={confirmCode}
-                  onChange={(e) => setConfirmCode(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium text-center tracking-widest"
-                  required
-                />
-              </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Nome Completo</label>
+                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Como gostaria de ser chamado?" className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all dark:text-white" required />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Profissional</label>
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@empresa.ao" className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all dark:text-white" required />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Senha</label>
+                      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all dark:text-white" required />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Confirmar</label>
+                      <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••" className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all dark:text-white" required />
+                    </div>
+                  </div>
+                </div>
 
-              <button
-                type="submit"
-                className="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-colors"
-              >
-                Confirmar
-              </button>
-
-<div className="flex flex-col gap-3">
-                <button 
-                  type="button" 
-                  onClick={handleResendCode}
-                  className="text-sm text-slate-500 hover:text-slate-700 font-medium"
-                >
-                  Não recebeu o código? Reenviar
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => switchMode('login')}
-                  className="text-sm text-primary hover:text-primary/80 font-medium"
-                >
-                  Voltar ao login
-                </button>
-              </div>
-            </form>
+                <div className="flex flex-col gap-3 pt-4">
+                   <button type="submit" disabled={isLoading} className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 hover:bg-primary/95 transition-all">
+                      {isLoading ? 'A Processar...' : 'Finalizar Registo'}
+                   </button>
+                   <button type="button" onClick={() => switchMode('select-plan')} className="w-full py-2 text-xs font-bold text-slate-400 uppercase tracking-widest">Alterar Plano</button>
+                </div>
+             </form>
           )}
 
+          {/* FORGOT PASSWORD MODE */}
           {mode === 'forgot' && (
-            <form onSubmit={handleForgot} className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Recuperar Password</h2>
-                <p className="text-slate-500 dark:text-slate-400">Introduza o seu email para receber o código de recuperação</p>
-              </div>
-
-              {errorString && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
-                  <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errorString}</p>
+             <form onSubmit={handleForgot} className="space-y-8 animate-fadeIn">
+                <div>
+                  <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Recuperar Senha</h2>
+                  <p className="text-sm font-medium text-slate-500">Enviaremos instruções para o seu e-mail.</p>
                 </div>
-              )}
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white font-medium"
-                  required
-                />
-              </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">E-mail Registado</label>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@empresa.ao" className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all dark:text-white" required />
+                </div>
 
-              <button
-                type="submit"
-                className="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-colors"
-              >
-                Enviar Código
-              </button>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => switchMode('login')}
-                  className="text-sm text-primary hover:text-primary/80 font-medium"
-                >
-                  Voltar ao login
-                </button>
-              </div>
-            </form>
+                <div className="flex flex-col gap-4">
+                   <button type="submit" disabled={isLoading} className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 hover:bg-primary/95 transition-all">
+                      {isLoading ? 'Enviando...' : 'Enviar Link de Recuperação'}
+                   </button>
+                   <button type="button" onClick={() => switchMode('login')} className="text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest text-center">Voltar ao Login</button>
+                </div>
+             </form>
           )}
+
+          {/* CONFIRM / VERIFY MODE */}
+          {mode === 'confirm' && (
+             <form onSubmit={handleConfirm} className="space-y-8 animate-fadeIn">
+                <div className="text-center">
+                  <div className="size-16 bg-blue-50 text-blue-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <span className="material-symbols-outlined text-3xl">mark_email_unread</span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Verifique o seu Email</h2>
+                  <p className="text-sm font-medium text-slate-500 px-4">Introduza o código de verificação enviado para {email}.</p>
+                </div>
+
+                <div>
+                  <input 
+                    type="text" 
+                    value={confirmCode} 
+                    onChange={(e) => setConfirmCode(e.target.value)} 
+                    placeholder="Código de 6 dígitos" 
+                    className="w-full px-5 py-6 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 rounded-3xl text-center text-2xl font-black tracking-[0.5em] focus:border-primary outline-none transition-all dark:text-white" 
+                    maxLength={6} 
+                    required 
+                  />
+                </div>
+
+                <div className="flex flex-col gap-4">
+                   <button type="submit" disabled={isLoading} className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all">
+                      {isLoading ? 'Verificando...' : 'Verificar e Entrar'}
+                   </button>
+                   <button type="button" onClick={() => switchMode('login')} className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Cancelar</button>
+                </div>
+             </form>
+          )}
+
         </div>
       </div>
     </div>

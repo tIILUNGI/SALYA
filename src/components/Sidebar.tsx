@@ -154,52 +154,58 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
   };
 
   return (
-    <aside className={`w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+    <aside className={`w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
       {/* Logo header */}
-      <div className="p-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800">
-        <div className="bg-primary text-white p-1.5 rounded-lg">
-          <span className="material-symbols-outlined">payments</span>
+      <div className="p-6 flex items-center gap-3 mb-2">
+        <div className="bg-primary/10 text-primary p-2.5 rounded-xl">
+          <span className="material-symbols-outlined text-xl">payments</span>
         </div>
-        <h2 className="text-xl font-bold tracking-tight text-primary">SALYA</h2>
+        <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">SALYA</h2>
       </div>
 
+
       {/* Conteúdo principal */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-4">
         {!empresa ? (
           // Estado: empresa não configurada
           <div className="flex flex-col items-center justify-center p-6 text-center min-h-[60vh]">
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <span className="material-symbols-outlined text-4xl text-primary">business</span>
+            <div className="w-16 h-16 bg-primary/5 rounded-2xl flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-3xl text-primary">business</span>
             </div>
-            <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">
+            <h3 className="text-base font-semibold text-slate-800 dark:text-white mb-1">
               Bem-vindo ao Salya!
             </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
               Complete o cadastro da sua empresa para começar.
             </p>
             <button
               onClick={() => setShowCompanyModal(true)}
-              className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+              className="bg-primary text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 w-full"
             >
-              <span className="material-symbols-outlined">add</span>
+              <span className="material-symbols-outlined text-sm">add</span>
               Configurar Empresa
             </button>
           </div>
         ) : (
           // Estado: empresa configurada - menu de navegação
-          <nav className="p-4 space-y-1">
+          <nav className="space-y-1">
             {menuItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all relative group ${
                   currentPage === item.id
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-slate-100 dark:bg-slate-800 text-primary'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <span className="material-symbols-outlined">{item.icon}</span>
+                <span className={`material-symbols-outlined transition-colors ${currentPage === item.id ? 'text-primary' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                  {item.icon}
+                </span>
                 {item.label}
+                {currentPage === item.id && (
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-l-full" />
+                )}
               </button>
             ))}
           </nav>
