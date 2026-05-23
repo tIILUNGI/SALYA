@@ -51,8 +51,8 @@ export const notify = {
       icon: 'info',
       title,
       text: message,
-      background: '#eff6ff',
-      iconColor: '#3b82f6',
+      background: '#f3e8ff',
+      iconColor: '#9333ea',
     });
   },
 
@@ -63,7 +63,7 @@ export const notify = {
         icon: 'success',
         title,
         text: message,
-        confirmButtonColor: '#3b82f6',
+        confirmButtonColor: '#9333ea',
         customClass: {
           popup: 'rounded-2xl border-none shadow-2xl',
           confirmButton: 'px-8 py-3 rounded-xl font-bold uppercase tracking-wider text-sm'
@@ -90,7 +90,7 @@ export const notify = {
         text: message,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#3b82f6',
+        confirmButtonColor: '#9333ea',
         cancelButtonColor: '#94a3b8',
         confirmButtonText: confirmText,
         cancelButtonText: 'Cancelar',

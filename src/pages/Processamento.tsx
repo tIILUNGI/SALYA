@@ -415,7 +415,7 @@ const Processamento: React.FC = () => {
       showCancelButton: true,
       confirmButtonText: 'Sim, Processar Todos',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#3b82f6'
+      confirmButtonColor: '#9333ea'
     });
 
     if (!result.isConfirmed) return;

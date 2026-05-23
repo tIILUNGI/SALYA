@@ -19,7 +19,7 @@ interface AlertaItem {
 const severidadeBadge: Record<string, string> = {
   'Crítica': 'bg-red-100 text-red-600',
   'Alta': 'bg-amber-100 text-amber-600',
-  'Média': 'bg-blue-100 text-blue-600',
+  'Média': 'bg-primary/10 text-primary',
 };
 
 const Alertas: React.FC = () => {
@@ -159,7 +159,7 @@ const Alertas: React.FC = () => {
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'Ir para Salários em Atraso',
-        confirmButtonColor: '#6366f1',
+        confirmButtonColor: '#9333ea',
       }).then((result) => {
         if (result.isConfirmed) {
           navigate('/processamento-atraso');
@@ -233,7 +233,7 @@ const Alertas: React.FC = () => {
                     <div className={`size-10 rounded-full flex items-center justify-center ${
                       alerta.severidade === 'Crítica' ? 'bg-red-100 text-red-600' :
                       alerta.severidade === 'Alta' ? 'bg-amber-100 text-amber-600' :
-                      'bg-blue-100 text-blue-600'
+                      'bg-primary/10 text-primary'
                     }`}>
                       <span className="material-symbols-outlined">
                         {alerta.tipo === 'Contrato' ? 'description' : 'assignment'}

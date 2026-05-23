@@ -52,7 +52,7 @@ const Relatórios: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-card">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Folha de Pagamento Anual</h3>
-            <div className="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold">+12% vs ano ant.</div>
+            <div className="px-3 py-1 bg-primary/10 text-primary dark:text-primary rounded-lg text-[10px] font-bold">+12% vs ano ant.</div>
           </div>
           {loading ? (
             <div className="h-[300px] flex items-center justify-center text-xs text-slate-400 font-bold uppercase tracking-widest animate-pulse">Analizando Dados...</div>
@@ -61,8 +61,8 @@ const Relatórios: React.FC = () => {
               <AreaChart data={chartProcessamento} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#9333ea" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#9333ea" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} fontWeight="bold" tickLine={false} axisLine={false} tickMargin={10} />
@@ -72,7 +72,7 @@ const Relatórios: React.FC = () => {
                   contentStyle={{ backgroundColor: '#fff', borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                   itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
                 />
-                <Area type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
+                <Area type="monotone" dataKey="total" stroke="#9333ea" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
               </AreaChart>
             </ResponsiveContainer>
           )}

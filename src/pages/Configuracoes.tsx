@@ -275,7 +275,7 @@ const Configurações: React.FC = () => {
       text: `Deseja assinar o plano ${planName}? Se for um plano pago, será necessário aprovação após o pagamento.`,
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#2563eb',
+      confirmButtonColor: '#9333ea',
       confirmButtonText: 'Sim, assinar!',
       cancelButtonText: 'Cancelar'
     });
@@ -533,7 +533,7 @@ const Configurações: React.FC = () => {
             <span className="hover:text-primary cursor-pointer">Início</span>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
             <span className="text-slate-900 dark:text-white font-medium">Configurações</span>
-          </nav>
+          </nav>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-1 h-8 bg-primary rounded-full"></div>
             <h1 className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">{setupStep === 'choice' ? 'Adicionar Nova Entidade' : (isConfigured ? 'Configurações do Sistema' : 'Novo Cadastro')}</h1>
@@ -566,7 +566,7 @@ const Configurações: React.FC = () => {
               <h3 className="text-xl font-bold mb-2 uppercase">Empresa</h3>
             </button>
             <button onClick={() => handleChooseCategory('Particular')} className="bg-white dark:bg-slate-900 p-8 rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-primary text-left shadow-xl">
-              <div className="size-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 mb-6"><span className="material-symbols-outlined text-4xl">home</span></div>
+              <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-6"><span className="material-symbols-outlined text-4xl">home</span></div>
               <h3 className="text-xl font-bold mb-2 uppercase">Particular</h3>
             </button>
           </div>
@@ -637,8 +637,6 @@ const Configurações: React.FC = () => {
                           <p className="text-[11px] text-slate-500 leading-relaxed">A base de cálculo é sempre 22 dias, independentemente do mês.</p>
                         </div>
                       </div>
-
-                      {/* Explicação Visual */}
                       <div className="mt-6 p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-2 mb-4">
                           <span className="material-symbols-outlined text-primary text-sm">info</span>

@@ -157,10 +157,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
     <aside className={`w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
       {/* Logo header */}
       <div className="p-6 flex items-center gap-3 mb-2">
-        <div className="bg-primary/10 text-primary p-2.5 rounded-xl">
-          <span className="material-symbols-outlined text-xl">payments</span>
-        </div>
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">SALYA</h2>
+        <img src="/logo.png" alt="Salya Logo" className="h-10 w-auto" />
       </div>
 
 

@@ -77,7 +77,7 @@ const Dashboard: React.FC = () => {
                   <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalEmpresas}</h3>
                   <p className="text-xs text-slate-400 mt-1">Empresas registadas no sistema</p>
                 </div>
-                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-primary">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
                   <span className="material-symbols-outlined text-2xl">domain</span>
                 </div>
               </div>
@@ -190,8 +190,8 @@ const Dashboard: React.FC = () => {
                 <AreaChart data={chartProcessamento} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorTotalDb" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#9333ea" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#9333ea" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} dy={10} />
@@ -200,7 +200,7 @@ const Dashboard: React.FC = () => {
                   <Tooltip 
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                   />
-                  <Area isAnimationActive={false} type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorTotalDb)" />
+                  <Area isAnimationActive={false} type="monotone" dataKey="total" stroke="#9333ea" strokeWidth={3} fillOpacity={1} fill="url(#colorTotalDb)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>

@@ -302,15 +302,15 @@ const Colaboradores: React.FC = () => {
 
   const renderField = (label: string, value: React.ReactNode) => (
     <div className="space-y-1">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-corporate-500">{label}</p>
-      <p className="text-sm font-medium text-corporate-800 dark:text-corporate-100 break-words">{value}</p>
+      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="text-sm font-medium text-slate-800 dark:text-slate-100 break-words">{value}</p>
     </div>
   );
 
   const renderTabContent = () => {
-    const inputClass = "w-full px-3 py-2.5 rounded-lg bg-white border border-corporate-200 dark:bg-slate-950 dark:border-slate-800 outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium text-corporate-800 dark:text-white transition-all";
-    const labelClass = "block text-[11px] font-medium text-corporate-500 uppercase tracking-wide mb-1.5";
-    const sectionClass = "rounded-xl border border-corporate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-sm";
+    const inputClass = "w-full px-3 py-2.5 rounded-lg bg-white border border-slate-200 dark:bg-slate-950 dark:border-slate-800 outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium text-slate-800 dark:text-white transition-all";
+    const labelClass = "block text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-1.5";
+    const sectionClass = "rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-sm";
 
     switch (modalTab) {
       case 'Identificação':
@@ -380,7 +380,7 @@ const Colaboradores: React.FC = () => {
               )}
 
               {showDocForm && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-corporate-50 dark:bg-slate-900 p-5 rounded-xl border border-corporate-200 dark:border-slate-800 mt-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 mt-5">
                   <div className="space-y-2">
                     <label className={labelClass}>Título do Ficheiro</label>
                     <input type="text" value={docForm.titulo} onChange={(e) => setDocForm({ ...docForm, titulo: e.target.value })} className={inputClass} placeholder="Ex: Cópia BI" />
@@ -400,7 +400,7 @@ const Colaboradores: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <label className={labelClass}>Ficheiro (PDF/IMG)</label>
-                    <input type="file" onChange={(e) => setDocFile(e.target.files?.[0] || null)} className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-corporate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200" />
+                    <input type="file" onChange={(e) => setDocFile(e.target.files?.[0] || null)} className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200" />
                   </div>
                   <button type="button" onClick={handleAddDocumento} disabled={docLoading || !editingId} className="md:col-span-2 py-3 bg-primary text-white rounded-lg font-medium text-xs uppercase tracking-wide disabled:opacity-60">
                     {docLoading ? 'A carregar...' : 'Carregar Agora'}
@@ -463,7 +463,7 @@ const Colaboradores: React.FC = () => {
             <div className={sectionClass}>
               <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Ganhos Contratuais</p>
               <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Estrutura de Ganhos</h4>
-              <div className="p-5 bg-corporate-50 rounded-xl border border-corporate-200 mt-5">
+              <div className="p-5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 mt-5">
                 <label className={labelClass}>Salário Base Mensal (KZ)</label>
                 <input type="text" value={formatMoneyInput(formData.salarioBase)} onChange={(e) => setFormData({ ...formData, salarioBase: parseMoneyInput(e.target.value) })} className="w-full bg-transparent border-none outline-none font-semibold text-primary text-3xl tracking-tight" placeholder="0" />
               </div>
@@ -781,7 +781,7 @@ const Colaboradores: React.FC = () => {
             <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
               <div className="p-5 flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-corporate-500">Ficha Corporativa</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Ficha Corporativa</p>
                   <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">{editingId ? 'Atualizar Colaborador' : 'Novo Colaborador'}</h2>
                 </div>
                 <button onClick={handleCloseModal} className="size-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center">

@@ -165,33 +165,24 @@ const Login: React.FC = () => {
       <div className="relative flex h-auto w-full max-w-[1000px] flex-col md:flex-row bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800">
         
         {/* Left Side - Branding */}
-        <div className="hidden md:flex md:w-[45%] bg-primary flex-col justify-between p-12 text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl animate-pulse" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-400/20 rounded-full -ml-10 -mb-10 blur-2xl" />
-          
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-16 group">
-               <div className="bg-white/10 backdrop-blur-md p-2 rounded-2xl border border-white/20">
-                  <span className="material-symbols-outlined text-2xl">payments</span>
-               </div>
-               <h1 className="text-2xl font-bold tracking-tight">SALYA</h1>
-            </div>
-            
-            <div className="space-y-6">
-               <h2 className="text-4xl font-bold leading-tight tracking-tight">Gestão de <span className="italic font-serif opacity-80">Folha de Pagamento</span> em Angola.</h2>
-               <p className="text-blue-100/70 text-lg leading-relaxed font-medium">
-                  Controle salários, IRT e INSS com a plataforma mais rápida do mercado.
-               </p>
-            </div>
+        <div className="hidden md:flex md:w-[45%] bg-primary flex-col justify-center items-center p-12 text-white relative">
+          <div className="relative z-10 flex flex-col items-center">
+             {/* Logo Design Substituto */}
+             <div className="flex flex-col items-center">
+                <span className="text-6xl font-black tracking-tighter text-white select-none">SALYA</span>
+                <p className="mt-2 text-white/50 text-[9px] font-bold uppercase tracking-[0.3em] whitespace-nowrap">
+                  GESTÃO DE FOLHA DE PAGAMENTO
+                </p>
+             </div>
           </div>
 
-          <div className="relative z-10">
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10">
              <button 
                onClick={() => navigate('/')} 
-               className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-xl text-xs font-bold transition-all"
+               className="flex items-center gap-2 text-white/40 hover:text-white transition-all text-[10px] font-bold uppercase tracking-[0.2em]"
              >
                 <span className="material-symbols-outlined text-sm">west</span>
-                Voltar à Página Inicial
+                Voltar ao Início
              </button>
           </div>
         </div>
@@ -378,7 +369,7 @@ const Login: React.FC = () => {
           {mode === 'confirm' && (
              <form onSubmit={handleConfirm} className="space-y-8 animate-fadeIn">
                 <div className="text-center">
-                  <div className="size-16 bg-blue-50 text-blue-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <div className="size-16 bg-primary/10 text-primary rounded-3xl flex items-center justify-center mx-auto mb-6">
                     <span className="material-symbols-outlined text-3xl">mark_email_unread</span>
                   </div>
                   <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Verifique o seu Email</h2>

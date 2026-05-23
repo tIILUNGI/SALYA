@@ -36,23 +36,14 @@ const Landing: React.FC = () => {
       <header className="border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/')}>
-            <div className="bg-primary text-white p-2 rounded-xl shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-              <span className="material-symbols-outlined text-xl">payments</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">SALYA</h1>
-            </div>
+            <img src="/logo.png" alt="Salya Logo" className="h-10 w-auto" />
           </div>
           <div className="flex items-center gap-8">
             <nav className="hidden lg:flex items-center gap-8">
               <button onClick={() => scrollToSection('sobre')} className="text-sm font-semibold text-slate-500 hover:text-primary transition-colors">Sobre</button>
               <button onClick={() => scrollToSection('funcionalidades')} className="text-sm font-semibold text-slate-500 hover:text-primary transition-colors">Funcionalidades</button>
-              <button onClick={() => scrollToSection('porque-usar')} className="text-sm font-semibold text-slate-500 hover:text-primary transition-colors">Vantagens</button>
             </nav>
             <div className="flex items-center gap-3">
-              <button onClick={() => navigate('/login')} className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:text-primary transition-colors">
-                Entrar
-              </button>
               <button onClick={() => navigate('/login')} className="px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-xl shadow-soft hover:shadow-lg hover:bg-primary/90 transition-all">
                 Começar Agora
               </button>
@@ -64,7 +55,7 @@ const Landing: React.FC = () => {
       <section className="relative py-24 px-6 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full -z-10 opacity-30">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px]" />
-          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-400/20 rounded-full blur-[120px]" />
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-violet-400/20 rounded-full blur-[120px]" />
         </div>
         
         <div className="max-w-4xl mx-auto text-center space-y-8">
@@ -154,8 +145,8 @@ const Landing: React.FC = () => {
                    </div>
                 </div>
                 <div className="flex items-center gap-5 group">
-                   <div className="size-12 rounded-2xl bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <span className="material-symbols-outlined text-blue-400">description</span>
+                   <div className="size-12 rounded-2xl bg-violet-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <span className="material-symbols-outlined text-violet-400">description</span>
                    </div>
                    <div>
                       <p className="text-white font-bold tracking-tight">Recibos Oficiais</p>
@@ -199,21 +190,13 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      <footer className="py-16 px-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
+      <footer className="py-8 px-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex flex-col items-center md:items-start gap-4">
              <div className="flex items-center gap-3">
-               <div className="bg-primary text-white p-1.5 rounded-xl shadow-lg shadow-primary/20"><span className="material-symbols-outlined text-sm">payments</span></div>
-               <span className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">SALYA</span>
+               <img src="/logo.png" alt="Salya Logo" className="h-8 w-auto" />
              </div>
              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest leading-relaxed">© 2026 SALYA</p>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-x-10 gap-y-4">
-             <button className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Produtos</button>
-             <button className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Termos de Uso</button>
-             <button className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Privacidade</button>
-             <button className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">Suporte</button>
           </div>
         </div>
       </footer>
