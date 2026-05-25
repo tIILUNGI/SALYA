@@ -176,11 +176,15 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
               Complete o cadastro da sua empresa para começar.
             </p>
             <button
-              onClick={() => setShowCompanyModal(true)}
+              onClick={() => {
+                if (currentPage !== 'configuracoes') {
+                  handleNavigate('configuracoes');
+                }
+              }}
               className="bg-primary text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 w-full"
             >
-              <span className="material-symbols-outlined text-sm">add</span>
-              Configurar Empresa
+              <span className="material-symbols-outlined text-sm">settings</span>
+              Ir para Configurações
             </button>
           </div>
         ) : (
