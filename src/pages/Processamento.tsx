@@ -1261,7 +1261,7 @@ const Processamento: React.FC = () => {
   };
 
   return (
-    <div className="p-6 font-app">
+    <div className="p-4 md:p-6 w-full max-w-full font-app">
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-medium text-slate-700">Processamento Salarial</h2>

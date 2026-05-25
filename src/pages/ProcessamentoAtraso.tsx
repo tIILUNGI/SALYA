@@ -134,7 +134,7 @@ const ProcessamentoAtraso: React.FC = () => {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8 w-full max-w-full">
       <div className="mb-8">
         <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Processamento em Atraso</h1>
         <p className="text-sm text-slate-500 mt-1">Regularize salários de meses anteriores que ainda não foram liquidados.</p>

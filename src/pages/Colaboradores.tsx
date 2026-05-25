@@ -677,7 +677,7 @@ const Colaboradores: React.FC = () => {
   ] : [];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 w-full max-w-full">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Recursos Humanos</h1>

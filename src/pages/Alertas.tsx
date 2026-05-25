@@ -186,7 +186,7 @@ const Alertas: React.FC = () => {
   const filtered = alertas.filter(a => a.status === activeTab);
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8 w-full max-w-full">
       <div className="flex justify-between items-start mb-8">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Centro de Alertas</h1>

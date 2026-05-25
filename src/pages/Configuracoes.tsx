@@ -526,7 +526,7 @@ const Configurações: React.FC = () => {
    ];
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8 w-full max-w-full">
       <div className="flex items-center justify-between mb-8">
         <div>
           <nav className="flex items-center gap-2 text-sm text-slate-500 mb-2">

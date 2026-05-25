@@ -15,7 +15,7 @@ interface LocalNotification {
 
 const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
   const navigate = useNavigate();
-  const { empresa, setEmpresa, empresaId, setEmpresaId, empresas } = useContext(AppContext);
+  const { empresa, setEmpresa, empresaId, setEmpresaId, empresas, user } = useContext(AppContext);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<LocalNotification[]>([]);
   const [showBanner, setShowBanner] = useState(false);
@@ -86,9 +86,6 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
     fetchNotifications();
   }, [empresaId, formatTimeAgo]);
 
-  const currentDate = new Date().toLocaleDateString('pt-AO', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-  });
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -153,15 +150,6 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
               <span className="material-symbols-outlined text-xl">menu</span>
             </button>
           )}
-
-          <div className="max-w-md w-full relative hidden md:block">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
-            <input
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-400"
-              placeholder="Pesquisar por funcionalidades ou dados..."
-              type="text"
-            />
-          </div>
 
           <div className="relative group ml-4">
             {empresa && (
@@ -280,11 +268,11 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
 
           <div className="flex items-center gap-3 pl-2 group cursor-pointer" onClick={() => navigate('/profile')}>
             <div className="hidden lg:block text-right">
-              <p className="text-xs font-bold text-slate-800 dark:text-white">Admin</p>
+              <p className="text-xs font-bold text-slate-800 dark:text-white">{user?.name || 'Administrador'}</p>
               <p className="text-[10px] text-slate-400 font-medium uppercase">Gestor de RH</p>
             </div>
-            <div className="size-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary font-bold text-sm shadow-sm group-hover:shadow-md transition-all">
-              BC
+            <div className="size-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary font-bold text-sm shadow-sm group-hover:shadow-md transition-all uppercase">
+              {user?.name?.substring(0, 2) || 'US'}
             </div>
           </div>
         </div>

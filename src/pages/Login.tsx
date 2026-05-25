@@ -21,8 +21,8 @@ const Login: React.FC = () => {
   } = useContext(AppContext);
 
   const [mode, setMode] = useState<ViewMode>('login');
-  const [email, setEmail] = useState('admin@salya.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [confirmCode, setConfirmCode] = useState('');
@@ -285,7 +285,7 @@ const Login: React.FC = () => {
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-bold text-slate-800 dark:text-white">{p.name}</span>
-                      <span className="text-primary font-black uppercase text-xs">{p.price || 'Consultar'}</span>
+                      <span className="text-primary font-black uppercase text-xs">{p.price || 'Testar'}</span>
                     </div>
                     <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{p.type}</p>
                   </div>

@@ -55,7 +55,7 @@ const Dashboard: React.FC = () => {
   }, [empresaId]);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 w-full max-w-full">
       <div className="mb-10">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Painel Executivo</h1>
         <p className="text-sm text-slate-500 mt-1">Visão geral da folha de pagamento e compliance corporativo</p>
