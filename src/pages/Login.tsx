@@ -284,10 +284,10 @@ const Login: React.FC = () => {
                     className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${selectedPlan === String(p.id) ? 'border-primary bg-primary/5 shadow-soft' : 'border-slate-50 hover:border-slate-100 dark:border-slate-800'}`}
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-bold text-slate-800 dark:text-white">{p.name}</span>
-                      <span className="text-primary font-black uppercase text-xs">{p.price || 'Testar'}</span>
+                      <span className="text-slate-800 dark:text-white">{p.name}</span>
+                      <span className="text-primary uppercase text-xs">{p.price ? `${Number(p.price).toLocaleString('pt-BR')} KZ` : 'Testar'}</span>
                     </div>
-                    <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{p.type}</p>
+                    <p className="text-[10px] text-slate-400 tracking-widest uppercase">{p.type}</p>
                   </div>
                 ))}
               </div>
