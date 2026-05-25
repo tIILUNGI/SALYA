@@ -45,7 +45,7 @@ const Landing: React.FC = () => {
             </nav>
             <div className="flex items-center gap-3">
               <button onClick={() => navigate('/login')} className="px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-xl shadow-soft hover:shadow-lg hover:bg-primary/90 transition-all">
-                Começar Agora
+                Logar
               </button>
             </div>
           </div>
@@ -71,7 +71,7 @@ const Landing: React.FC = () => {
               onClick={() => navigate('/login')}
               className="w-full sm:w-auto px-10 py-4 bg-primary text-white text-base font-bold rounded-2xl shadow-xl shadow-primary/30 hover:scale-105 transition-all"
             >
-              Começar conta gratuita
+              Começar agora
             </button>
             <button 
               onClick={() => scrollToSection('funcionalidades')}
