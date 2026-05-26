@@ -1101,9 +1101,12 @@ const Configurações: React.FC = () => {
                     <h5 className="text-xl font-black uppercase tracking-tight mb-2">Precisa de Ajuda?</h5>
                     <p className="text-sm text-slate-400 font-medium">Tem dúvidas sobre qual plano escolher ou precisa de um plano customizado?</p>
                   </div>
-                  <button className="relative px-8 py-4 bg-white text-slate-900 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-100 transition-all">
-                    Falar com Consultor
-                  </button>
+                  <a 
+                    href="mailto:solucoes@ilungi.ao" 
+                    className="relative px-8 py-4 bg-white text-slate-900 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center"
+                  >
+                    Ajuda
+                  </a>
                 </div>
                 </div>
               )}
