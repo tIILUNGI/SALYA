@@ -269,7 +269,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
           <div className="flex items-center gap-3 pl-2 group cursor-pointer" onClick={() => navigate('/profile')}>
             <div className="hidden lg:block text-right">
               <p className="text-xs font-bold text-slate-800 dark:text-white">{user?.name || 'Administrador'}</p>
-              <p className="text-[10px] text-slate-400 font-medium uppercase">Gestor de RH</p>
+              {user?.cargo && <p className="text-[10px] text-slate-400 font-medium uppercase">{user.cargo}</p>}
             </div>
             <div className="size-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary font-bold text-sm shadow-sm group-hover:shadow-md transition-all uppercase">
               {user?.name?.substring(0, 2) || 'US'}

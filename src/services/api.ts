@@ -68,7 +68,7 @@ const humanizeMessage = (error: any): string => {
     'Bad Request': 'Os dados informados parecem estar incorretos.',
     'Not Found': 'O recurso solicitado não foi encontrado.',
     'User already exists': 'Este usuário já está cadastrado no sistema.',
-    'Invalid credentials': 'Email ou senha incorretos. Verifique seus dados.',
+    'Invalid credentials': 'Credencial errada.',
     'Email is already in use': 'Este email já está sendo utilizado por outra conta.',
   };
 

@@ -28,6 +28,7 @@ interface User {
   subscriptionExpiry?: string;
   planType?: string;
   activePlanName?: string;
+  cargo?: string;
 }
 
 interface AppContextType {
@@ -189,7 +190,7 @@ function App() {
             return { ...prev, subscriptionStatus: newStatus, subscriptionExpiry: data.subscriptionExpiry };
           });
           // If approved, unblock and reload company data
-          if (newStatus === 'ATIVA') {
+          if (newStatus === 'ATIVA' && subscriptionBlockedRef.current) {
             subscriptionBlockedRef.current = false;
             refreshData();
           }
@@ -321,6 +322,7 @@ function App() {
     }, 30000);
     return () => clearInterval(interval);
   }, [isAuthenticated, refreshSubscriptionStatus]);
+
   // Re-check subscription status when user returns to the tab (catches plans that expired while idle)
   useEffect(() => {
     const handleFocus = () => {

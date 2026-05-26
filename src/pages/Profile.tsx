@@ -6,18 +6,20 @@ import { api, getApiErrorMessage } from '../services/api';
 
 const Profile: React.FC = () => {
   const { user, setUser } = useContext(AppContext);
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+   const [name, setName] = useState(user?.name || '');
+   const [email, setEmail] = useState(user?.email || '');
+   const [cargo, setCargo] = useState(user?.cargo || '');
+   const [password, setPassword] = useState('');
+   const [confirmPassword, setConfirmPassword] = useState('');
+   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      setName(user.name);
-      setEmail(user.email);
-    }
-  }, [user]);
+   useEffect(() => {
+     if (user) {
+       setName(user.name);
+       setEmail(user.email);
+       setCargo(user.cargo || '');
+     }
+   }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,9 +35,9 @@ const Profile: React.FC = () => {
     }
 
     setIsLoading(true);
-    try {
-      const data: any = { name, email };
-      if (password) data.password = password;
+     try {
+       const data: any = { name, email, cargo };
+       if (password) data.password = password;
 
       const response = await api.put('/users/profile', data);
       
@@ -91,16 +93,27 @@ const Profile: React.FC = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">Email</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all dark:text-white font-medium"
-                    required
-                  />
-                </div>
+                 <div>
+                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">Email</label>
+                   <input
+                     type="email"
+                     value={email}
+                     onChange={(e) => setEmail(e.target.value)}
+                     className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all dark:text-white font-medium"
+                     required
+                   />
+                 </div>
+
+                 <div>
+                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">Profissão / Cargo</label>
+                   <input
+                     type="text"
+                     placeholder="Ex: Gestor de RH, Diretor Geral"
+                     value={cargo}
+                     onChange={(e) => setCargo(e.target.value)}
+                     className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all dark:text-white font-medium"
+                   />
+                 </div>
               </div>
 
               {/* Segurança */}

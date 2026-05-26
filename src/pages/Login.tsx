@@ -251,7 +251,7 @@ const Login: React.FC = () => {
                 {isLoading ? (
                   <div className="size-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
                 ) : (
-                  <>Entrar no Dashboard <span className="material-symbols-outlined text-lg">east</span></>
+                  <>Entrar <span className="material-symbols-outlined text-lg">east</span></>
                 )}
               </button>
 

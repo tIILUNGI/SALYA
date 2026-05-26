@@ -235,20 +235,24 @@ const Configurações: React.FC = () => {
       setHolidaysLoading(true);
       try {
         const year = new Date().getFullYear();
-        const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/${country.code}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (Array.isArray(data)) {
-            setHolidays(data);
-          } else {
-            console.warn('API de feriados retornou um formato inesperado:', data);
-            setHolidays([]);
-          }
+        // Dynamic import for date-holidays to keep it clean
+        const Holidays = (await import('date-holidays')).default;
+        const hd = new Holidays(country.code);
+        const data = hd.getHolidays(year);
+        
+        if (Array.isArray(data)) {
+          // Map to match the existing UI expectation (date, localName, name)
+          const mapped = data.map((h: any) => ({
+            date: h.date,
+            localName: h.name,
+            name: typeof h.type === 'string' ? h.type.toUpperCase() : 'Public Holiday'
+          }));
+          setHolidays(mapped);
         } else {
           setHolidays([]);
         }
       } catch (error) {
-        // Ignorar erro silenciosamente ou mostrar log discreto
+        console.error('Erro ao carregar feriados:', error);
         setHolidays([]);
       } finally {
         setHolidaysLoading(false);
@@ -533,7 +537,7 @@ const Configurações: React.FC = () => {
             <span className="hover:text-primary cursor-pointer">Início</span>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
             <span className="text-slate-900 dark:text-white font-medium">Configurações</span>
-          </nav>
+          </nav>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-1 h-8 bg-primary rounded-full"></div>
             <h1 className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">{setupStep === 'choice' ? 'Adicionar Nova Entidade' : (isConfigured ? 'Configurações do Sistema' : 'Novo Cadastro')}</h1>
@@ -637,61 +641,6 @@ const Configurações: React.FC = () => {
                           <p className="text-[11px] text-slate-500 leading-relaxed">A base de cálculo é sempre 22 dias, independentemente do mês.</p>
                         </div>
                       </div>
-                      <div className="mt-6 p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                        <div className="flex items-center gap-2 mb-4">
-                          <span className="material-symbols-outlined text-primary text-sm">info</span>
-                          <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Como funciona o cálculo?</h4>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                          <div className="space-y-4">
-                            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                              Se o funcionário trabalhar o <strong>mês completo</strong>, o valor final será igual ao salário base em ambos os regimes. A diferença aparece apenas em <strong>meses incompletos</strong> (admissões, demissões ou faltas).
-                            </p>
-                            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Exemplo (Salário: 180.000 Kz)</p>
-                              <table className="w-full text-[11px]">
-                                <thead>
-                                  <tr className="text-slate-400 border-b border-slate-50 dark:border-slate-800">
-                                    <th className="pb-2 text-left">Situação</th>
-                                    <th className="pb-2 text-right">Dias Fixos</th>
-                                    <th className="pb-2 text-right">Dias Variáveis</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="text-slate-700 dark:text-slate-300">
-                                  <tr className="border-b border-slate-50 dark:border-slate-800">
-                                    <td className="py-2">Mês Completo</td>
-                                    <td className="py-2 text-right font-bold text-emerald-500">180.000 Kz</td>
-                                    <td className="py-2 text-right font-bold text-emerald-500">180.000 Kz</td>
-                                  </tr>
-                                  <tr>
-                                    <td className="py-2">10 Dias (Fev/20)</td>
-                                    <td className="py-2 text-right">81.818 Kz</td>
-                                    <td className="py-2 text-right text-primary font-bold">90.000 Kz</td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                          
-                          <div className="bg-primary/5 p-5 rounded-2xl border border-primary/10">
-                            <h5 className="text-[10px] font-black text-primary uppercase mb-3 flex items-center gap-2">
-                              <span className="material-symbols-outlined text-sm">calculate</span>
-                              Fórmulas Aplicadas
-                            </h5>
-                            <div className="space-y-4">
-                              <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Regime Fixo</p>
-                                <p className="text-xs font-mono bg-white dark:bg-slate-900 p-2 rounded-lg border border-primary/10 text-slate-700 dark:text-slate-300">Base ÷ 22 × Dias_Trab</p>
-                              </div>
-                              <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Regime Variável</p>
-                                <p className="text-xs font-mono bg-white dark:bg-slate-900 p-2 rounded-lg border border-primary/10 text-slate-700 dark:text-slate-300">Base ÷ Úteis ÷ Dias_Trab</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -704,7 +653,7 @@ const Configurações: React.FC = () => {
                         {countries.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
                       </select>
                     </div>
-                      <div className="md:col-span-1">
+                      <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Província</label>
                         <input type="text" value={config.provincia} onChange={(e) => setConfig({...config, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                       </div>
@@ -715,10 +664,6 @@ const Configurações: React.FC = () => {
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Município</label>
                         <input type="text" value={config.municipio} onChange={(e) => setConfig({...config, municipio: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Província</label>
-                        <input type="text" value={config.provincia} onChange={(e) => setConfig({...config, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                       </div>
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Telefone</label>
@@ -799,9 +744,9 @@ const Configurações: React.FC = () => {
                           taxasIRT.map((t, idx) => (
                             <tr key={`irt-${idx}`} className="hover:bg-slate-50/50 transition-all font-bold text-sm">
                               <td className="p-4">{t.faixa}</td>
-                              <td className="p-4">{t.minimo.toLocaleString()}</td>
-                              <td className="p-4">{t.maximo.toLocaleString()}</td>
-                              <td className="p-4">{t.taxa}%</td>
+                              <td className="p-4 text-right">{t.minimo.toLocaleString()}</td>
+                              <td className="p-4 text-right">{t.maximo.toLocaleString()}</td>
+                              <td className="p-4 text-center">{t.taxa}%</td>
                               <td className="p-4 text-right">{t.parcelaAbt.toLocaleString()} Kz</td>
                             </tr>
                           ))
