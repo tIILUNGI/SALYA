@@ -482,11 +482,13 @@ function MainLayout() {
 
 function SubscriptionBarrier() {
   const { user, effectivePlan, refreshSubscriptionStatus } = React.useContext(AppContext);
-  const [view, setView] = React.useState<'message' | 'renew'>('message');
+  const [view, setView] = React.useState<'message' | 'renew' | 'confirm'>('message');
   const [plans, setPlans] = React.useState<any[]>([]);
   const [loadingPlans, setLoadingPlans] = React.useState(false);
   const [checking, setChecking] = React.useState(false);
   const [checkMsg, setCheckMsg] = React.useState('');
+  const [pendingPlan, setPendingPlan] = React.useState<any>(null);
+  const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
     if (view === 'renew') {
@@ -519,9 +521,16 @@ function SubscriptionBarrier() {
     }
   };
 
-  const handleSubscribe = async (planId: number, planName: string) => {
+  const handleSelectPlan = (plan: any) => {
+    setPendingPlan(plan);
+    setView('confirm');
+  };
+
+  const confirmSubscribe = async () => {
+    if (!pendingPlan) return;
+    setSubmitting(true);
     try {
-      await api.post(`/plans/${planId}/subscribe`, {}, true);
+      await api.post(`/plans/${pendingPlan.id}/subscribe`, {}, true);
       await Swal.fire({
         title: 'Solicitação Enviada!',
         text: 'O seu pedido foi enviado com sucesso. O administrador irá validar e activar o acesso.',
@@ -534,8 +543,100 @@ function SubscriptionBarrier() {
       if (!e?.isSubscriptionBlock) {
         Swal.fire('Erro', 'Não foi possível processar o pedido. Tente novamente.', 'error');
       }
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  if (view === 'confirm' && pendingPlan) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-xl">
+        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 dark:border-slate-800">
+          {/* Header */}
+          <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Confirmar Plano</h2>
+              <p className="text-sm text-slate-500 mt-1">Reveja os detalhes antes de solicitar.</p>
+            </div>
+            <button onClick={() => setView('renew')} className="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 transition-all">
+              <span className="material-symbols-outlined">arrow_back</span>
+            </button>
+          </div>
+
+          <div className="p-8 space-y-6">
+            {/* Plan summary card */}
+            <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-6">
+              <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3">Plano Selecionado</p>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">{pendingPlan.name}</h3>
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
+                  {pendingPlan.durationDays} dias
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-black text-primary">{pendingPlan.price.toLocaleString()}</span>
+                <span className="text-xs font-bold text-slate-400 uppercase">Kz</span>
+              </div>
+            </div>
+
+            {/* Next steps info */}
+            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 space-y-3">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Próximos Passos</p>
+              <div className="space-y-2">
+                <div className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-primary text-base mt-0.5">counter_1</span>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">Clique em <strong>"Solicitar Plano"</strong> para registar o seu pedido.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-primary text-base mt-0.5">counter_2</span>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">Efectue o pagamento e envie o comprovativo ao suporte.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-primary text-base mt-0.5">counter_3</span>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">O administrador irá validar e activar o seu acesso.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Support email card */}
+            <div className="rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="material-symbols-outlined text-indigo-500 text-xl">support_agent</span>
+                <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Suporte Técnico</p>
+              </div>
+              <p className="text-xs text-indigo-700 dark:text-indigo-300 mb-1">Para pagamentos, comprovativo e activação:</p>
+              <a
+                href="mailto:solucoes@ilungi.ao"
+                className="text-sm font-black text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 underline underline-offset-2 transition-colors"
+              >
+                solucoes@ilungi.ao
+              </a>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setView('renew')}
+                className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={confirmSubscribe}
+                disabled={submitting}
+                className="flex-1 py-4 bg-primary text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {submitting
+                  ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> A enviar...</>
+                  : <><span className="material-symbols-outlined text-sm">send</span> Solicitar Plano</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (view === 'renew') {
     return (
@@ -559,7 +660,7 @@ function SubscriptionBarrier() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {plans.filter(p => p.type !== 'DEMO').map(p => (
-                  <div key={p.id} className="p-8 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-primary transition-all flex flex-col">
+                  <div key={p.id} className="p-8 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-primary transition-all flex flex-col group cursor-pointer" onClick={() => handleSelectPlan(p)}>
                     <h3 className="font-black text-lg uppercase mb-2">{p.name}</h3>
                     <div className="flex items-baseline gap-1 mb-6">
                       <span className="text-2xl font-black">{p.price.toLocaleString()}</span>
@@ -571,10 +672,10 @@ function SubscriptionBarrier() {
                       <li className="flex items-center gap-2 text-xs text-slate-500"><span className="material-symbols-outlined text-emerald-500 text-sm">check_circle</span> Suporte Prioritário</li>
                     </ul>
                     <button 
-                      onClick={() => handleSubscribe(p.id, p.name)}
+                      onClick={(e) => { e.stopPropagation(); handleSelectPlan(p); }}
                       className="w-full py-3 bg-primary text-white rounded-xl font-bold uppercase text-xs hover:bg-primary/90 transition-all"
                     >
-                      Solicitar Plano
+                      Escolher Plano
                     </button>
                   </div>
                 ))}
@@ -582,8 +683,18 @@ function SubscriptionBarrier() {
             )}
           </div>
           
-          <div className="p-8 bg-slate-50 dark:bg-slate-800/50 text-center">
-            <p className="text-xs text-slate-500">Após solicitar, efectue o pagamento e envie o comprovativo ao suporte.</p>
+          <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
+              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                <span className="material-symbols-outlined text-base">support_agent</span>
+                <span className="text-xs font-bold">Suporte Técnico:</span>
+              </div>
+              <a href="mailto:solucoes@ilungi.ao" className="text-xs font-black text-indigo-600 dark:text-indigo-400 hover:underline">
+                solucoes@ilungi.ao
+              </a>
+              <span className="hidden sm:inline text-slate-300 dark:text-slate-600">•</span>
+              <p className="text-xs text-slate-400">Após escolher, envie o comprovativo de pagamento ao suporte.</p>
+            </div>
           </div>
         </div>
       </div>
