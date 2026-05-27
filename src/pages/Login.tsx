@@ -97,6 +97,15 @@ const Login: React.FC = () => {
       showError('As palavras-passe não coincidem.');
       return;
     }
+    if (password.length < 6) {
+      showError('A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    if (!selectedPlan) {
+      showError('Por favor, selecione um plano primeiro.');
+      setMode('select-plan');
+      return;
+    }
     setIsLoading(true);
     try {
       const response = await api.post('/auth/register', { name, email, password, planId: Number(selectedPlan) }, true);
@@ -189,7 +198,15 @@ const Login: React.FC = () => {
 
         {/* Right Side - Forms */}
         <div className="w-full md:w-[55%] p-10 md:p-16 flex flex-col justify-center bg-white dark:bg-slate-900">
-          
+          {/* Global Error Display */}
+          <div className={`${errorString ? 'mb-6' : ''} transition-all duration-300`}>
+            {errorString && (
+              <div className={`p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-2xl flex items-center gap-3 ${shake ? 'animate-shake' : ''}`}>
+                <span className="material-symbols-outlined text-red-500 text-lg">error</span>
+                <p className="text-xs font-bold text-red-600 dark:text-red-400">{errorString}</p>
+              </div>
+            )}
+          </div>
           {/* LOGIN MODE */}
           {mode === 'login' && (
             <form onSubmit={handleLogin} className="space-y-8">
@@ -198,12 +215,6 @@ const Login: React.FC = () => {
                 <p className="text-sm font-medium text-slate-500">Gestão simplificada da sua folha de pagamento.</p>
               </div>
 
-              {errorString && (
-                <div className={`p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-2xl flex items-center gap-3 ${shake ? 'animate-shake' : ''}`}>
-                  <span className="material-symbols-outlined text-red-500 text-lg">error</span>
-                  <p className="text-xs font-bold text-red-600 dark:text-red-400">{errorString}</p>
-                </div>
-              )}
 
               <div className="space-y-5">
                 <div>
