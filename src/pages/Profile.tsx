@@ -21,7 +21,7 @@ const Profile: React.FC = () => {
      }
    }, [user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (password && password !== confirmPassword) {
@@ -36,15 +36,24 @@ const Profile: React.FC = () => {
 
     setIsLoading(true);
      try {
-       const data: any = { name, email, cargo };
-       if (password) data.password = password;
+        const data: any = { name, email, cargo };
+        if (password) data.password = password;
 
       const response = await api.put('/users/profile', data);
       
-      if (setUser) {
+      if (setUser && response && response.user) {
+        // Atualizar localStorage atômicamente com os dados retornados
+        localStorage.setItem('salya_user', JSON.stringify({
+          ...user,
+          name: response.user.name,
+          email: response.user.email,
+          cargo: response.user.cargo
+        }));
         setUser({
           ...user,
-          ...response.user
+          name: response.user.name,
+          email: response.user.email,
+          cargo: response.user.cargo
         });
       }
 
