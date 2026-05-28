@@ -208,12 +208,12 @@ const Login: React.FC = () => {
             )}
           </div>
           {/* LOGIN MODE */}
-          {mode === 'login' && (
-            <form onSubmit={handleLogin} className="space-y-8">
-              <div>
-                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Acesso ao Sistema</h2>
-                <p className="text-sm font-medium text-slate-500">Gestão simplificada da sua folha de pagamento.</p>
-              </div>
+{mode === 'login' && (
+             <form onSubmit={handleLogin} className="space-y-8">
+               <div>
+                 <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Acesso ao Sistema</h2>
+                 <p className="text-sm font-medium text-slate-500">Gestão simplificada de folha de pagamento.</p>
+               </div>
 
 
               <div className="space-y-5">

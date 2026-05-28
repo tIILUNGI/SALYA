@@ -45,7 +45,7 @@ const Landing: React.FC = () => {
             </nav>
             <div className="flex items-center gap-3">
               <button onClick={() => navigate('/login')} className="px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-xl shadow-soft hover:shadow-lg hover:bg-primary/90 transition-all">
-                Logar
+                Entrar
               </button>
             </div>
           </div>
