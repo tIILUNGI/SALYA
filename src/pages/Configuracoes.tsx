@@ -152,6 +152,7 @@ const Configurações: React.FC = () => {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [selectedEmpresaId, setSelectedEmpresaId] = useState<number | ''>('');
   const [plans, setPlans] = useState<any[]>([]);
+  const [viewDate, setViewDate] = useState(new Date());
 
 
   // Sincronizar quando a empresa mudar via switcher
@@ -676,27 +677,121 @@ const Configurações: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Calendário de Feriados */}
-                <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-black text-lg uppercase tracking-wider text-slate-800 dark:text-white">Calendário Vigente ({new Date().getFullYear()})</h3>
-                    {holidaysLoading && <span className="text-xs text-primary animate-pulse font-bold uppercase">A carregar feriados...</span>}
-                  </div>
+                {/* Calendário de Feriados Interativo */}
+                <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
                   
-                  {holidays.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {holidays.map((h, i) => (
-                        <div key={i} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 hover:border-primary transition-colors">
-                          <p className="text-[10px] font-black text-primary uppercase mb-1">{new Date(h.date).toLocaleDateString('pt-AO', { day: '2-digit', month: 'long' })}</p>
-                          <p className="text-sm font-bold text-slate-700 dark:text-white truncate">{h.localName}</p>
-                          <p className="text-[9px] text-slate-400 uppercase font-medium truncate">{h.name}</p>
-                        </div>
-                      ))}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 relative">
+                    <div>
+                      <h3 className="font-black text-xl uppercase tracking-tight text-slate-800 dark:text-white flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary">calendar_month</span>
+                        Calendário de Feriados
+                      </h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Feriados oficiais em {config.pais}</p>
                     </div>
-                  ) : (
-                    <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800">
-                      <span className="material-symbols-outlined text-slate-300 text-4xl mb-2">calendar_today</span>
-                      <p className="text-sm text-slate-400">Nenhum feriado carregado para {config.pais}.</p>
+
+                    <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-700">
+                      <button 
+                         onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}
+                         className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all text-slate-500 hover:text-primary shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-sm">chevron_left</span>
+                      </button>
+                      
+                      <div className="px-4 min-w-[140px] text-center">
+                        <span className="text-sm font-black text-slate-700 dark:text-white uppercase tracking-tighter">
+                          {viewDate.toLocaleString('pt-AO', { month: 'long', year: 'numeric' })}
+                        </span>
+                      </div>
+
+                      <button 
+                         onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}
+                         className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all text-slate-500 hover:text-primary shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-sm">chevron_right</span>
+                      </button>
+                      
+                      <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-600 mx-1"></div>
+                      
+                      <button 
+                         onClick={() => setViewDate(new Date())}
+                         className="px-3 py-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all text-[10px] font-black text-primary uppercase tracking-widest shadow-sm"
+                      >
+                        Hoje
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-2 mb-2">
+                    {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+                      <div key={day} className="text-center py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-2">
+                    {(() => {
+                      const days = [];
+                      const year = viewDate.getFullYear();
+                      const month = viewDate.getMonth();
+                      
+                      const firstDayOfMonth = new Date(year, month, 1).getDay();
+                      const daysInMonth = new Date(year, month + 1, 0).getDate();
+                      
+                      // Empty cells before the first day of the month
+                      for (let i = 0; i < firstDayOfMonth; i++) {
+                        days.push(<div key={`empty-${i}`} className="aspect-square"></div>);
+                      }
+                      
+                      // Cells for each day of the month
+                      const today = new Date();
+                      for (let d = 1; d <= daysInMonth; d++) {
+                        const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
+                        
+                        const holiday = holidays.find(h => {
+                            const hDate = new Date(h.date);
+                            return hDate.getDate() === d && hDate.getMonth() === month;
+                        });
+
+                        days.push(
+                          <div 
+                            key={d} 
+                            className={`aspect-square rounded-2xl border flex flex-col items-center justify-center relative group transition-all cursor-default ${
+                              holiday ? 'bg-primary/5 border-primary/20 hover:bg-primary/10' : 
+                              isToday ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 
+                              'bg-slate-50/50 dark:bg-slate-800/30 border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-800'
+                            }`}
+                          >
+                            <span className={`text-sm font-bold ${isToday ? 'text-white' : holiday ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>
+                              {d}
+                            </span>
+                            
+                            {holiday && (
+                              <>
+                                <div className="absolute bottom-1.5 size-1 bg-primary rounded-full"></div>
+                                {/* Holiday Tooltip */}
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 bg-slate-900 text-white rounded-xl text-[10px] w-40 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-xl border border-slate-700 font-bold">
+                                  <p className="text-primary uppercase mb-1">{holiday.localName}</p>
+                                  <p className="text-slate-400 font-medium leading-tight">{holiday.name}</p>
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900"></div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      }
+                      
+                      return days;
+                    })()}
+                  </div>
+
+                  {holidaysLoading && (
+                    <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center rounded-3xl z-20">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="size-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">Sincronizando Feriados...</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1051,7 +1146,12 @@ const Configurações: React.FC = () => {
                            user?.planType === p.type ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                         }`}>
                           <span className="material-symbols-outlined text-2xl">
-                            {p.type === 'DEMO' ? 'rocket_launch' : p.type === 'BASIC' ? 'person' : p.type === 'PRO' ? 'groups' : 'corporate_fare'}
+                            {p.type === 'DEMO' ? 'rocket_launch' : 
+                             p.type === 'SEMESTRAL' ? 'person' : 
+                             p.type === 'ANUAL' ? 'groups' : 
+                             p.type === 'BIANUAL' ? 'corporate_fare' :
+                             p.type === 'BASIC' ? 'person' : 
+                             p.type === 'PRO' ? 'groups' : 'corporate_fare'}
                           </span>
                         </div>
                         <h5 className="font-black text-lg uppercase tracking-tight text-slate-800 dark:text-white mb-1">{p.name}</h5>
