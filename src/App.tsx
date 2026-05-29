@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Swal from 'sweetalert2';
 
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import Landing from './pages/Landing';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate, Outlet } from 'react-router-dom';
+import PageTitleSync from './components/PageTitleSync';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Alertas from './pages/Alertas';
@@ -221,7 +221,9 @@ function App() {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         if (payload.exp && payload.exp * 1000 < Date.now()) {
-          console.warn("Sessão expirada detectada no carregamento inicial.");
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn("Sessão expirada detectada no carregamento inicial.");
+          }
           setIsAuthenticated(false);
           setUser(null);
           clearCompanyState();
@@ -232,7 +234,9 @@ function App() {
         }
       } catch (e) {
         // Se o token estiver malformado, tratamos como não autenticado
-        console.error("Token malformado detectado.");
+        if (process.env.NODE_ENV !== 'production') {
+          console.error("Token malformado detectado.");
+        }
         setIsAuthenticated(false);
         setIsAuthChecking(false);
         return;
@@ -368,11 +372,37 @@ function App() {
        effectivePlan
      }}>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <PageTitleSync />
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route
+            path="/"
+            element={
+              isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+            }
+          />
           <Route path="/login" element={<Login />} />
+          <Route path="/registar/planos" element={<Login />} />
+          <Route path="/registar/verificar" element={<Login />} />
+          <Route path="/registar" element={<Login />} />
+          <Route path="/recuperar-senha" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="*" element={isAuthenticated ? <MainLayout /> : <Navigate to="/" replace />} />
+
+          <Route
+            element={isAuthenticated ? <MainLayout /> : <Navigate to="/login" replace />}
+          >
+            <Route path="/dashboard" element={<DashboardRoute />} />
+            <Route path="/alertas" element={<AlertasRoute />} />
+            <Route path="/colaboradores" element={<ColaboradoresRoute />} />
+            <Route path="/processamento" element={<ProcessamentoRoute />} />
+            <Route path="/processamento-atraso" element={<ProcessamentoAtrasoRoute />} />
+            <Route path="/relatorios" element={<RelatoriosRoute />} />
+            <Route path="/configuracoes" element={<ConfiguracoesIndexRedirect />} />
+            <Route path="/configuracoes/:tab" element={<Configuracoes />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
     </AppContext.Provider>
@@ -380,20 +410,46 @@ function App() {
 
 }
 
+function useRequiresEmpresa() {
+  const { empresa, isConfigured } = React.useContext(AppContext);
+  return Boolean(isConfigured && empresa && empresa.id);
+}
+
+function DashboardRoute() {
+  return useRequiresEmpresa() ? <Dashboard /> : <Navigate to="/configuracoes/empresa" replace />;
+}
+function AlertasRoute() {
+  return useRequiresEmpresa() ? <Alertas /> : <Navigate to="/configuracoes/empresa" replace />;
+}
+function ColaboradoresRoute() {
+  return useRequiresEmpresa() ? <Colaboradores /> : <Navigate to="/configuracoes/empresa" replace />;
+}
+function ProcessamentoRoute() {
+  return useRequiresEmpresa() ? <Processamento /> : <Navigate to="/configuracoes/empresa" replace />;
+}
+function ProcessamentoAtrasoRoute() {
+  return useRequiresEmpresa() ? <ProcessamentoAtraso /> : <Navigate to="/configuracoes/empresa" replace />;
+}
+function RelatoriosRoute() {
+  return useRequiresEmpresa() ? <Relatorios /> : <Navigate to="/configuracoes/empresa" replace />;
+}
+
+function ConfiguracoesIndexRedirect() {
+  const { empresas } = React.useContext(AppContext);
+  const tab = empresas && empresas.length > 1 ? 'gestao' : 'empresa';
+  return <Navigate to={`/configuracoes/${tab}`} replace />;
+}
+
 function MainLayout() {
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { empresa, isConfigured, isLoadingData, refreshData, setMessage } = React.useContext(AppContext);
-
+  const { isLoadingData, refreshData, setMessage } = React.useContext(AppContext);
 
   useEffect(() => {
-    const path = location.pathname.replace('/', '') || 'dashboard';
-    setCurrentPage(path);
-  }, [location]);
-
-  // Verificar se o usuário tem empresa configurada
-  const hasEmpresa = isConfigured && empresa && empresa.id;
+    const segment = location.pathname.replace(/^\//, '').split('/')[0] || 'dashboard';
+    setCurrentPage(segment);
+  }, [location.pathname]);
 
   // Enquanto os dados carregam, não redireccionamos para evitar flash de /configuracoes
   if (isLoadingData) {
@@ -410,13 +466,11 @@ function MainLayout() {
   // Função para atualizar após criar empresa
   const handleCompanyCreated = async () => {
     await refreshData();
-    if (isConfigured) {
-      setMessage({
-        title: 'SUCESSO!',
-        text: 'Empresa criada com sucesso! Agora você pode começar a usar o sistema.',
-        type: 'success'
-      });
-    }
+    setMessage({
+      title: 'SUCESSO!',
+      text: 'Empresa criada com sucesso! Agora você pode começar a usar o sistema.',
+      type: 'success'
+    });
   };
 
    return (
@@ -436,39 +490,7 @@ function MainLayout() {
          
          <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
          <main className="flex-1 p-0">
-          <Routes>
-            <Route path="/" element={<Navigate to={hasEmpresa ? "/dashboard" : "/configuracoes"} replace />} />
-            <Route 
-              path="/dashboard" 
-              element={hasEmpresa ? <Dashboard /> : <Navigate to="/configuracoes" replace />} 
-            />
-            
-            {/* Rotas que exigem empresa configurada */}
-            <Route 
-              path="/alertas" 
-              element={hasEmpresa ? <Alertas /> : <Navigate to="/configuracoes" replace />} 
-            />
-            <Route 
-              path="/colaboradores" 
-              element={hasEmpresa ? <Colaboradores /> : <Navigate to="/configuracoes" replace />} 
-            />
-            <Route 
-              path="/processamento" 
-              element={hasEmpresa ? <Processamento /> : <Navigate to="/configuracoes" replace />} 
-            />
-            <Route 
-              path="/processamento-atraso" 
-              element={hasEmpresa ? <ProcessamentoAtraso /> : <Navigate to="/configuracoes" replace />} 
-            />
-            <Route 
-              path="/relatorios" 
-              element={hasEmpresa ? <Relatorios /> : <Navigate to="/configuracoes" replace />} 
-            />
-            
-            {/* Configurações - sempre acessível */}
-            <Route path="/configuracoes" element={<Configuracoes />} />
-            <Route path="/profile" element={<Profile />} />
-          </Routes>
+          <Outlet />
         </main>
         <footer className="py-8 text-center opacity-[0.05] pointer-events-none">
         <p className="text-xs text-slate-400 font-medium tracking-widest">
@@ -752,7 +774,7 @@ function SubscriptionBarrier() {
               {info.showCheck ? 'Solicitar Nova Assinatura' : 'Escolher Plano'}
             </button>
             <button 
-              onClick={() => { localStorage.clear(); window.location.href = '/'; }}
+              onClick={() => { localStorage.clear(); window.location.href = '/login'; }}
               className="w-full py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
             >
               Sair da Conta

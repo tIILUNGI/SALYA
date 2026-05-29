@@ -1,9 +1,26 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api, clearAuthStorage, getApiErrorMessage, setAuthToken } from '../services/api';
+import { APP_URL, LANDING_URL } from '../config/urls';
 
 type ViewMode = 'login' | 'register' | 'select-plan' | 'confirm' | 'forgot';
+
+const MODE_PATHS: Record<ViewMode, string> = {
+  login: '/login',
+  'select-plan': '/registar/planos',
+  register: '/registar',
+  confirm: '/registar/verificar',
+  forgot: '/recuperar-senha',
+};
+
+function modeFromPath(pathname: string): ViewMode {
+  if (pathname.startsWith('/registar/planos')) return 'select-plan';
+  if (pathname === '/registar/verificar') return 'confirm';
+  if (pathname === '/registar') return 'register';
+  if (pathname === '/recuperar-senha') return 'forgot';
+  return 'login';
+}
 
 type Plan = {
   id: number;
@@ -16,11 +33,16 @@ type Plan = {
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     setIsAuthenticated, setUser, setEmpresa, setEmpresaId, setEmpresas, setIsConfigured, setColaboradores, setMessage
   } = useContext(AppContext);
 
-  const [mode, setMode] = useState<ViewMode>('login');
+  const [mode, setMode] = useState<ViewMode>(() => modeFromPath(location.pathname));
+
+  useEffect(() => {
+    setMode(modeFromPath(location.pathname));
+  }, [location.pathname]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -49,8 +71,7 @@ const Login: React.FC = () => {
           setPlans(data);
         }
       })
-      .catch((error: any) => {
-        console.error('Erro ao carregar planos:', error);
+      .catch(() => {
         showError('Não foi possível carregar os planos no momento.');
       })
       .finally(() => setIsLoading(false));
@@ -103,7 +124,7 @@ const Login: React.FC = () => {
     }
     if (!selectedPlan) {
       showError('Por favor, selecione um plano primeiro.');
-      setMode('select-plan');
+      navigate('/registar/planos');
       return;
     }
     setIsLoading(true);
@@ -116,7 +137,7 @@ const Login: React.FC = () => {
           text: response.message || 'Verifique o seu email para ativar a conta.',
           type: 'info'
         });
-        setMode('confirm');
+        navigate('/registar/verificar');
         return;
       }
 
@@ -124,7 +145,7 @@ const Login: React.FC = () => {
 
       if (token) {
         startCleanSession(token, user);
-        navigate('/configuracoes');
+        navigate('/configuracoes/empresa');
       }
     } catch (error: any) {
       showError(getApiErrorMessage(error));
@@ -138,10 +159,9 @@ const Login: React.FC = () => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      const response = await api.post('/auth/verify-email', { email, code: confirmCode }, true);
+      await api.post('/auth/verify-email', { email, code: confirmCode }, true);
       setMessage({ title: 'Sucesso', text: 'Email verificado! Pode fazer login.', type: 'success' });
-      setMode('login');
-      console.log(response);
+      navigate('/login');
     } catch (error: any) {
       showError(getApiErrorMessage(error));
     } finally {
@@ -154,9 +174,9 @@ const Login: React.FC = () => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      await api.post('/auth/forgot-password', { email }, true);
+      await api.post('/auth/forgot-password', { email, frontendUrl: APP_URL }, true);
       setMessage({ title: 'Email Enviado', text: 'Se o email existir, receberá instruções de recuperação.', type: 'info' });
-      setMode('login');
+      navigate('/login');
     } catch (error: any) {
       showError(getApiErrorMessage(error));
     } finally {
@@ -165,7 +185,7 @@ const Login: React.FC = () => {
   };
 
   const switchMode = (newMode: ViewMode) => {
-    setMode(newMode);
+    navigate(MODE_PATHS[newMode]);
     setErrorString('');
   };
 
@@ -178,21 +198,25 @@ const Login: React.FC = () => {
           <div className="relative z-10 flex flex-col items-center">
              {/* Logo Design Substituto */}
              <div className="flex flex-col items-center">
-                <span className="text-6xl font-black tracking-tighter text-white select-none">SALYA</span>
-                <p className="mt-2 text-white/50 text-[9px] font-bold uppercase tracking-[0.3em] whitespace-nowrap">
+                <img
+                  src="/logo login.png"
+                  alt="SALYA"
+                  className="h-20 w-auto max-w-[min(100%,280px)] object-contain select-none"
+                />
+                <p className="mt-4 text-white/50 text-[9px] font-bold uppercase tracking-[0.3em] whitespace-nowrap">
                   GESTÃO DE FOLHA DE PAGAMENTO
                 </p>
              </div>
           </div>
 
           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10">
-             <button 
-               onClick={() => navigate('/')} 
+             <a
+               href={LANDING_URL}
                className="flex items-center gap-2 text-white/40 hover:text-white transition-all text-[10px] font-bold uppercase tracking-[0.2em]"
              >
                 <span className="material-symbols-outlined text-sm">west</span>
                 Voltar ao Início
-             </button>
+             </a>
           </div>
         </div>
 
@@ -267,7 +291,7 @@ const Login: React.FC = () => {
               </button>
 
               <div className="text-center pt-8 border-t border-slate-100 dark:border-slate-800 mt-6 md:hidden">
-                 <button onClick={() => navigate('/')} className="text-xs font-bold text-slate-400 flex items-center gap-2 justify-center"><span className="material-symbols-outlined text-sm">west</span> Volatar ao Início</button>
+                 <a href={LANDING_URL} className="text-xs font-bold text-slate-400 flex items-center gap-2 justify-center"><span className="material-symbols-outlined text-sm">west</span> Voltar ao Início</a>
               </div>
 
               <div className="text-center pt-8 md:pt-4">

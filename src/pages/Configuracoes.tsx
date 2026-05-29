@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 import { AppContext } from '../App';
@@ -98,16 +98,31 @@ const mapEmpresaToConfig = (emp: any): ConfiguraçãoEmpresa => ({
   tipoProcessamento: emp.tipoProcessamento === 'DIAS_FIXOS' ? 'Dias Fixos' : 'Dias Variáveis'
 });
 
+const CONFIG_TAB_IDS = ['empresa', 'impostos', 'processamento', 'gestao', 'acesso', 'assinatura'] as const;
+
 const Configurações: React.FC = () => {
   const { user, empresa, setEmpresa, isConfigured, setIsConfigured, empresas, empresaId, setEmpresaId, refreshData, setMessage } = useContext(AppContext);
 
   const navigate = useNavigate();
+  const { tab: tabParam } = useParams<{ tab?: string }>();
+  const defaultTab = empresas && empresas.length > 1 ? 'gestao' : 'empresa';
+
   const [activeTab, setActiveTab] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab');
-    if (tab) return tab;
-    return empresas && empresas.length > 1 ? 'gestao' : 'empresa';
+    if (tabParam && CONFIG_TAB_IDS.includes(tabParam as typeof CONFIG_TAB_IDS[number])) return tabParam;
+    return defaultTab;
   });
+
+  useEffect(() => {
+    if (tabParam && CONFIG_TAB_IDS.includes(tabParam as typeof CONFIG_TAB_IDS[number]) && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam, activeTab]);
+
+  useEffect(() => {
+    if (tabParam && !CONFIG_TAB_IDS.includes(tabParam as typeof CONFIG_TAB_IDS[number])) {
+      navigate(`/configuracoes/${defaultTab}`, { replace: true });
+    }
+  }, [tabParam, defaultTab, navigate]);
   
   const emptyConfig: ConfiguraçãoEmpresa = {
     id: Date.now(),
@@ -590,7 +605,7 @@ const Configurações: React.FC = () => {
                    return true;
                  })
                  .map(tab => (
-                 <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-primary/10 text-primary font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                 <button key={tab.id} onClick={() => navigate(`/configuracoes/${tab.id}`)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-primary/10 text-primary font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                    <span className="material-symbols-outlined">{tab.icon}</span>
                    {tab.label}
                  </button>
