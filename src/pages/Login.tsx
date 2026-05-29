@@ -208,16 +208,6 @@ const Login: React.FC = () => {
                 </p>
              </div>
           </div>
-
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10">
-             <a
-               href={LANDING_URL}
-               className="flex items-center gap-2 text-white/40 hover:text-white transition-all text-[10px] font-bold uppercase tracking-[0.2em]"
-             >
-                <span className="material-symbols-outlined text-sm">west</span>
-                Voltar ao Início
-             </a>
-          </div>
         </div>
 
         {/* Right Side - Forms */}
@@ -289,10 +279,6 @@ const Login: React.FC = () => {
                   <>Entrar <span className="material-symbols-outlined text-lg">east</span></>
                 )}
               </button>
-
-              <div className="text-center pt-8 border-t border-slate-100 dark:border-slate-800 mt-6 md:hidden">
-                 <a href={LANDING_URL} className="text-xs font-bold text-slate-400 flex items-center gap-2 justify-center"><span className="material-symbols-outlined text-sm">west</span> Voltar ao Início</a>
-              </div>
 
               <div className="text-center pt-8 md:pt-4">
                 <p className="text-sm font-medium text-slate-500">
