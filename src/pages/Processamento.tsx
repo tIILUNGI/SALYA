@@ -105,8 +105,8 @@ const calcularINSS = (salarioBase: number): number => roundMoney(salarioBase * 0
  *   MC = 254.600  → 3º Escalão → IRT = 31.250 + (254.600 - 200.000) × 18% = 41.078 Kz ✅
  *   MC = 970.000  → 5º Escalão → IRT = 87.250 + (970.000 - 500.000) × 20% = 181.250 Kz ✅
  */
-const calcularIRT = (mc: number): { valor: number; faixa: string } => {
-  if (mc <= 0) return { valor: 0, faixa: '1º Escalão' };
+const calcularIRT = (mc: number, isPrestador = false): { valor: number; faixa: string } => {
+  if (isPrestador || mc <= 0) return { valor: 0, faixa: isPrestador ? 'Grupo B/C (Independente)' : '1º Escalão' };
   // Encontra o escalão correcto: o mais alto cujo excesso seja < MC
   const f = [...taxasIRT].reverse().find(b => mc > b.excesso) ?? taxasIRT[0];
   // Fórmula correta: parcelaFixa + (MC - excesso) × taxa
@@ -267,8 +267,11 @@ const Processamento: React.FC = () => {
 
   // ── INSS: 3% APENAS sobre o salário base proporcional ───────────────────────
   const inssEstimado = useMemo(
-    () => calcularINSS(salarioProporcional),
-    [salarioProporcional]
+    () => {
+      if (selectedColab?.tipoContrato === 'Prestador') return 0;
+      return calcularINSS(salarioProporcional);
+    },
+    [salarioProporcional, selectedColab]
   );
 
   // ── Matéria Colectável para IRT mensal ──────────────────────────────────────
@@ -280,7 +283,10 @@ const Processamento: React.FC = () => {
   );
 
   // ── IRT Progressivo (sobre a MC) ─────────────────────────────────────────────
-  const irtEstimado = useMemo(() => calcularIRT(materiaColectavel), [materiaColectavel]);
+  const irtEstimado = useMemo(() => {
+    const isPrestador = selectedColab?.tipoContrato === 'Prestador';
+    return calcularIRT(materiaColectavel, isPrestador);
+  }, [materiaColectavel, selectedColab]);
 
   // ── Retenções autónomas de 15% para Férias e Natal ──────────────────────────
   const retencaoFerias = useMemo(() => roundMoney(ferias * 0.15), [ferias]);

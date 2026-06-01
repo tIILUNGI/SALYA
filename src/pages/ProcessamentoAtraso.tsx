@@ -242,7 +242,7 @@ const ProcessamentoAtraso: React.FC = () => {
       { label: `Salário Base`, valorRemun: snap.salarioBase, valorDesc: 0, qtd: `${snap.diasTrabalhados} Dias` },
       ...(snap.ganhoAlimentacao > 0 ? [{ label: 'Subsídio de Alimentação', valorRemun: snap.ganhoAlimentacao, valorDesc: 0, qtd: '1' }] : []),
       ...(snap.ganhoTransporte > 0 ? [{ label: 'Subsídio de Transporte', valorRemun: snap.ganhoTransporte, valorDesc: 0, qtd: '1' }] : []),
-      { label: 'Segurança Social (INSS)', valorRemun: 0, valorDesc: snap.valorINSS, qtd: '3%' },
+      { label: 'Segurança Social (INSS)', valorRemun: 0, valorDesc: snap.valorINSS, qtd: snap.valorINSS > 0 ? '3%' : '0%' },
       { label: 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: snap.valorIRT, qtd: snap.percentualIRT ? `${snap.percentualIRT.toFixed(0)}%` : '-' },
     ];
 
