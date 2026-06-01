@@ -1,8 +1,54 @@
 import { notify } from '../utils/notifications';
 
-// api.ts
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://api.salya.ilungi.digital/api';
+// Detecta se está em desenvolvimento local baseado na URL atual
+const isLocalDevelopment = (): boolean => {
+  const hostname = window.location.hostname;
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '0.0.0.0' ||
+    hostname.startsWith('192.168.') ||
+    hostname.startsWith('10.') ||
+    hostname.endsWith('.local')
+  );
+};
+
+// Define a URL base da API com fallback
+const getApiBaseUrl = (): string => {
+  // 1. Verifica se há uma URL salva no localStorage (útil para desenvolvimento)
+  const savedUrl = localStorage.getItem('api_base_url');
+  if (savedUrl && isLocalDevelopment()) {
   
+    return savedUrl;
+  }
+  
+  // 2. Verifica se está em desenvolvimento local pela URL da janela
+  if (isLocalDevelopment()) {
+    return 'http://localhost:8080/api';
+  }
+  
+  // 3. Verifica se é preview/deploy (Vercel, Netlify, etc)
+  const hostname = window.location.hostname;
+  if (hostname.includes('vercel.app') || 
+      hostname.includes('netlify.app') ||
+      hostname.includes('surge.sh')) {
+    return 'https://api.salya.ao/api';
+  }
+  
+  // 4. Fallback final para produção
+
+  return 'https://api.salya.ao/api';
+};
+
+// Função para trocar a URL da API em tempo real (útil para desenvolvimento)
+export const setApiBaseUrl = (url: string) => {
+  localStorage.setItem('api_base_url', url);
+  window.location.reload();
+};
+
+// Exibe a URL sendo usada no console
+export const API_BASE_URL = getApiBaseUrl();
+
 
 const TOKEN_STORAGE_KEYS = ['salya_token', 'token'] as const;
 const AUTH_STORAGE_KEYS = ['salya_token', 'token', 'salya_user', 'salya_empresaId', 'salya_empresa'] as const;
@@ -58,9 +104,14 @@ const humanizeMessage = (error: any): string => {
   const message = error.message || (typeof error === 'string' ? error : '');
   const status = error.status;
 
+  // Verifica se é erro de conexão
+  if (message.includes('Failed to fetch') || message.includes('NetworkError')) {
+    return `Não foi possível conectar ao servidor em ${API_BASE_URL}. Verifique se o backend está rodando em http://localhost:8080`;
+  }
+
   // Dicionário de humanização
   const mappings: Record<string, string> = {
-    'Failed to fetch': 'Não foi possível conectar ao servidor. Verifique sua internet.',
+    'Failed to fetch': `Não foi possível conectar ao servidor. Verifique se o backend está rodando em ${API_BASE_URL}`,
     'Network Error': 'Erro de rede. O servidor pode estar fora do ar.',
     'Unauthorized': 'Sua sessão expirou. Por favor, faça login novamente.',
     'Forbidden': 'Você não tem permissão para realizar esta ação.',
@@ -70,6 +121,7 @@ const humanizeMessage = (error: any): string => {
     'User already exists': 'Este usuário já está cadastrado no sistema.',
     'Invalid credentials': 'Credencial errada.',
     'Email is already in use': 'Este email já está sendo utilizado por outra conta.',
+    'Email não verificado': 'Por favor, verifique seu email antes de fazer login.',
   };
 
   // Busca por correspondência exata ou parcial
@@ -175,7 +227,10 @@ export const getApiErrorMessage = (error: any) => {
 export const api = {
   async get(endpoint: string, silentError = false) {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const url = `${API_BASE_URL}${endpoint}`;
+   
+      
+      const response = await fetch(url, {
         headers: getHeaders(),
       });
 
@@ -197,7 +252,10 @@ export const api = {
 
   async post(endpoint: string, data: any, silentError = false) {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const url = `${API_BASE_URL}${endpoint}`;
+      console.log(`📡 POST: ${url}`);
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(data),
@@ -213,6 +271,7 @@ export const api = {
       return responseData;
     } catch (error: any) {
       if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
+
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
@@ -221,7 +280,9 @@ export const api = {
 
   async postForm(endpoint: string, formData: FormData, silentError = false) {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const url = `${API_BASE_URL}${endpoint}`;
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: getFormHeaders(),
         body: formData,
@@ -245,7 +306,9 @@ export const api = {
 
   async put(endpoint: string, data: any, silentError = false) {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const url = `${API_BASE_URL}${endpoint}`;
+      
+      const response = await fetch(url, {
         method: 'PUT',
         headers: getHeaders(),
         body: JSON.stringify(data),
@@ -261,6 +324,7 @@ export const api = {
       return responseData;
     } catch (error: any) {
       if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
+
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
@@ -269,7 +333,9 @@ export const api = {
 
   async patch(endpoint: string, data: any, silentError = false) {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const url = `${API_BASE_URL}${endpoint}`;
+      
+      const response = await fetch(url, {
         method: 'PATCH',
         headers: getHeaders(),
         body: JSON.stringify(data),
@@ -285,6 +351,7 @@ export const api = {
       return responseData;
     } catch (error: any) {
       if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
+     
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
@@ -293,7 +360,10 @@ export const api = {
 
   async delete(endpoint: string, silentError = false) {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const url = `${API_BASE_URL}${endpoint}`;
+      console.log(`📡 DELETE: ${url}`);
+      
+      const response = await fetch(url, {
         method: 'DELETE',
         headers: getHeaders(),
       });
@@ -308,9 +378,16 @@ export const api = {
       return true;
     } catch (error: any) {
       if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
+      
         notify.error('Ops!', humanizeMessage(error));
       }
       throw error;
     }
   }
+};
+
+// Função para debug - mostra a URL atual da API
+export const showCurrentApiUrl = () => {
+
+  return API_BASE_URL;
 };

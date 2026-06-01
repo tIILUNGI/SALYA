@@ -90,9 +90,13 @@ function App() {
   const [empresaId, setEmpresaId] = useState<number | null>(null);
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [effectivePlan, setEffectivePlan] = useState<{ tipo: string; status: string } | null>(null);
+  
   // Track if subscription is currently blocked to prevent loop of failed requests
   const subscriptionBlockedRef = useRef(false);
-
+  // Track if request was already sent to prevent polling
+  const requestSentRef = useRef(false);
+  // Track if user is already logged out
+  const isLoggingOutRef = useRef(false);
 
   const normalizeList = (data: any, key?: string) => {
     if (Array.isArray(data)) return data;
@@ -177,30 +181,32 @@ function App() {
   const refreshSubscriptionStatus = useCallback(async () => {
     const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
     if (!token) return;
+    
+    // Se já solicitou plano, não fica verificando
+    if (requestSentRef.current) {
+      console.log('Solicitação já enviada, polling desativado');
+      return;
+    }
+    
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'https://api.salya.ilungi.digital/api'}/auth/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.subscriptionStatus) {
-          const newStatus = data.subscriptionStatus as User['subscriptionStatus'];
-          setUser(prev => {
-            if (!prev || prev.subscriptionStatus === newStatus) return prev;
-            return { ...prev, subscriptionStatus: newStatus, subscriptionExpiry: data.subscriptionExpiry };
-          });
-          // If approved, unblock and reload company data
-          if (newStatus === 'ATIVA' && subscriptionBlockedRef.current) {
-            subscriptionBlockedRef.current = false;
-            refreshData();
-          }
+      const data = await api.get('/auth/me', true);
+      if (data?.subscriptionStatus) {
+        const newStatus = data.subscriptionStatus as User['subscriptionStatus'];
+        setUser(prev => {
+          if (!prev || prev.subscriptionStatus === newStatus) return prev;
+          return { ...prev, subscriptionStatus: newStatus, subscriptionExpiry: data.subscriptionExpiry };
+        });
+        // If approved, unblock and reload company data
+        if (newStatus === 'ATIVA' && subscriptionBlockedRef.current) {
+          subscriptionBlockedRef.current = false;
+          requestSentRef.current = false; // Reset request sent flag
+          refreshData();
         }
       }
-    } catch {
-      // silent
+    } catch (error) {
+      console.log('Erro ao verificar subscription status:', error);
     }
   }, [refreshData]);
-
 
   useEffect(() => {
     const checkAuth = () => {
@@ -319,8 +325,13 @@ function App() {
   // Poll /auth/me every 30s while subscription is blocked — auto-unlock when admin approves
   useEffect(() => {
     if (!isAuthenticated) return;
+    if (requestSentRef.current) {
+      console.log('Polling desativado - solicitação já enviada');
+      return;
+    }
+    
     const interval = setInterval(() => {
-      if (subscriptionBlockedRef.current) {
+      if (subscriptionBlockedRef.current && !requestSentRef.current && !isLoggingOutRef.current) {
         refreshSubscriptionStatus();
       }
     }, 30000);
@@ -330,7 +341,7 @@ function App() {
   // Re-check subscription status when user returns to the tab (catches plans that expired while idle)
   useEffect(() => {
     const handleFocus = () => {
-      if (isAuthenticated) {
+      if (isAuthenticated && !requestSentRef.current) {
         refreshSubscriptionStatus();
       }
     };
@@ -502,8 +513,9 @@ function MainLayout() {
   );
 }
 
+
 function SubscriptionBarrier() {
-  const { user, effectivePlan, refreshSubscriptionStatus } = React.useContext(AppContext);
+  const { user, effectivePlan, refreshSubscriptionStatus, setMessage } = React.useContext(AppContext);
   const [view, setView] = React.useState<'message' | 'renew' | 'confirm'>('message');
   const [plans, setPlans] = React.useState<any[]>([]);
   const [loadingPlans, setLoadingPlans] = React.useState(false);
@@ -511,6 +523,15 @@ function SubscriptionBarrier() {
   const [checkMsg, setCheckMsg] = React.useState('');
   const [pendingPlan, setPendingPlan] = React.useState<any>(null);
   const [submitting, setSubmitting] = React.useState(false);
+  const [requestSent, setRequestSent] = React.useState(false);
+  
+  // Ref para controlar tentativas de verificação
+  const checkAttemptsRef = React.useRef(0);
+  const lastCheckTimeRef = React.useRef(0);
+  const checkTimeoutRef = React.useRef<NodeJS.Timeout>();
+
+  // Definir status antes de usar
+  const status = effectivePlan ? effectivePlan.status : user?.subscriptionStatus;
 
   React.useEffect(() => {
     if (view === 'renew') {
@@ -522,71 +543,233 @@ function SubscriptionBarrier() {
     }
   }, [view]);
   
+  // Cleanup timeout on unmount - corrigido
+  React.useEffect(() => {
+    const timeoutRef = checkTimeoutRef.current;
+    return () => {
+      if (timeoutRef) {
+        clearTimeout(timeoutRef);
+      }
+    };
+  }, []);
+  
+  // Restaurar estado de solicitação enviada ao carregar o componente
+  React.useEffect(() => {
+    const savedRequestSent = localStorage.getItem('salya_request_sent') === 'true';
+    if (savedRequestSent) {
+      setRequestSent(true);
+    }
+  }, []);
+
+  // Limpar flag de solicitação quando status mudar para ATIVA
+  React.useEffect(() => {
+    if (status === 'ATIVA') {
+      localStorage.removeItem('salya_request_sent');
+      localStorage.removeItem('salya_requested_plan');
+      setRequestSent(false);
+    }
+  }, [status]);
+  
   if (!user || user.planType === 'ADMIN') {
     return null;
   }
 
-  const status = effectivePlan ? effectivePlan.status : user.subscriptionStatus;
+  // Se status é PENDENTE_APROVACAO e já enviou solicitação, mostra mensagem específica
+  if (status === 'PENDENTE_APROVACAO' && requestSent) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
+        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800">
+          <div className="p-10 text-center">
+            <div className="size-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg bg-amber-100 text-amber-700">
+              <span className="material-symbols-outlined text-4xl">hourglass_empty</span>
+            </div>
+            <h2 className="text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tight mb-4">Solicitação Enviada!</h2>
+            <p className="text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
+              O seu pedido de assinatura foi enviado com sucesso. 
+              O administrador irá validar e activar o acesso em breve.
+            </p>
+            
+            <div className="rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 p-5 mb-6">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="material-symbols-outlined text-indigo-500 text-xl">support_agent</span>
+                <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Suporte Técnico</p>
+              </div>
+              <p className="text-xs text-indigo-700 dark:text-indigo-300 mb-1">Para dúvidas sobre a activação:</p>
+              <a
+                href="mailto:solucoes@ilungi.ao"
+                className="text-sm font-black text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 underline underline-offset-2 transition-colors"
+              >
+                solucoes@ilungi.ao
+              </a>
+            </div>
+            
+            <button 
+              onClick={() => { 
+                localStorage.clear();
+                localStorage.removeItem('salya_request_sent');
+                localStorage.removeItem('salya_requested_plan');
+                window.location.href = '/login'; 
+              }}
+              className="w-full py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+            >
+              Sair da Conta
+            </button>
+            
+            <p className="text-[10px] text-slate-400 mt-6 font-medium">
+              📧 Você será notificado por email quando o acesso for ativado
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (status === 'ATIVA') {
     return null;
   }
 
   const handleCheckNow = async () => {
+    // Previne múltiplos cliques
+    if (checking) {
+      console.log('Verificação já em andamento');
+      return;
+    }
+    
+    // Se já enviou solicitação, não verifica mais
+    if (requestSent) {
+      setCheckMsg('Solicitação já enviada. Aguarde a ativação do administrador.');
+      setTimeout(() => setCheckMsg(''), 3000);
+      return;
+    }
+    
+    // Verifica se passou tempo suficiente desde a última verificação (mínimo 5 segundos)
+    const now = Date.now();
+    if (now - lastCheckTimeRef.current < 5000) {
+      const secondsToWait = Math.ceil((5000 - (now - lastCheckTimeRef.current)) / 1000);
+      setCheckMsg(`Aguarde ${secondsToWait} segundos antes de tentar novamente`);
+      setTimeout(() => setCheckMsg(''), 3000);
+      return;
+    }
+    
+    // Verifica limite de tentativas (máximo 5 tentativas)
+    if (checkAttemptsRef.current >= 5) {
+      setCheckMsg('Muitas tentativas. Aguarde 1 minuto antes de tentar novamente.');
+      setTimeout(() => {
+        checkAttemptsRef.current = 0;
+        setCheckMsg('');
+      }, 60000);
+      return;
+    }
+    
     setChecking(true);
-    setCheckMsg('');
+    setCheckMsg('Verificando status da assinatura...');
+    lastCheckTimeRef.current = now;
+    checkAttemptsRef.current++;
+    
     try {
       await refreshSubscriptionStatus();
-      setTimeout(() => setCheckMsg(''), 2000);
+      
+      // Pequeno delay para evitar loop
+      setTimeout(() => {
+        setCheckMsg('Verificação concluída!');
+        setTimeout(() => setCheckMsg(''), 2000);
+      }, 1000);
+      
+    } catch (error) {
+      setCheckMsg('Erro ao verificar. Tente novamente em alguns instantes.');
+      setTimeout(() => setCheckMsg(''), 3000);
     } finally {
-      setChecking(false);
+      setTimeout(() => {
+        setChecking(false);
+      }, 2000);
     }
   };
 
   const handleSelectPlan = (plan: any) => {
+    if (requestSent) {
+      setMessage?.({
+        title: 'Aguarde',
+        text: 'Solicitação já enviada. Aguarde a ativação do administrador.',
+        type: 'info'
+      });
+      return;
+    }
     setPendingPlan(plan);
     setView('confirm');
   };
 
   const confirmSubscribe = async () => {
     if (!pendingPlan) return;
+    if (submitting) return;
+    if (requestSent) return;
+    
     setSubmitting(true);
     try {
       await api.post(`/plans/${pendingPlan.id}/subscribe`, {}, true);
+      
+      // Marca que a solicitação foi enviada
+      setRequestSent(true);
+      
+      // Salva no localStorage para persistir após refresh
+      localStorage.setItem('salya_request_sent', 'true');
+      localStorage.setItem('salya_requested_plan', JSON.stringify(pendingPlan));
+      
       await Swal.fire({
         title: 'Solicitação Enviada!',
         text: 'O seu pedido foi enviado com sucesso. O administrador irá validar e activar o acesso.',
         icon: 'success',
         confirmButtonColor: '#6366f1',
+        timer: 3000,
+        showConfirmButton: true,
       });
-      localStorage.clear();
-      window.location.href = '/login';
+      
+      // Atualiza o status do usuário localmente
+      // Não redireciona, apenas volta para a tela principal
+      setView('message');
+      
     } catch (e: any) {
       if (!e?.isSubscriptionBlock) {
-        Swal.fire('Erro', 'Não foi possível processar o pedido. Tente novamente.', 'error');
+        await Swal.fire('Erro', 'Não foi possível processar o pedido. Tente novamente.', 'error');
       }
+      setRequestSent(false);
+      localStorage.removeItem('salya_request_sent');
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleRenewClick = () => {
+    if (requestSent) {
+      setMessage?.({
+        title: 'Aguarde',
+        text: 'Solicitação já enviada. Aguarde a ativação do administrador.',
+        type: 'info'
+      });
+      return;
+    }
+    setView('renew');
+  };
+
+  // Restante do componente permanece igual...
   if (view === 'confirm' && pendingPlan) {
     return (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-xl">
         <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 dark:border-slate-800">
-          {/* Header */}
           <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Confirmar Plano</h2>
               <p className="text-sm text-slate-500 mt-1">Reveja os detalhes antes de solicitar.</p>
             </div>
-            <button onClick={() => setView('renew')} className="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 transition-all">
+            <button 
+              onClick={() => setView('renew')} 
+              disabled={submitting}
+              className="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 transition-all disabled:opacity-50"
+            >
               <span className="material-symbols-outlined">arrow_back</span>
             </button>
           </div>
 
           <div className="p-8 space-y-6">
-            {/* Plan summary card */}
             <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-6">
               <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3">Plano Selecionado</p>
               <div className="flex items-center justify-between mb-4">
@@ -596,12 +779,11 @@ function SubscriptionBarrier() {
                 </span>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-black text-primary">{pendingPlan.price.toLocaleString()}</span>
+                <span className="text-3xl font-black text-primary">{pendingPlan.price?.toLocaleString()}</span>
                 <span className="text-xs font-bold text-slate-400 uppercase">Kz</span>
               </div>
             </div>
 
-            {/* Next steps info */}
             <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 space-y-3">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Próximos Passos</p>
               <div className="space-y-2">
@@ -620,7 +802,6 @@ function SubscriptionBarrier() {
               </div>
             </div>
 
-            {/* Support email card */}
             <div className="rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 p-5">
               <div className="flex items-center gap-3 mb-2">
                 <span className="material-symbols-outlined text-indigo-500 text-xl">support_agent</span>
@@ -635,11 +816,11 @@ function SubscriptionBarrier() {
               </a>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setView('renew')}
-                className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                disabled={submitting}
+                className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all disabled:opacity-50"
               >
                 Voltar
               </button>
@@ -669,7 +850,10 @@ function SubscriptionBarrier() {
               <h2 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Escolha o Seu Plano</h2>
               <p className="text-sm text-slate-500">Selecione um plano para reactivar a sua conta.</p>
             </div>
-            <button onClick={() => setView('message')} className="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 transition-all">
+            <button 
+              onClick={() => setView('message')} 
+              className="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 transition-all"
+            >
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
@@ -682,10 +866,14 @@ function SubscriptionBarrier() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {plans.filter(p => p.type !== 'DEMO').map(p => (
-                  <div key={p.id} className="p-8 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-primary transition-all flex flex-col group cursor-pointer" onClick={() => handleSelectPlan(p)}>
+                  <div 
+                    key={p.id} 
+                    className="p-8 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-primary transition-all flex flex-col group cursor-pointer" 
+                    onClick={() => handleSelectPlan(p)}
+                  >
                     <h3 className="font-black text-lg uppercase mb-2">{p.name}</h3>
                     <div className="flex items-baseline gap-1 mb-6">
-                      <span className="text-2xl font-black">{p.price.toLocaleString()}</span>
+                      <span className="text-2xl font-black">{p.price?.toLocaleString()}</span>
                       <span className="text-[10px] font-bold text-slate-400 uppercase">Kz / {p.durationDays} dias</span>
                     </div>
                     <ul className="space-y-3 mb-8 flex-1">
@@ -756,7 +944,7 @@ function SubscriptionBarrier() {
             {info.showCheck && (
               <button 
                 onClick={handleCheckNow}
-                disabled={checking}
+                disabled={checking || requestSent}
                 className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-emerald-600 shadow-xl shadow-emerald-500/20 transition-all flex items-center justify-center gap-3 disabled:opacity-60"
               >
                 {checking
@@ -765,16 +953,26 @@ function SubscriptionBarrier() {
                 }
               </button>
             )}
-            {checkMsg && <p className="text-xs text-slate-400 font-medium">{checkMsg}</p>}
+            {checkMsg && (
+              <p className={`text-xs font-medium ${checkMsg.includes('Aguarde') || checkMsg.includes('Muitas') ? 'text-amber-600' : 'text-slate-400'}`}>
+                {checkMsg}
+              </p>
+            )}
             <button 
-              onClick={() => setView('renew')}
-              className="w-full py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-3"
+              onClick={handleRenewClick}
+              disabled={requestSent}
+              className="w-full py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="material-symbols-outlined">upgrade</span>
               {info.showCheck ? 'Solicitar Nova Assinatura' : 'Escolher Plano'}
             </button>
             <button 
-              onClick={() => { localStorage.clear(); window.location.href = '/login'; }}
+              onClick={() => { 
+                localStorage.clear();
+                localStorage.removeItem('salya_request_sent');
+                localStorage.removeItem('salya_requested_plan');
+                window.location.href = '/login'; 
+              }}
               className="w-full py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
             >
               Sair da Conta
