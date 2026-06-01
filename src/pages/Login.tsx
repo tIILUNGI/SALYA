@@ -1,5 +1,5 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useContext, useEffect, useRef, useCallback } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api, clearAuthStorage, getApiErrorMessage, setAuthToken } from '../services/api';
 import { APP_URL } from '../config/urls';
@@ -240,11 +240,9 @@ const Login: React.FC = () => {
     }
   };
 
-  const switchMode = (newMode: ViewMode) => {
+  const switchMode = useCallback((newMode: ViewMode) => {
     navigate(MODE_PATHS[newMode]);
     setErrorString('');
-    setRemainingAttempts(0);
-    setCanResend(true);
   };
 
   const [resendTimer, setResendTimer] = useState(0);
@@ -291,6 +289,8 @@ const Login: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // ... (rest of component logic before return)
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50/50 dark:bg-slate-950 font-app selection:bg-primary/10 selection:text-primary">
