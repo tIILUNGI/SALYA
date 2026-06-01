@@ -410,7 +410,7 @@ const Processamento: React.FC = () => {
 
     const result = await Swal.fire({
       title: 'Processamento em Lote',
-      text: `Deseja processar o salario de todos os ${ativosParaProcessar.length} colaboradors ativos não processados para ${selectedMonth}/${selectedYear}?`,
+      text: `Deseja processar o salario de todos os ${ativosParaProcessar.length} colaboradores ativos não processados para ${selectedMonth}/${selectedYear}?`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Sim, Processar Todos',
