@@ -19,6 +19,20 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<LocalNotification[]>([]);
   const [showBanner, setShowBanner] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    return localStorage.getItem('theme') === 'dark' || 
+      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  });
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDark]);
 
   const formatTimeAgo = useCallback((dateString: string) => {
     if (!dateString) return '';
@@ -190,11 +204,14 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
         <div className="flex items-center gap-2">
           {/* Action Icons from model */}
           <div className="flex items-center gap-1 mr-2 px-2 border-r border-slate-100 dark:border-slate-800">
-            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">
-              <span className="material-symbols-outlined text-xl">language</span>
-            </button>
-            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">
-              <span className="material-symbols-outlined text-xl">dark_mode</span>
+            <button 
+              onClick={() => setIsDark(!isDark)}
+              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
+              title={isDark ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
+            >
+              <span className="material-symbols-outlined text-xl">
+                {isDark ? 'light_mode' : 'dark_mode'}
+              </span>
             </button>
             
             <div className="relative">
