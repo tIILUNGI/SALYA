@@ -7,6 +7,19 @@
 /* Visual system (similar reference): manter cores, ajustar tipografia */
 :root {
   --radius-ui: 12px;
+  --theme-bg: #f8fafc; /* slate-50 */
+  --theme-card-bg: #ffffff;
+  --theme-text-main: #334155; /* slate-700 */
+  --theme-text-muted: #64748b; /* slate-500 */
+  --theme-border: #e2e8f0; /* slate-200 */
+}
+
+.dark {
+  --theme-bg: #020617; /* slate-950 */
+  --theme-card-bg: #0f172a; /* slate-900 */
+  --theme-text-main: #f8fafc; /* slate-50 */
+  --theme-text-muted: #94a3b8; /* slate-400 */
+  --theme-border: #1e293b; /* slate-800 */
 }
 
 /* Radius padrão para os blocos (cards/inputs) */
@@ -17,7 +30,9 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  @apply text-slate-700 bg-slate-50 dark:text-slate-300 dark:bg-slate-950 antialiased transition-colors duration-300;
+  background-color: var(--theme-bg);
+  color: var(--theme-text-main);
+  @apply antialiased transition-colors duration-300;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -56,11 +71,15 @@ h1, h2, h3, h4, .font-app {
 }
 
 .glass {
-  @apply bg-white border border-slate-200 shadow-card;
+  background-color: var(--theme-card-bg);
+  border-color: var(--theme-border);
+  @apply shadow-card;
 }
 
 .glass-card {
-  @apply bg-white border border-slate-200 shadow-sm rounded-xl transition-all duration-300;
+  background-color: var(--theme-card-bg);
+  border-color: var(--theme-border);
+  @apply shadow-sm rounded-xl transition-all duration-300;
 }
 
 @keyframes shake {

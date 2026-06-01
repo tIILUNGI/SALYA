@@ -154,7 +154,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
   };
 
   return (
-    <aside className={`w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
+    <aside className={`w-64 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
       {/* Logo header */}
       <div className="p-6 flex items-center gap-3 mb-2">
         <img src="/logo.png" alt="Salya Logo" className="h-10 w-auto" />
@@ -214,7 +214,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
       </div>
 
       {/* User section */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+      <div className="p-4 border-t border-slate-200 dark:border-slate-700">
         <div className="flex items-center gap-3 p-2">
           <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold uppercase">
             {user?.name?.substring(0, 2) || 'US'}
@@ -245,7 +245,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
       {/* Modal de criação de empresa */}
       {showCompanyModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-900 rounded-xl w-full max-w-lg mx-4 p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-xl w-full max-w-lg mx-4 p-6 border border-slate-200 dark:border-slate-700 shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold">Criar Nova Entidade</h3>
               <button

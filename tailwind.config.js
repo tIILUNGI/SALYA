@@ -34,9 +34,18 @@ module.exports = {
           900: '#0f172a',
           950: '#020617',
         },
+        app: {
+          bg: 'var(--theme-bg)',
+          card: 'var(--theme-card-bg)',
+          text: {
+            main: 'var(--theme-text-main)',
+            muted: 'var(--theme-text-muted)',
+          },
+          border: 'var(--theme-border)',
+        },
         background: {
-          light: '#f8fafc', // slate-50
-          dark: '#020617',  // slate-950
+          light: 'var(--theme-bg)',
+          dark: 'var(--theme-bg)',
         }
       },
       fontFamily: {

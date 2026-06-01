@@ -70,7 +70,7 @@ const Dashboard: React.FC = () => {
           {/* Executive Cards Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
-            <div className="glass-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft hover:shadow-lg transition-all">
+            <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <p className="text-sm font-medium text-slate-500 mb-1">Entidades Geridas</p>
@@ -83,7 +83,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="glass-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft hover:shadow-lg transition-all">
+            <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <p className="text-sm font-medium text-slate-500 mb-1">Total Colaboradores</p>
@@ -96,7 +96,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="glass-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft hover:shadow-lg transition-all">
+            <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <p className="text-sm font-medium text-slate-500 mb-1">Processamentos</p>
@@ -109,7 +109,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="glass-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft hover:shadow-lg transition-all">
+            <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <p className="text-sm font-medium text-slate-500 mb-1">Custo Estimado</p>
@@ -132,7 +132,7 @@ const Dashboard: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               
               {/* Alerta Contratos como um Card de Módulo */}
-              <div className="glass-card p-6 flex flex-col justify-between bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft">
+              <div className="glass-card p-6 flex flex-col justify-between shadow-soft">
                 <div>
                   <div className="size-10 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center mb-4">
                     <span className="material-symbols-outlined text-red-500">assignment_late</span>
@@ -154,7 +154,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Alerta Documentos como um Card de Módulo */}
-              <div className="glass-card p-6 flex flex-col justify-between bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft">
+              <div className="glass-card p-6 flex flex-col justify-between shadow-soft">
                 <div>
                   <div className="size-10 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center mb-4">
                     <span className="material-symbols-outlined text-amber-500">description</span>
@@ -178,7 +178,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Gráficos */}
-            <div className="glass-card p-8 min-h-[400px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft">
+            <div className="glass-card p-8 min-h-[400px] shadow-soft">
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 dark:text-white">Evolução de Custos</h3>
@@ -202,7 +202,7 @@ const Dashboard: React.FC = () => {
                   <Area isAnimationActive={false} type="monotone" dataKey="total" stroke="#9333ea" strokeWidth={3} fillOpacity={1} fill="url(#colorTotalDb)" />
                 </AreaChart>
               </ResponsiveContainer>
-            <div className="glass-card p-8 min-h-[400px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft">
+            <div className="glass-card p-8 min-h-[400px] shadow-soft">
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 dark:text-white">Absentismo Mensal</h3>
