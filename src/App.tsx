@@ -178,7 +178,7 @@ function App() {
     const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
     if (!token) return;
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api'}/auth/me`, {
+      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL || 'https://api.salya.ilungi.digital/api'}/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {

@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api, clearAuthStorage, getApiErrorMessage, setAuthToken } from '../services/api';
-import { APP_URL, LANDING_URL } from '../config/urls';
+import { APP_URL } from '../config/urls';
 
 type ViewMode = 'login' | 'register' | 'select-plan' | 'confirm' | 'forgot';
 
@@ -188,6 +188,34 @@ const Login: React.FC = () => {
     navigate(MODE_PATHS[newMode]);
     setErrorString('');
   };
+
+  const [resendTimer, setResendTimer] = useState(0);
+
+  useEffect(() => {
+    let interval: any;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+
+  const handleResendCode = async () => {
+    if (resendTimer > 0 || isLoading) return;
+    setIsLoading(true);
+    try {
+      await api.post('/auth/resend-code', { email }, true);
+      setMessage({ title: 'Código Enviado', text: 'Um novo código foi enviado para o seu email.', type: 'info' });
+      setResendTimer(60);
+    } catch (error: any) {
+      showError(getApiErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ... (rest of component logic before return)
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50/50 dark:bg-slate-950 font-app selection:bg-primary/10 selection:text-primary">
@@ -397,7 +425,7 @@ const Login: React.FC = () => {
                   <p className="text-sm font-medium text-slate-500 px-4">Introduza o código de verificação enviado para {email}.</p>
                 </div>
 
-                <div>
+                <div className="space-y-4">
                   <input 
                     type="text" 
                     value={confirmCode} 
@@ -407,10 +435,21 @@ const Login: React.FC = () => {
                     maxLength={6} 
                     required 
                   />
+                  
+                  <div className="text-center">
+                    <button 
+                      type="button" 
+                      onClick={handleResendCode} 
+                      disabled={resendTimer > 0 || isLoading}
+                      className="text-xs font-bold text-primary hover:underline disabled:text-slate-400 disabled:no-underline uppercase tracking-widest"
+                    >
+                      {resendTimer > 0 ? `Reenviar em ${resendTimer}s` : 'Não recebeu o código? Reenviar'}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-4">
-                   <button type="submit" disabled={isLoading} className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all">
+                <div className="flex flex-col gap-4 pt-4">
+                   <button type="submit" disabled={isLoading} className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-50">
                       {isLoading ? 'Verificando...' : 'Verificar e Entrar'}
                    </button>
                    <button type="button" onClick={() => switchMode('login')} className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Cancelar</button>
