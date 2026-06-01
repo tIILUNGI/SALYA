@@ -243,7 +243,7 @@ const Login: React.FC = () => {
   const switchMode = useCallback((newMode: ViewMode) => {
     navigate(MODE_PATHS[newMode]);
     setErrorString('');
-  };
+  }, [navigate]);
 
   const [resendTimer, setResendTimer] = useState(0);
 
