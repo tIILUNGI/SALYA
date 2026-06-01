@@ -34,6 +34,10 @@ module.exports = {
           900: '#0f172a',
           950: '#020617',
         },
+        background: {
+          light: '#f8fafc', // slate-50
+          dark: '#020617',  // slate-950
+        }
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

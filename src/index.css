@@ -17,7 +17,7 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  @apply text-slate-700 bg-slate-50 antialiased;
+  @apply text-slate-700 bg-slate-50 dark:text-slate-300 dark:bg-slate-950 antialiased transition-colors duration-300;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

@@ -147,7 +147,7 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <button className="flex items-center justify-between w-full py-2 px-4 border border-slate-100 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all group">
+                <button className="flex items-center justify-between w-full py-2 px-4 border border-slate-100 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group">
                   Ver Detalhes
                   <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
                 </button>
@@ -169,7 +169,7 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <button className="flex items-center justify-between w-full py-2 px-4 border border-slate-100 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all group">
+                <button className="flex items-center justify-between w-full py-2 px-4 border border-slate-100 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group">
                   Gerenciar Arquivo
                   <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
                 </button>
@@ -178,8 +178,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Gráficos */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6">
-            <div className="glass-card p-8 min-h-[400px]">
+            <div className="glass-card p-8 min-h-[400px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft">
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 dark:text-white">Evolução de Custos</h3>
@@ -203,9 +202,7 @@ const Dashboard: React.FC = () => {
                   <Area isAnimationActive={false} type="monotone" dataKey="total" stroke="#9333ea" strokeWidth={3} fillOpacity={1} fill="url(#colorTotalDb)" />
                 </AreaChart>
               </ResponsiveContainer>
-            </div>
-
-            <div className="glass-card p-8 min-h-[400px]">
+            <div className="glass-card p-8 min-h-[400px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft">
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 dark:text-white">Absentismo Mensal</h3>
