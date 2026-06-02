@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api, clearAuthStorage } from '../services/api';
+import { PLAN_LIMITS, PlanType } from '../types';
 import Swal from 'sweetalert2';
 
 interface SidebarProps {
@@ -108,6 +109,15 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
     e.preventDefault();
     setIsCreating(true);
     setError('');
+
+    const planType = user?.planType as PlanType | undefined;
+    const limits = planType ? PLAN_LIMITS[planType] : PLAN_LIMITS.DEMO;
+    
+    if (empresas.length >= limits.maxEmpresas) {
+      setError(`O plano ${user?.planType || 'DEMO'} permite apenas ${limits.maxEmpresas} entidade(s). Atualize seu plano para criar mais entidades.`);
+      setIsCreating(false);
+      return;
+    }
 
     try {
       const empresaCriada = await api.post('/empresas', newCompany);

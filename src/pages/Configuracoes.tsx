@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import { AppContext } from '../App';
 import { api } from '../services/api';
 import { countries } from '../data/countries';
+import { PLAN_LIMITS, PlanType } from '../types';
 
 
 interface ConfiguraçãoEmpresa {
@@ -337,6 +338,20 @@ const Configurações: React.FC = () => {
       return;
     }
 
+    if (isCreatingNew) {
+      const planType = user?.planType as PlanType | undefined;
+      const limits = planType ? PLAN_LIMITS[planType] : PLAN_LIMITS.DEMO;
+      
+      if (empresas.length >= limits.maxEmpresas) {
+        setMessage({
+          title: 'LIMITE ATINGIDO!',
+          text: `O plano ${user?.planType || 'DEMO'} permite apenas ${limits.maxEmpresas} entidade(s). Atualize seu plano para criar mais entidades.`,
+          type: 'error'
+        });
+        return;
+      }
+    }
+
     try {
       const dataToSave = {
         ...config,
@@ -479,6 +494,22 @@ const Configurações: React.FC = () => {
 
   const handleSendInvite = async (empId: number) => {
     if (!inviteEmail) return;
+    
+    const planType = user?.planType as PlanType | undefined;
+    const limits = planType ? PLAN_LIMITS[planType] : PLAN_LIMITS.DEMO;
+    
+    const targetEmpresa = empresas.find(e => e.id === empId);
+    const currentUsers = targetEmpresa?.sharedUsers?.length || 0;
+    
+    if (currentUsers >= limits.maxUsuarios) {
+      setMessage({
+        title: 'LIMITE ATINGIDO!',
+        text: `O plano ${user?.planType || 'DEMO'} permite apenas ${limits.maxUsuarios} usuário(s) por entidade. Atualize seu plano para adicionar mais usuários.`,
+        type: 'error'
+      });
+      return;
+    }
+    
     setInviteLoading(true);
     try {
       await api.post(`/empresas/${empId}/convidar`, { email: inviteEmail });
@@ -563,7 +594,19 @@ const Configurações: React.FC = () => {
         <div className="flex items-center gap-3">
           {(setupStep === 'form' && isConfigured) && (
             <button 
-              onClick={() => setSetupStep('choice')}
+              onClick={() => {
+                const planType = user?.planType as PlanType | undefined;
+                const limits = planType ? PLAN_LIMITS[planType] : PLAN_LIMITS.DEMO;
+                if (empresas.length >= limits.maxEmpresas) {
+                  setMessage({
+                    title: 'LIMITE ATINGIDO!',
+                    text: `O plano ${user?.planType || 'DEMO'} permite apenas ${limits.maxEmpresas} entidade(s). Atualize seu plano para criar mais entidades.`,
+                    type: 'error'
+                  });
+                  return;
+                }
+                setSetupStep('choice');
+              }}
               className="px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 text-sm font-bold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               <span className="material-symbols-outlined">add</span> Criar Nova Entidade
@@ -900,11 +943,22 @@ const Configurações: React.FC = () => {
                 </div>
               </div>
             )}
-            {activeTab === 'gestao' && (
-              <div className="space-y-6">
-                <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                  <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Minhas Entidades</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+{activeTab === 'gestao' && (
+               <div className="space-y-6">
+                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                   <div className="flex items-center justify-between mb-6">
+                     <h3 className="font-black text-lg uppercase tracking-wider text-slate-800 dark:text-white">Minhas Entidades</h3>
+                     {user?.planType && (() => {
+                       const planType = user.planType as PlanType;
+                       const limits = planType ? PLAN_LIMITS[planType] : PLAN_LIMITS.DEMO;
+                       return (
+                         <span className="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                           {empresas.length} / {limits.maxEmpresas === 999 ? '∞' : limits.maxEmpresas} entidades
+                         </span>
+                       );
+                     })()}
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                     {empresas.map((bus, idx) => (
                       <div key={`empresa-${bus.id || idx}`} className={`p-6 rounded-xl border-2 transition-all ${empresaId === bus.id ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-800'}`}>
                         <div className="flex items-center gap-3 mb-4">
@@ -988,10 +1042,21 @@ const Configurações: React.FC = () => {
 
                 {/* Conceder Acesso (Apenas para empresas onde sou dono) */}
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                  <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-2">
-                    <span className="material-symbols-outlined">person_add</span>
-                    Conceder Acesso
-                  </h3>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-black text-lg uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-2">
+                      <span className="material-symbols-outlined">person_add</span>
+                      Conceder Acesso
+                    </h3>
+                    {user?.planType && (() => {
+                      const planType = user.planType as PlanType;
+                      const limits = planType ? PLAN_LIMITS[planType] : PLAN_LIMITS.DEMO;
+                      return (
+                        <span className="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                          Limite: {limits.maxUsuarios} usuário(s) por entidade
+                        </span>
+                      );
+                    })()}
+                  </div>
                   <p className="text-xs text-slate-500 mb-6 italic">Selecione a empresa e insira o email do usuário para conceder acesso.</p>
                   
                   <div className="bg-slate-50/50 dark:bg-slate-800/30 p-6 rounded-2xl border border-slate-100 dark:border-slate-800">

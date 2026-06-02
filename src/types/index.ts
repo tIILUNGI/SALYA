@@ -29,7 +29,18 @@ export interface Plan {
   isActive: boolean;
   type: string;
   category: 'GRATUITO' | 'PAGO';
+  maxEmpresas?: number;
+  maxUsuarios?: number;
 }
+
+export type PlanType = 'DEMO' | 'SEMESTRAL' | 'ANUAL' | 'BIANUAL';
+
+export const PLAN_LIMITS: Record<PlanType, { maxEmpresas: number; maxUsuarios: number }> = {
+  DEMO: { maxEmpresas: 2, maxUsuarios: 2 },
+  SEMESTRAL: { maxEmpresas: 2, maxUsuarios: 2 },
+  ANUAL: { maxEmpresas: 5, maxUsuarios: 5 },
+  BIANUAL: { maxEmpresas: 10, maxUsuarios: 10 },
+};
 
 export interface Empresa {
   id: number;
