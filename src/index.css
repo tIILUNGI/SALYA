@@ -2,14 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
 
 /* Visual system (similar reference): manter cores, ajustar tipografia */
 :root {
-  --radius-ui: 12px;
+  --radius-ui: 16px;
   --theme-bg: #f8fafc; /* slate-50 */
   --theme-card-bg: #ffffff;
-  --theme-text-main: #334155; /* slate-700 */
+  --theme-text-main: #1e293b; /* slate-800 */
   --theme-text-muted: #64748b; /* slate-500 */
   --theme-border: #e2e8f0; /* slate-200 */
 }
@@ -29,7 +29,7 @@
 
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--theme-bg);
   color: var(--theme-text-main);
   @apply antialiased transition-colors duration-300;
@@ -37,15 +37,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Headers com mais presença (igual ao estilo das imagens) */
-h1,h2,h3,h4 {
-  letter-spacing: -0.02em;
+/* Headers Corporativos com Outfit */
+h1, h2, h3, h4, .font-app-title {
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.01em;
   font-weight: 700;
 }
 
-
-
-h1, h2, h3, h4, .font-app {
+.font-app {
   font-family: 'Inter', sans-serif;
 }
 

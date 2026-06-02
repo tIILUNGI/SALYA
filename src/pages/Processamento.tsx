@@ -88,7 +88,7 @@ const createOtherGain = (): OutroGanhoInput => ({ id: `${Date.now()}_${Math.rand
 const roundMoney = (value: number): number => Number(value.toFixed(2));
 
 // INSS: 3% sobre o salário base proporcional (não sobre subsídios) - Lei n.º 14/25
-const calcularINSS = (salarioBase: number): number => roundMoney(salarioBase * 0.03);
+const calcularINSS = (salarioBase: number, isPrestador = false): number => isPrestador ? 0 : roundMoney(salarioBase * 0.03);
 
 /**
  * IRT — Lei n.º 14/25 (Angola)
@@ -105,7 +105,12 @@ const calcularINSS = (salarioBase: number): number => roundMoney(salarioBase * 0
  *   MC = 970.000  → 5º Escalão → IRT = 87.250 + (970.000 - 500.000) × 20% = 181.250 Kz ✅
  */
 const calcularIRT = (mc: number, isPrestador = false): { valor: number; faixa: string } => {
-  if (isPrestador || mc <= 0) return { valor: 0, faixa: isPrestador ? 'Grupo B/C (Independente)' : '1º Escalão' };
+  if (mc <= 0) return { valor: 0, faixa: '1º Escalão' };
+  
+  if (isPrestador) {
+    return { valor: roundMoney(mc * 0.065), faixa: 'Prestador (Taxa Fixa 6,5%)' };
+  }
+
   // Encontra o escalão correcto: o mais alto cujo excesso seja < MC
   const f = [...taxasIRT].reverse().find(b => mc > b.excesso) ?? taxasIRT[0];
   // Fórmula correta: parcelaFixa + (MC - excesso) × taxa

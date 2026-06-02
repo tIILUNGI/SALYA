@@ -252,6 +252,22 @@ const Colaboradores: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validar data de admissão (impedir datas futuras)
+    if (formData.dataAdmissao) {
+      const selectedDate = new Date(formData.dataAdmissao);
+      const today = new Date();
+      // Resetar horas para comparação justa
+      today.setHours(23, 59, 59, 999);
+      if (selectedDate > today) {
+        setMessage({ 
+          title: 'Data Inválida', 
+          text: 'A data de admissão não pode ser posterior à data de hoje.', 
+          type: 'warning' 
+        });
+        return;
+      }
+    }
+
     try {
       const sanitizedData = { ...formData };
       ['email', 'nif', 'telefone', 'iban', 'inss', 'numeroColaborador'].forEach((key) => {
