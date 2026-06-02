@@ -6,10 +6,10 @@
 
 /* Visual system (similar reference): manter cores, ajustar tipografia */
 :root {
-  --radius-ui: 16px;
+  --radius-ui: 12px;
   --theme-bg: #f8fafc; /* slate-50 */
   --theme-card-bg: #ffffff;
-  --theme-text-main: #1e293b; /* slate-800 */
+  --theme-text-main: #334155; /* slate-700 */
   --theme-text-muted: #64748b; /* slate-500 */
   --theme-border: #e2e8f0; /* slate-200 */
 }
@@ -29,7 +29,7 @@
 
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', sans-serif;
   background-color: var(--theme-bg);
   color: var(--theme-text-main);
   @apply antialiased transition-colors duration-300;
@@ -37,16 +37,41 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Headers Corporativos com Outfit */
-h1, h2, h3, h4, .font-app-title {
-  font-family: 'Outfit', sans-serif;
-  letter-spacing: -0.01em;
+/* Headers com mais presença (igual ao estilo das imagens) */
+h1,h2,h3,h4 {
+  letter-spacing: -0.02em;
   font-weight: 700;
 }
 
-.font-app {
+h1, h2, h3, h4, .font-app {
   font-family: 'Inter', sans-serif;
 }
+
+/* --- TEMA PROFISSIONAL (ADMIN) --- */
+.admin-professional {
+  font-family: 'Inter', sans-serif;
+}
+
+.admin-professional h1, 
+.admin-professional h2, 
+.admin-professional h3, 
+.admin-professional h4 {
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.admin-professional .card-premium {
+  @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl;
+}
+
+.admin-professional table th {
+  @apply text-[10px] font-black text-slate-400 uppercase tracking-widest py-4 px-6 border-b border-slate-100 dark:border-slate-800 text-left;
+}
+
+.admin-professional table td {
+  @apply py-4 px-6 text-sm text-slate-600 dark:text-slate-300 border-b border-slate-50 dark:border-slate-900;
+}
+/* --- FIM TEMA PROFISSIONAL --- */
 
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -159,28 +184,6 @@ h3 {
 p, .text-body {
   font-size: clamp(0.875rem, 2.5vw, 1rem);
   line-height: 1.6;
-}
-
-/* Componentes Corporativos */
-button, .btn {
-  @apply font-medium transition-all duration-200 active:scale-[0.98];
-}
-
-input, select, textarea {
-  @apply border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl transition-all;
-}
-
-.card-premium {
-  @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl;
-}
-
-/* Tabelas Corporativas */
-table th {
-  @apply text-[10px] font-black text-slate-400 uppercase tracking-widest py-4 px-6 border-b border-slate-100 dark:border-slate-800 text-left;
-}
-
-table td {
-  @apply py-4 px-6 text-sm text-slate-600 dark:text-slate-300 border-b border-slate-50 dark:border-slate-900;
 }
 
 /* Responsive container utilities */

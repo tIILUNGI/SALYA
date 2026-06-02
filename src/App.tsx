@@ -485,7 +485,7 @@ function MainLayout() {
   };
 
    return (
-     <div className="flex min-h-screen bg-background-light dark:bg-background-dark">
+     <div className="flex min-h-screen bg-background-light dark:bg-background-dark admin-professional">
        {/* Sidebar - passa as props de controle */}
        <Sidebar 
          currentPage={currentPage} 
