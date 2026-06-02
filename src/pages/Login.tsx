@@ -1,5 +1,5 @@
-import React, { useState, useContext, useEffect, useRef, useCallback } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api, clearAuthStorage, getApiErrorMessage, setAuthToken } from '../services/api';
 import { APP_URL } from '../config/urls';
@@ -55,7 +55,6 @@ const Login: React.FC = () => {
   const [shake, setShake] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
-  const [tempUserId, setTempUserId] = useState<string>('');
   const [remainingAttempts, setRemainingAttempts] = useState<number>(0);
   const [canResend, setCanResend] = useState<boolean>(true);
 
@@ -154,7 +153,6 @@ const Login: React.FC = () => {
       }, true);
 
       if (response.requiresVerification) {
-        setTempUserId(response.tempUserId);
         setMessage({
           title: 'Código Enviado!',
           text: response.message || 'Verifique seu email para ativar a conta.',

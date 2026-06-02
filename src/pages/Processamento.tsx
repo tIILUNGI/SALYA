@@ -1,5 +1,4 @@
 import React, { useState, useContext, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import html2pdf from 'html2pdf.js';
 
