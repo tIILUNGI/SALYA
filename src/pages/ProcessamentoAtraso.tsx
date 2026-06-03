@@ -426,45 +426,48 @@ const ProcessamentoAtraso: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {grupos.map(({ colaborador, pendencias }) => {
-            const isExpanded = expandedId === colaborador.id;
-            const numSelected = countSelected(colaborador.id);
-            const allSelected = numSelected === pendencias.length;
+           {grupos.map(({ colaborador, pendencias }) => {
+             const isExpanded = expandedId === colaborador.id;
+             const numSelected = countSelected(colaborador.id);
+             const allSelected = numSelected === pendencias.length;
+             const monthlyGross = (colaborador.salarioBase ?? 0) + (colaborador.subsidioAlimentacao ?? 0) + (colaborador.subsidioTransporte ?? 0);
+             const valorEmAtrasoTopo = (colaborador.salarioBase ?? 0) + (colaborador.subsidioAlimentacao ?? 0) + (colaborador.subsidioTransporte ?? 0);
 
-            return (
-              <div
-                key={colaborador.id}
-                className="glass-card overflow-hidden border border-slate-100 transition-all"
-              >
-                {/* Collaborator header — clickable */}
-                <button
-                  onClick={() => setExpandedId(isExpanded ? null : colaborador.id)}
-                  className="w-full flex items-center gap-4 p-5 text-left hover:bg-slate-50/60 transition-all"
-                >
-                  {/* Avatar */}
-                  <div className="size-11 shrink-0 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold">
-                    {colaborador.nome.substring(0, 2).toUpperCase()}
-                  </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{colaborador.nome}</p>
-                    <p className="text-xs text-slate-400 truncate">{colaborador.cargo}</p>
-                  </div>
+             return (
+               <div
+                 key={colaborador.id}
+                 className="glass-card overflow-hidden border border-slate-100 transition-all"
+               >
+                 {/* Collaborator header — clickable */}
+                 <button
+                   onClick={() => setExpandedId(isExpanded ? null : colaborador.id)}
+                   className="w-full flex items-center gap-4 p-5 text-left hover:bg-slate-50/60 transition-all"
+                 >
+                   {/* Avatar */}
+                   <div className="size-11 shrink-0 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold">
+                     {colaborador.nome.substring(0, 2).toUpperCase()}
+                   </div>
 
-                  {/* Badge: pending months */}
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-600 text-[11px] font-bold border border-amber-100">
-                      {pendencias.length} {pendencias.length === 1 ? 'mês em atraso' : 'meses em atraso'}
-                    </span>
-                    <span className="text-sm text-slate-400 font-medium hidden sm:block whitespace-nowrap">
-                      {formatMoney(colaborador.salarioBase)}
-                    </span>
-                    <span className={`material-symbols-outlined text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
-                      expand_more
-                    </span>
-                  </div>
-                </button>
+                   {/* Info */}
+                   <div className="flex-1 min-w-0">
+                     <p className="text-sm font-semibold text-slate-800 truncate">{colaborador.nome}</p>
+                     <p className="text-xs text-slate-400 truncate">{colaborador.cargo}</p>
+                   </div>
+
+                   {/* Badge: pending months */}
+                   <div className="flex items-center gap-3 shrink-0">
+                     <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-600 text-[11px] font-bold border border-amber-100">
+                     {formatMoney(valorEmAtrasoTopo * pendencias.length)} Valor em atraso
+                     </span>
+                     <span className="text-sm text-slate-400 font-medium hidden sm:block whitespace-nowrap">
+                       {formatMoney(colaborador.salarioBase)}
+                     </span>
+                     <span className={`material-symbols-outlined text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                       expand_more
+                     </span>
+                   </div>
+                 </button>
 
                 {/* Expanded content */}
                 {isExpanded && (

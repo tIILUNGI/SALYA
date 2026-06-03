@@ -46,28 +46,29 @@ interface HistóricoProcessamento {
 }
 
 interface ReceiptSnapshot {
-  colaborador: Colaborador;
-  mes: string;
-  ano: string;
-  dataProcessamento: string;
-  salarioBase: number;
-  diasTrabalhados: number;
-  ganhoAlimentacao: number;
-  ganhoTransporte: number;
-  ganhoFerias: number;
-  ganhoNatal: number;
-  horasExtra: number;
-  bonus: number;
-  faltas: number;
-  faltasDias?: number;
-  outrosGanhos: OutroGanhoInput[];
-  totalBruto: number;
-  valorINSS: number;
-  valorIRT: number;
-  percentualIRT?: number;
-  totalDescontos: number;
-  salarioLiquido: number;
-}
+   colaborador: Colaborador;
+   mes: string;
+   ano: string;
+   dataProcessamento: string;
+   salarioBase: number;
+   diasTrabalhados: number;
+   ganhoAlimentacao: number;
+   ganhoTransporte: number;
+   ganhoFerias: number;
+   ganhoNatal: number;
+   horasExtra: number;
+   bonus: number;
+   faltas: number;
+   faltasDias?: number;
+   outrosGanhos: OutroGanhoInput[];
+   totalBruto: number;
+   valorINSS: number;
+   valorIRT: number;
+   percentualIRT?: number;
+   totalDescontos: number;
+   salarioLiquido: number;
+   materiaColetavel: number;
+ }
 
 const MONTHS = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
@@ -281,10 +282,13 @@ const Processamento: React.FC = () => {
   // ── Matéria Colectável para IRT mensal ──────────────────────────────────────
   // MC = Salário + Alimentação tributável + Transporte tributável + Extras - INSS
   // Férias e Natal são excluídos da MC (têm retenção autónoma de 15%)
-  const materiaColectavel = useMemo(
-    () => roundMoney(Math.max(0, salarioProporcional + alimentacaoTributavel + transporteTributavel + formHorasExtra + formBonus + totalOutrosGanhos - inssEstimado - descontoFaltas)),
-    [salarioProporcional, alimentacaoTributavel, transporteTributavel, formHorasExtra, formBonus, totalOutrosGanhos, inssEstimado, descontoFaltas]
-  );
+const materiaColectavel = useMemo(() => {
+     const isPrestador = selectedColab?.tipoContrato === 'Prestador';
+     if (isPrestador) {
+       return roundMoney(totalBruto);
+     }
+     return roundMoney(Math.max(0, salarioProporcional + alimentacaoTributavel + transporteTributavel + formHorasExtra + formBonus + totalOutrosGanhos - inssEstimado - descontoFaltas));
+   }, [selectedColab?.tipoContrato, totalBruto, salarioProporcional, alimentacaoTributavel, transporteTributavel, formHorasExtra, formBonus, totalOutrosGanhos, inssEstimado, descontoFaltas]);
 
   // ── IRT Progressivo (sobre a MC) ─────────────────────────────────────────────
   const irtEstimado = useMemo(() => {
@@ -497,29 +501,30 @@ const Processamento: React.FC = () => {
 
       const result = await api.post('/processamentos/processar-salario', dto);
 
-      setReceiptSnapshot({
-        colaborador: selectedColab,
-        mes: selectedMonth,
-        ano: selectedYear,
-        dataProcessamento: new Date().toLocaleDateString('pt-AO'),
-        salarioBase: formSalario,
-        diasTrabalhados: formDiasTrabalhados,
-        ganhoAlimentacao: formGanhoAlimentacao,
-        ganhoTransporte: formGanhoTransporte,
-        ganhoFerias: incluirFerias ? formGanhoFerias : 0,
-        ganhoNatal: incluirNatal ? formGanhoNatal : 0,
-        horasExtra: formHorasExtra,
-        bonus: formBonus,
-        faltas: descontoFaltas,
-        faltasDias: formFaltas,
-        outrosGanhos: outrosGanhosPayload.map((ganho, index) => ({ id: `${index}`, descricao: ganho.descricao, valor: ganho.valor })),
-        totalBruto: typeof result.totalBruto === 'number' && Number.isFinite(result.totalBruto) ? result.totalBruto : 0,
-        valorINSS: typeof result.valorINSS === 'number' && Number.isFinite(result.valorINSS) ? result.valorINSS : 0,
-        valorIRT: typeof result.valorIRT === 'number' && Number.isFinite(result.valorIRT) ? result.valorIRT : 0,
-        percentualIRT: result.detalhesIRT?.taxaIRT ? result.detalhesIRT.taxaIRT * 100 : 0,
-        totalDescontos: typeof result.descontos === 'number' && Number.isFinite(result.descontos) ? result.descontos : 0,
-        salarioLiquido: typeof result.salarioLiquido === 'number' && Number.isFinite(result.salarioLiquido) ? result.salarioLiquido : 0,
-      });
+       setReceiptSnapshot({
+         colaborador: selectedColab,
+         mes: selectedMonth,
+         ano: selectedYear,
+         dataProcessamento: new Date().toLocaleDateString('pt-AO'),
+         salarioBase: formSalario,
+         diasTrabalhados: formDiasTrabalhados,
+         ganhoAlimentacao: formGanhoAlimentacao,
+         ganhoTransporte: formGanhoTransporte,
+         ganhoFerias: incluirFerias ? formGanhoFerias : 0,
+         ganhoNatal: incluirNatal ? formGanhoNatal : 0,
+         horasExtra: formHorasExtra,
+         bonus: formBonus,
+         faltas: descontoFaltas,
+         faltasDias: formFaltas,
+         outrosGanhos: outrosGanhosPayload.map((ganho, index) => ({ id: `${index}`, descricao: ganho.descricao, valor: ganho.valor })),
+         totalBruto: typeof result.totalBruto === 'number' && Number.isFinite(result.totalBruto) ? result.totalBruto : 0,
+         valorINSS: typeof result.valorINSS === 'number' && Number.isFinite(result.valorINSS) ? result.valorINSS : 0,
+         valorIRT: typeof result.valorIRT === 'number' && Number.isFinite(result.valorIRT) ? result.valorIRT : 0,
+         percentualIRT: result.detalhesIRT?.taxaIRT ? result.detalhesIRT.taxaIRT * 100 : 0,
+         totalDescontos: typeof result.descontos === 'number' && Number.isFinite(result.descontos) ? result.descontos : 0,
+         salarioLiquido: typeof result.salarioLiquido === 'number' && Number.isFinite(result.salarioLiquido) ? result.salarioLiquido : 0,
+         materiaColetavel: materiaColectavel,
+       });
 
       await loadHistórico();
       setShowFormModal(false);
@@ -659,10 +664,12 @@ const Processamento: React.FC = () => {
        </div>
     </div>
   );
-  const renderFormModal = () => {
-    if (!showFormModal || !selectedColab) return null;
+   const renderFormModal = () => {
+     if (!showFormModal || !selectedColab) return null;
 
-    return (
+     const isPrestador = selectedColab?.tipoContrato === 'Prestador';
+
+     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
         <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-xl flex flex-col">
           <div className="p-5 border-b bg-slate-50 flex items-center justify-between gap-4">
@@ -881,28 +888,32 @@ const Processamento: React.FC = () => {
                     <span className="text-slate-500">Salário ({formDiasTrabalhados} dias)</span>
                     <span className="font-medium text-slate-700">{formatMoney(salarioProporcional)}</span>
                   </div>
-                  {alimentacao > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <div>
-                        <span className="text-slate-500">Alimentação</span>
-                        {alimentacaoTributavel > 0
-                          ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(alimentacaoTributavel)} trib.</span>
-                          : <span className="ml-1 text-[9px] text-emerald-500">isento</span>}
-                      </div>
-                      <span className="font-medium text-slate-700">{formatMoney(alimentacao)}</span>
-                    </div>
-                  )}
-                  {transporte > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <div>
-                        <span className="text-slate-500">Transporte</span>
-                        {transporteTributavel > 0
-                          ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(transporteTributavel)} trib.</span>
-                          : <span className="ml-1 text-[9px] text-emerald-500">isento</span>}
-                      </div>
-                      <span className="font-medium text-slate-700">{formatMoney(transporte)}</span>
-                    </div>
-                  )}
+                   {alimentacao > 0 && (
+                     <div className="flex justify-between text-sm">
+                       <div>
+                         <span className="text-slate-500">Alimentação</span>
+                         {!isPrestador && alimentacaoTributavel === 0
+                           ? <span className="ml-1 text-[9px] text-emerald-500">isento</span>
+                           : alimentacaoTributavel > 0
+                             ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(alimentacaoTributavel)} trib.</span>
+                             : null}
+                       </div>
+                       <span className="font-medium text-slate-700">{formatMoney(alimentacao)}</span>
+                     </div>
+                   )}
+                   {transporte > 0 && (
+                     <div className="flex justify-between text-sm">
+                       <div>
+                         <span className="text-slate-500">Transporte</span>
+                         {!isPrestador && transporteTributavel === 0
+                           ? <span className="ml-1 text-[9px] text-emerald-500">isento</span>
+                           : transporteTributavel > 0
+                             ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(transporteTributavel)} trib.</span>
+                             : null}
+                       </div>
+                       <span className="font-medium text-slate-700">{formatMoney(transporte)}</span>
+                     </div>
+                   )}
                   {formGanhoFerias > 0 && (
                     <div className="flex justify-between text-sm">
                       <div>
