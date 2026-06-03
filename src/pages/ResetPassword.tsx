@@ -39,7 +39,7 @@ const ResetPassword: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await api.post('/auth/setup-password', { token, password }, true);
+      await api.post('/auth/setup-password', { token, newPassword: password, confirmPassword }, true);
       
       await Swal.fire({
         title: 'Sucesso!',

@@ -290,15 +290,24 @@ const materiaColectavel = useMemo(() => {
      return roundMoney(Math.max(0, salarioProporcional + alimentacaoTributavel + transporteTributavel + formHorasExtra + formBonus + totalOutrosGanhos - inssEstimado - descontoFaltas));
    }, [selectedColab?.tipoContrato, totalBruto, salarioProporcional, alimentacaoTributavel, transporteTributavel, formHorasExtra, formBonus, totalOutrosGanhos, inssEstimado, descontoFaltas]);
 
-  // ── IRT Progressivo (sobre a MC) ─────────────────────────────────────────────
+  // ── IRT Progressivo (sobre a MC / Bruto para Prestador) ─────────────────────
   const irtEstimado = useMemo(() => {
     const isPrestador = selectedColab?.tipoContrato === 'Prestador';
-    return calcularIRT(materiaColectavel, isPrestador);
-  }, [materiaColectavel, selectedColab]);
+    if (isPrestador) {
+      return { valor: roundMoney(totalBruto * 0.065), faixa: 'Prestador (Taxa Fixa 6,5%)' };
+    }
+    return calcularIRT(materiaColectavel, false);
+  }, [materiaColectavel, selectedColab, totalBruto]);
 
   // ── Retenções autónomas de 15% para Férias e Natal ──────────────────────────
-  const retencaoFerias = useMemo(() => roundMoney(ferias * 0.15), [ferias]);
-  const retencaoNatal  = useMemo(() => roundMoney(natal  * 0.15), [natal]);
+  const retencaoFerias = useMemo(() => {
+    if (selectedColab?.tipoContrato === 'Prestador') return 0;
+    return roundMoney(ferias * 0.15);
+  }, [ferias, selectedColab]);
+  const retencaoNatal  = useMemo(() => {
+    if (selectedColab?.tipoContrato === 'Prestador') return 0;
+    return roundMoney(natal  * 0.15);
+  }, [natal, selectedColab]);
 
   // ── Total Descontos e Salário Líquido ────────────────────────────────────────
   const totalDescontos = useMemo(() => {
@@ -1048,8 +1057,8 @@ const materiaColectavel = useMemo(() => {
       ...(receiptSnapshot.horasExtra > 0 ? [{ label: 'Horas Extras', valorRemun: receiptSnapshot.horasExtra, valorDesc: 0, qtd: '1' }] : []),
       ...(receiptSnapshot.bonus > 0 ? [{ label: 'Bónus / Prémio', valorRemun: receiptSnapshot.bonus, valorDesc: 0, qtd: '1' }] : []),
       ...receiptSnapshot.outrosGanhos.map((ganho) => ({ label: ganho.descricao, valorRemun: ganho.valor, valorDesc: 0, qtd: '1' })),
-      { label: 'Segurança Social (INSS)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: '3%' },
-      { label: 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: receiptSnapshot.percentualIRT ? `${receiptSnapshot.percentualIRT}%` : '-' },
+      { label: 'Segurança Social (INSS)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: receiptSnapshot.valorINSS > 0 ? '3%' : '0%' },
+      { label: 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: receiptSnapshot.percentualIRT ? (receiptSnapshot.percentualIRT % 1 === 0 ? `${receiptSnapshot.percentualIRT}%` : `${receiptSnapshot.percentualIRT.toFixed(1)}%`) : '-' },
       ...(receiptSnapshot.faltas > 0 ? [{ label: 'Faltas', valorRemun: 0, valorDesc: receiptSnapshot.faltas, qtd: receiptSnapshot.faltasDias ? `${receiptSnapshot.faltasDias} dias` : '-' }] : []),
     ];
 
