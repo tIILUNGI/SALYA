@@ -606,6 +606,7 @@ const materiaColectavel = useMemo(() => {
       percentualIRT: item.percentualIRT ? item.percentualIRT * 100 : 0,
       totalDescontos: item.descontos,
       salarioLiquido: item.salarioLiquido,
+      materiaColetavel: Math.max(0, (item.salarioBaseProporcional || 0) - (item.valorINSS || 0)),
     });
     setShowReceiptModal(true);
   };
