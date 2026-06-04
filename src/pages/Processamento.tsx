@@ -606,7 +606,7 @@ const materiaColectavel = useMemo(() => {
       percentualIRT: item.percentualIRT ? item.percentualIRT * 100 : 0,
       totalDescontos: item.descontos,
       salarioLiquido: item.salarioLiquido,
-      materiaColetavel: Math.max(0, (item.salarioBaseProporcional || 0) - (item.valorINSS || 0)),
+      materiaColetavel: item.totalBruto, // Para recibo histórico, usamos o total bruto como matéria colectável
     });
     setShowReceiptModal(true);
   };
@@ -1059,7 +1059,7 @@ const materiaColectavel = useMemo(() => {
       ...receiptSnapshot.outrosGanhos.map((ganho) => ({ label: ganho.descricao, valorRemun: ganho.valor, valorDesc: 0, qtd: '1' })),
       { label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: receiptSnapshot.valorINSS > 0 ? '3%' : '0%' },
       { label: receiptSnapshot.colaborador.tipoContrato === 'Prestador' ? 'IRT Grupo B/C (Independente)' : 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: receiptSnapshot.percentualIRT ? (receiptSnapshot.percentualIRT % 1 === 0 ? `${receiptSnapshot.percentualIRT}%` : `${receiptSnapshot.percentualIRT.toFixed(1)}%`) : '-' },
-      ...(receiptSnapshot.colaborador.tipoContrato === 'Prestador' ? [{ label: 'Matéria Colectável', valorRemun: 0, valorDesc: 0, qtd: formatMoney(receiptSnapshot.totalBruto) }] : []),
+      { label: 'Matéria Colectável', valorRemun: 0, valorDesc: 0, qtd: formatMoney(receiptSnapshot.materiaColetavel) },
       ...(receiptSnapshot.faltas > 0 ? [{ label: 'Faltas', valorRemun: 0, valorDesc: receiptSnapshot.faltas, qtd: receiptSnapshot.faltasDias ? `${receiptSnapshot.faltasDias} dias` : '-' }] : []),
     ];
 
