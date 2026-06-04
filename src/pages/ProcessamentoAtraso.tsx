@@ -32,6 +32,7 @@ interface ReciboSnapshot {
   percentualIRT: number;
   totalDescontos: number;
   salarioLiquido: number;
+  materiaColetavel: number;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -194,6 +195,7 @@ const ProcessamentoAtraso: React.FC = () => {
           percentualIRT: result.detalhesIRT?.taxaIRT ? result.detalhesIRT.taxaIRT * 100 : 0,
           totalDescontos: typeof result.descontos === 'number' ? result.descontos : 0,
           salarioLiquido: typeof result.salarioLiquido === 'number' ? result.salarioLiquido : 0,
+          materiaColetavel: typeof result.materiaColectavel === 'number' ? result.materiaColectavel : 0,
         });
       }
 
@@ -242,8 +244,9 @@ const ProcessamentoAtraso: React.FC = () => {
       { label: `Salário Base`, valorRemun: snap.salarioBase, valorDesc: 0, qtd: `${snap.diasTrabalhados} Dias` },
       ...(snap.ganhoAlimentacao > 0 ? [{ label: 'Subsídio de Alimentação', valorRemun: snap.ganhoAlimentacao, valorDesc: 0, qtd: '1' }] : []),
       ...(snap.ganhoTransporte > 0 ? [{ label: 'Subsídio de Transporte', valorRemun: snap.ganhoTransporte, valorDesc: 0, qtd: '1' }] : []),
-      { label: 'Segurança Social (INSS)', valorRemun: 0, valorDesc: snap.valorINSS, qtd: snap.valorINSS > 0 ? '3%' : '0%' },
-      { label: 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: snap.valorIRT, qtd: snap.percentualIRT ? (snap.percentualIRT % 1 === 0 ? `${snap.percentualIRT}%` : `${snap.percentualIRT.toFixed(1)}%`) : '-' },
+      { label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: snap.valorINSS, qtd: snap.valorINSS > 0 ? '3%' : '0%' },
+      { label: snap.colaborador.tipoContrato === 'Prestador' ? 'IRT Grupo B/C (Independente)' : 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: snap.valorIRT, qtd: snap.percentualIRT ? (snap.percentualIRT % 1 === 0 ? `${snap.percentualIRT}%` : `${snap.percentualIRT.toFixed(1)}%`) : '-' },
+      { label: 'Matéria Colectável', valorRemun: 0, valorDesc: 0, qtd: formatMoney(snap.materiaColetavel) },
     ];
 
     return (
@@ -430,7 +433,6 @@ const ProcessamentoAtraso: React.FC = () => {
              const isExpanded = expandedId === colaborador.id;
              const numSelected = countSelected(colaborador.id);
              const allSelected = numSelected === pendencias.length;
-             const monthlyGross = (colaborador.salarioBase ?? 0) + (colaborador.subsidioAlimentacao ?? 0) + (colaborador.subsidioTransporte ?? 0);
              const valorEmAtrasoTopo = (colaborador.salarioBase ?? 0) + (colaborador.subsidioAlimentacao ?? 0) + (colaborador.subsidioTransporte ?? 0);
 
 
