@@ -904,7 +904,7 @@ const materiaColectavel = useMemo(() => {
                          <span className="text-slate-500">Alimentação</span>
                          {!isPrestador && alimentacaoTributavel === 0
                            ? <span className="ml-1 text-[9px] text-emerald-500">isento</span>
-                           : alimentacaoTributavel > 0
+                           : !isPrestador && alimentacaoTributavel > 0
                              ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(alimentacaoTributavel)} trib.</span>
                              : null}
                        </div>
@@ -917,7 +917,7 @@ const materiaColectavel = useMemo(() => {
                          <span className="text-slate-500">Transporte</span>
                          {!isPrestador && transporteTributavel === 0
                            ? <span className="ml-1 text-[9px] text-emerald-500">isento</span>
-                           : transporteTributavel > 0
+                           : !isPrestador && transporteTributavel > 0
                              ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(transporteTributavel)} trib.</span>
                              : null}
                        </div>
@@ -961,8 +961,7 @@ const materiaColectavel = useMemo(() => {
                   {/* INSS */}
                   <div className="flex justify-between text-sm">
                     <div>
-                      <span className="text-slate-500">INSS</span>
-                      <span className="ml-1 text-[9px] text-slate-400">3% s/ sal. base</span>
+                      <span className="text-slate-500">INSS 3% s/ sal. base</span>
                     </div>
                     <span className="font-medium text-rose-500">-{formatMoney(inssEstimado)}</span>
                   </div>
@@ -971,8 +970,8 @@ const materiaColectavel = useMemo(() => {
                   <div className="flex flex-col gap-1 text-sm">
                     <div className="flex justify-between">
                       <div>
-                        <span className="text-slate-500">IRT</span>
-                        <span className="ml-1 text-[9px] text-slate-400">{irtEstimado.faixa}</span>
+                        <span className="text-slate-500">{isPrestador ? 'IRT Grupo B/C (Independente)' : 'IRT'}</span>
+                        {!isPrestador && <span className="ml-1 text-[9px] text-slate-400">{irtEstimado.faixa}</span>}
                       </div>
                       <span className="font-medium text-rose-500">-{formatMoney(irtEstimado.valor)}</span>
                     </div>
@@ -1058,8 +1057,9 @@ const materiaColectavel = useMemo(() => {
       ...(receiptSnapshot.horasExtra > 0 ? [{ label: 'Horas Extras', valorRemun: receiptSnapshot.horasExtra, valorDesc: 0, qtd: '1' }] : []),
       ...(receiptSnapshot.bonus > 0 ? [{ label: 'Bónus / Prémio', valorRemun: receiptSnapshot.bonus, valorDesc: 0, qtd: '1' }] : []),
       ...receiptSnapshot.outrosGanhos.map((ganho) => ({ label: ganho.descricao, valorRemun: ganho.valor, valorDesc: 0, qtd: '1' })),
-      { label: 'Segurança Social (INSS)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: receiptSnapshot.valorINSS > 0 ? '3%' : '0%' },
-      { label: 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: receiptSnapshot.percentualIRT ? (receiptSnapshot.percentualIRT % 1 === 0 ? `${receiptSnapshot.percentualIRT}%` : `${receiptSnapshot.percentualIRT.toFixed(1)}%`) : '-' },
+      { label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: receiptSnapshot.valorINSS > 0 ? '3%' : '0%' },
+      { label: receiptSnapshot.colaborador.tipoContrato === 'Prestador' ? 'IRT Grupo B/C (Independente)' : 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: receiptSnapshot.percentualIRT ? (receiptSnapshot.percentualIRT % 1 === 0 ? `${receiptSnapshot.percentualIRT}%` : `${receiptSnapshot.percentualIRT.toFixed(1)}%`) : '-' },
+      ...(receiptSnapshot.colaborador.tipoContrato === 'Prestador' ? [{ label: 'Matéria Colectável', valorRemun: 0, valorDesc: 0, qtd: formatMoney(receiptSnapshot.totalBruto) }] : []),
       ...(receiptSnapshot.faltas > 0 ? [{ label: 'Faltas', valorRemun: 0, valorDesc: receiptSnapshot.faltas, qtd: receiptSnapshot.faltasDias ? `${receiptSnapshot.faltasDias} dias` : '-' }] : []),
     ];
 

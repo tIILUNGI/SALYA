@@ -904,6 +904,13 @@ const Configurações: React.FC = () => {
                             </tr>
                           ))
                         )}
+                        <tr className="bg-primary/5 hover:bg-primary/10 transition-all font-black text-sm border-t-2 border-primary/10">
+                          <td className="p-4 text-primary">Prestadores de Serviços</td>
+                          <td className="p-4 text-right">0</td>
+                          <td className="p-4 text-right">∞</td>
+                          <td className="p-4 text-center text-primary">6.5%</td>
+                          <td className="p-4 text-right">Taxa Fixa (Bruto)</td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
