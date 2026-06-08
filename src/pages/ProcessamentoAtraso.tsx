@@ -2,8 +2,9 @@ import React, { useState, useContext, useEffect, useCallback } from 'react';
 
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
-import { api } from '../services/api';
+import { API_BASE_URL, api } from '../services/api';
 import html2pdf from 'html2pdf.js';
+import { countries } from '../data/countries';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,7 @@ interface ColaboradorComPendencias {
 }
 
 interface ReciboSnapshot {
+  historicoId?: number;
   colaborador: Colaborador;
   mes: string;
   ano: string;
@@ -64,6 +66,48 @@ const ProcessamentoAtraso: React.FC = () => {
   const [recibos, setRecibos] = useState<ReciboSnapshot[]>([]);
   const [reciboIndex, setReciboIndex] = useState(0);
   const [showReciboModal, setShowReciboModal] = useState(false);
+  const [holidaysByMonth, setHolidaysByMonth] = useState<Record<string, any[]>>({});
+
+  // ── Calculate work days (Seg-Sex) excluding holidays ───────────────────────────
+  const calcularDiasUteis = useCallback((mes: number, ano: number): number => {
+    const daysInMonth = new Date(ano, mes, 0).getDate();
+    let workDays = 0;
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(ano, mes - 1, day);
+      const isWeekend = date.getDay() === 0 || date.getDay() === 6; // Dom ou Sáb
+      
+      if (!isWeekend) {
+        const dateStr = date.toISOString().split('T')[0];
+        const holidays = holidaysByMonth[`${ano}-${mes}`] || [];
+        const isHoliday = holidays.some((h: any) => h.date === dateStr);
+        if (!isHoliday) {
+          workDays++;
+        }
+      }
+    }
+    return workDays || 22; // Fallback to 22
+  }, [holidaysByMonth]);
+
+  // ── Fetch holidays for a specific month ─────────────────────────────────────────
+  const fetchHolidaysForMonth = useCallback(async (mes: number, ano: number) => {
+    const key = `${ano}-${mes}`;
+    if (holidaysByMonth[key]) return; // Already cached
+    
+    const pais = empresa?.pais || 'Angola';
+    const country = countries.find(c => c.name === pais);
+    if (!country) return;
+    
+    try {
+      const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${ano}/${country.code}`);
+      if (response.ok) {
+        const data = await response.json();
+        setHolidaysByMonth(prev => ({ ...prev, [key]: data }));
+      }
+    } catch (e) {
+      console.error('Erro ao carregar feriados:', e);
+    }
+  }, [empresa?.pais, holidaysByMonth]);
 
   // ── Load pending salaries ────────────────────────────────────────────────────
   const carregarPendencias = useCallback(async () => {
@@ -155,9 +199,15 @@ const ProcessamentoAtraso: React.FC = () => {
 
     try {
       const isFixed = empresa?.tipoProcessamento === 'Dias Fixos' || empresa?.tipoProcessamento === 'DIAS_FIXOS';
-      const baseDays = isFixed ? 22 : 22;
+
+      // Fetch holidays for each month before processing
+      for (const periodo of mesesParaProcessar) {
+        await fetchHolidaysForMonth(periodo.mes, periodo.ano);
+      }
 
       for (const periodo of mesesParaProcessar) {
+        const baseDays = isFixed ? 22 : calcularDiasUteis(periodo.mes, periodo.ano);
+
         const dto = {
           trabalhadorId: colab.id,
           mes: periodo.mes,
@@ -180,7 +230,9 @@ const ProcessamentoAtraso: React.FC = () => {
 
         const result = await api.post('/processamentos/processar-salario', dto);
 
+        const historicoId = result.historicoId;
         novosRecibos.push({
+          historicoId,
           colaborador: colab,
           mes: numToMonth(periodo.mes),
           ano: String(periodo.ano),
@@ -216,21 +268,30 @@ const ProcessamentoAtraso: React.FC = () => {
     }
   };
 
-  // ── PDF Export ───────────────────────────────────────────────────────────────
-  const handleExportarPDF = () => {
+  // ── PDF Export + Armazenamento de Recibo ─────────────────────────────────────
+  const handleExportarPDF = async () => {
     const element = document.getElementById('recibo-atraso-impressao');
     if (!element) return;
     const snap = recibos[reciboIndex];
     if (!snap) return;
-    const opt = {
-      margin: 0,
-      filename: `Recibo_${snap.colaborador.nome.replace(/ /g, '_')}_${snap.mes}_${snap.ano}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { scale: 3 },
-      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
-    };
-    html2pdf().from(element).set(opt).save();
+
+    try {
+      html2pdf().from(element).set({
+        margin: 0,
+        filename: `Recibo_${snap.colaborador.nome.replace(/ /g, '_')}_${snap.mes}_${snap.ano}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 3 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+       }).save();
+
+      if (snap.historicoId) {
+        api.post(`/processamentos/${snap.historicoId}/recibo`, { html: element.innerHTML }).catch(() => {});
+      }
+    } catch (e) {
+      console.error('Erro ao exportar PDF:', e);
+    }
   };
+
 
   // ── Render: Receipt Modal ────────────────────────────────────────────────────
   const renderReciboModal = () => {
@@ -296,11 +357,20 @@ const ProcessamentoAtraso: React.FC = () => {
             >
               {/* Company header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10mm', borderBottom: '2px solid #000', paddingBottom: '5mm' }}>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ fontSize: '18px', fontWeight: '900', margin: '0 0 4px 0' }}>{empresa?.nome}</h2>
-                  <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
-                  <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>{empresa?.endereco}, {empresa?.municipio}</p>
-                  <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>{empresa?.email} | {empresa?.telefone}</p>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '6mm' }}>
+                  {empresa?.logoUrl && (
+                    <img
+                      src={`${API_BASE_URL}${empresa.logoUrl}`}
+                      alt="Logotipo"
+                      style={{ width: '18mm', height: '18mm', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#f8fafc', padding: '2px' }}
+                    />
+                  )}
+                  <div>
+                    <h2 style={{ fontSize: '18px', fontWeight: '900', margin: '0 0 4px 0' }}>{empresa?.nome}</h2>
+                    <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
+                    <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>{empresa?.endereco}, {empresa?.municipio}</p>
+                    <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>{empresa?.email} | {empresa?.telefone}</p>
+                  </div>
                 </div>
                 <div style={{ flex: 1, textAlign: 'right' }}>
                   <h1 style={{ fontSize: '16px', fontWeight: '900', margin: '0 0 8px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>

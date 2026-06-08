@@ -36,10 +36,10 @@ export interface Plan {
 export type PlanType = 'DEMO' | 'SEMESTRAL' | 'ANUAL' | 'BIANUAL';
 
 export const PLAN_LIMITS: Record<PlanType, { maxEmpresas: number; maxUsuarios: number }> = {
-  DEMO: { maxEmpresas: 2, maxUsuarios: 2 },
-  SEMESTRAL: { maxEmpresas: 2, maxUsuarios: 2 },
-  ANUAL: { maxEmpresas: 5, maxUsuarios: 5 },
-  BIANUAL: { maxEmpresas: 10, maxUsuarios: 10 },
+  DEMO: { maxEmpresas: 1, maxUsuarios: 1 },
+  SEMESTRAL: { maxEmpresas: 1, maxUsuarios: 1 },
+  ANUAL: { maxEmpresas: 3, maxUsuarios: 3 },
+  BIANUAL: { maxEmpresas: 5, maxUsuarios: 5 },
 };
 
 export interface Empresa {
@@ -64,6 +64,7 @@ export interface Empresa {
   diaProcessamento?: number;
   pais?: string;
   tipoProcessamento?: 'Dias Variáveis' | 'Dias Fixos' | 'DIAS_VARIAVEIS' | 'DIAS_FIXOS';
+  logoUrl?: string;
 
   user?: User;
   sharedUsers?: User[];

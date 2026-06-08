@@ -858,42 +858,42 @@ function SubscriptionBarrier() {
             </button>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-8">
-            {loadingPlans ? (
-              <div className="flex justify-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {plans.filter(p => p.type !== 'DEMO').map(p => (
-                  <div 
-                    key={p.id} 
-                    className="p-8 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-primary transition-all flex flex-col group cursor-pointer" 
-                    onClick={() => handleSelectPlan(p)}
-                  >
-                    <h3 className="font-black text-lg uppercase mb-2">{p.name}</h3>
-                    <div className="flex items-baseline gap-1 mb-6">
-                      <span className="text-2xl font-black">{p.price?.toLocaleString()}</span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Kz / {p.durationDays} dias</span>
-                    </div>
-                    <ul className="space-y-3 mb-8 flex-1">
-                      <li className="flex items-center gap-2 text-xs text-slate-500"><span className="material-symbols-outlined text-emerald-500 text-sm">check_circle</span> Processamento Ilimitado</li>
-                      <li className="flex items-center gap-2 text-xs text-slate-500"><span className="material-symbols-outlined text-emerald-500 text-sm">check_circle</span> Relatórios Exportáveis</li>
-                      <li className="flex items-center gap-2 text-xs text-slate-500"><span className="material-symbols-outlined text-emerald-500 text-sm">check_circle</span> Suporte Prioritário</li>
-                    </ul>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleSelectPlan(p); }}
-                      className="w-full py-3 bg-primary text-white rounded-xl font-bold uppercase text-xs hover:bg-primary/90 transition-all"
-                    >
-                      Escolher Plano
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+<div className="flex-1 overflow-y-auto p-8">
+                 {loadingPlans ? (
+                   <div className="flex justify-center py-20">
+                     <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+                   </div>
+                 ) : (
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-full">
+                     {plans.filter(p => p.type !== 'DEMO').map(p => (
+                       <div 
+                         key={p.id} 
+                         className="p-8 rounded-3xl border-2 border-slate-100 dark:border-slate-800 hover:border-primary transition-all flex flex-col group cursor-pointer max-w-full" 
+                         onClick={() => handleSelectPlan(p)}
+                       >
+                         <h3 className="font-black text-lg uppercase mb-2">{p.name}</h3>
+                         <div className="flex items-baseline gap-1 mb-6">
+                           <span className="text-2xl font-black">{p.price?.toLocaleString()}</span>
+                           <span className="text-[10px] font-bold text-slate-400 uppercase">Kz / {p.durationDays} dias</span>
+                         </div>
+                         <ul className="space-y-3 mb-8 flex-1">
+                           <li className="flex items-center gap-2 text-xs text-slate-500"><span className="material-symbols-outlined text-emerald-500 text-sm">check_circle</span> Processamento Ilimitado</li>
+                           <li className="flex items-center gap-2 text-xs text-slate-500"><span className="material-symbols-outlined text-emerald-500 text-sm">check_circle</span> Relatórios Exportáveis</li>
+                           <li className="flex items-center gap-2 text-xs text-slate-500"><span className="material-symbols-outlined text-emerald-500 text-sm">check_circle</span> Suporte Prioritário</li>
+                         </ul>
+                         <button 
+                           onClick={(e) => { e.stopPropagation(); handleSelectPlan(p); }}
+                           className="w-full py-3 bg-primary text-white rounded-xl font-bold uppercase text-xs hover:bg-primary/90 transition-all"
+                         >
+                           Escolher Plano
+                         </button>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+               </div>
           
-          <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800">
+<div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
               <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
                 <span className="material-symbols-outlined text-base">support_agent</span>
@@ -901,6 +901,10 @@ function SubscriptionBarrier() {
               </div>
               <a href="mailto:solucoes@ilungi.ao" className="text-xs font-black text-indigo-600 dark:text-indigo-400 hover:underline">
                 solucoes@ilungi.ao
+              </a>
+              <a href="https://wa.me/244935793270" target="_blank" rel="noopener noreferrer" className="text-xs font-black text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">whatsapp</span>
+                +244 935 793 270
               </a>
               <span className="hidden sm:inline text-slate-300 dark:text-slate-600">•</span>
               <p className="text-xs text-slate-400">Após escolher, envie o comprovativo de pagamento ao suporte.</p>

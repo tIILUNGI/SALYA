@@ -30,6 +30,7 @@ interface ConfiguraçãoEmpresa {
   categoria: string;
   pais: string;
   tipoProcessamento: 'Dias Variáveis' | 'Dias Fixos';
+  logoUrl?: string;
 }
 
 interface TaxaIRT {
@@ -96,7 +97,8 @@ const mapEmpresaToConfig = (emp: any): ConfiguraçãoEmpresa => ({
   tipoEntidade: emp.tipoEntidade || 'Lda',
   categoria: emp.categoria || 'Empresa',
   pais: emp.pais || 'Angola',
-  tipoProcessamento: emp.tipoProcessamento === 'DIAS_FIXOS' ? 'Dias Fixos' : 'Dias Variáveis'
+  tipoProcessamento: emp.tipoProcessamento === 'DIAS_FIXOS' ? 'Dias Fixos' : 'Dias Variáveis',
+  logoUrl: emp.logoUrl || undefined,
 });
 
 const CONFIG_TAB_IDS = ['empresa', 'impostos', 'processamento', 'gestao', 'acesso', 'assinatura'] as const;
@@ -146,7 +148,7 @@ const Configurações: React.FC = () => {
     tipoEntidade: 'Lda',
     categoria: 'Empresa',
     pais: 'Angola',
-    tipoProcessamento: 'Dias Variáveis'
+    tipoProcessamento: 'Dias Variáveis',
   };
 
   const [config, setConfig] = useState<ConfiguraçãoEmpresa>(
@@ -169,6 +171,10 @@ const Configurações: React.FC = () => {
   const [selectedEmpresaId, setSelectedEmpresaId] = useState<number | ''>('');
   const [plans, setPlans] = useState<any[]>([]);
   const [viewDate, setViewDate] = useState(new Date());
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoLoading, setLogoLoading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
 
   // Sincronizar quando a empresa mudar via switcher
@@ -326,6 +332,45 @@ const Configurações: React.FC = () => {
     setIsCreatingNew(true);
     setSetupStep('form');
     setActiveTab('empresa');
+  };
+
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      Swal.fire('Formato inválido', 'Seleccione um ficheiro de imagem (PNG/JPG/WebP).', 'warning');
+      return;
+    }
+    setLogoFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setLogoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadLogo = async () => {
+    if (!logoFile || !empresa?.id) return;
+    setLogoLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('logo', logoFile);
+      const result: any = await api.postForm(`/empresas/${empresa.id}/logo`, formData, true);
+      const updatedLogoUrl = result?.logoUrl || undefined;
+      setConfig((prev) => ({ ...prev, logoUrl: updatedLogoUrl }));
+      setMessage({ title: 'SUCESSO!', text: 'Logotipo actualizado com sucesso!', type: 'success' });
+    } catch (error: any) {
+      setMessage({ title: 'ERRO!', text: 'Não foi possível actualizar o logotipo.', type: 'error' });
+    } finally {
+      setLogoLoading(false);
+      setLogoFile(null);
+      setLogoPreview(null);
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (!empresa?.id) return;
+    setLogoPreview(null);
+    setLogoFile(null);
+    setConfig((prev) => ({ ...prev, logoUrl: undefined }));
   };
 
   const handleSave = async () => {
@@ -659,6 +704,54 @@ const Configurações: React.FC = () => {
             {activeTab === 'empresa' && (
               <div className="space-y-6">
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Logotipo</h3>
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-32 h-32 rounded-full border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-800">
+                      {(logoPreview || config.logoUrl) ? (
+                        <img src={logoPreview || config.logoUrl} alt="Logotipo" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="material-symbols-outlined text-4xl text-slate-300">image</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap justify-center">
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleLogoSelect}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
+                        disabled={logoLoading}
+                        className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60"
+                      >
+                        {logoLoading ? 'A carregar...' : (logoPreview || config.logoUrl) ? 'Alterar Logotipo' : 'Adicionar Logotipo'}
+                      </button>
+                      {(logoPreview || config.logoUrl) && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveLogo}
+                          className="px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest text-rose-600 border border-rose-200 hover:bg-rose-50"
+                        >
+                          Remover
+                        </button>
+                      )}
+                      {logoPreview && (
+                        <button
+                          type="button"
+                          onClick={handleUploadLogo}
+                          disabled={logoLoading}
+                          className="px-6 py-2 rounded-lg bg-primary text-white text-xs font-black uppercase tracking-widest disabled:opacity-60 shadow-lg shadow-primary/20"
+                        >
+                          Guardar Logotipo
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                   <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Identidade</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -712,26 +805,26 @@ const Configurações: React.FC = () => {
                         {countries.map(c => <option key={c.code} value={c.name}>{c.name}</option>)}
                       </select>
                     </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Província</label>
-                        <input type="text" value={config.provincia} onChange={(e) => setConfig({...config, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Endereço</label>
-                        <input type="text" value={config.endereco} onChange={(e) => setConfig({...config, endereco: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Município</label>
-                        <input type="text" value={config.municipio} onChange={(e) => setConfig({...config, municipio: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Telefone</label>
-                        <input type="text" value={config.telefone} onChange={(e) => setConfig({...config, telefone: e.target.value.replace(/[^0-9+]/g, '').slice(0, 13)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder="+244912345678" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">E-mail</label>
-                        <input type="email" value={config.email} onChange={(e) => setConfig({...config, email: e.target.value})} onBlur={(e) => { if (e.target.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value)) { setConfig({...config, email: ''}); }}} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder="exemplo@email.com" />
-                      </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Província</label>
+                      <input type="text" value={config.provincia} onChange={(e) => setConfig({...config, provincia: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Endereço</label>
+                      <input type="text" value={config.endereco} onChange={(e) => setConfig({...config, endereco: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Município</label>
+                      <input type="text" value={config.municipio} onChange={(e) => setConfig({...config, municipio: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Telefone</label>
+                      <input type="text" value={config.telefone} onChange={(e) => setConfig({...config, telefone: e.target.value.replace(/[^0-9+]/g, '').slice(0, 13)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder="+244912345678" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">E-mail</label>
+                      <input type="email" value={config.email} onChange={(e) => setConfig({...config, email: e.target.value})} onBlur={(e) => { if (e.target.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value)) { setConfig({...config, email: ''}); }}} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder="exemplo@email.com" />
+                    </div>
                   </div>
                 </div>
 
@@ -950,7 +1043,7 @@ const Configurações: React.FC = () => {
                 </div>
               </div>
             )}
-{activeTab === 'gestao' && (
+            {activeTab === 'gestao' && (
                <div className="space-y-6">
                  <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                    <div className="flex items-center justify-between mb-6">
@@ -1224,20 +1317,25 @@ const Configurações: React.FC = () => {
                   {plans.map((p) => (
                     <div 
                       key={p.id} 
-                      className={`group p-8 rounded-[2.5rem] border-2 transition-all hover:scale-[1.02] flex flex-col ${
-                        user?.planType === p.type ? 'border-primary bg-primary/5 shadow-2xl shadow-primary/20' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900'
+                      className={`group p-8 rounded-[2.5rem] border-2 transition-all hover:scale-[1.02] flex flex-col relative ${
+                        user?.planType === p.type ? 'border-primary bg-primary/5 shadow-2xl shadow-primary/20' : 
+                        p.type === 'ANUAL' ? 'border-primary bg-primary/5 scale-105 shadow-xl' : 
+                        'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900'
                       }`}
                     >
+                      {p.type === 'ANUAL' && (
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full">Recomendado</div>
+                      )}
                       <div className="mb-6">
                         <div className={`size-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:rotate-12 ${
-                           user?.planType === p.type ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                           user?.planType === p.type || p.type === 'ANUAL' ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                         }`}>
-<span className="material-symbols-outlined text-2xl">
-                             {p.type === 'DEMO' ? 'rocket_launch' : 
-                              p.type === 'SEMESTRAL' ? 'person' : 
-                              p.type === 'ANUAL' ? 'groups' : 
-                              'corporate_fare'}
-                           </span>
+                          <span className="material-symbols-outlined text-2xl">
+                            {p.type === 'DEMO' ? 'rocket_launch' : 
+                             p.type === 'SEMESTRAL' ? 'person' : 
+                             p.type === 'ANUAL' ? 'groups' : 
+                             'corporate_fare'}
+                          </span>
                         </div>
                         <h5 className="font-black text-lg uppercase tracking-tight text-slate-800 dark:text-white mb-1">{p.name}</h5>
                         <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">{p.category}</p>
@@ -1251,19 +1349,26 @@ const Configurações: React.FC = () => {
                         <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed min-h-[3rem]">{p.description || `Plano ${p.name} ideal para as suas necessidades de processamento.`}</p>
                       </div>
 
-                      <ul className="space-y-4 mb-10 flex-1">
-                        {[
-                          'Processamento Ilimitado',
-                          p.type === 'DEMO' ? 'Apenas 24 Horas' : `Acesso por ${p.durationDays} dias`,
-                          'Suporte Prioritário',
-                          'Relatórios Automáticos'
-                        ].map((feat, i) => (
-                          <li key={i} className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
-                            <span className="material-symbols-outlined text-emerald-500 text-lg">check_circle</span>
-                            {feat}
-                          </li>
-                        ))}
-                      </ul>
+<ul className="space-y-3 mb-10 flex-1">
+                         {[
+                           'Processamento Ilimitado',
+                           p.type === 'DEMO' ? 'Teste 24 horas' : `Acesso por ${p.durationDays} dias`,
+                           'Suporte Prioritário',
+                           'Relatórios de Business Intelligence',
+                         ].map((feat, i) => (
+                           <li key={i} className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                             <span className="material-symbols-outlined text-emerald-500 text-lg">check_circle</span>
+                             {feat}
+                           </li>
+                         ))}
+                         <li className="flex items-center gap-3 text-xs font-bold text-primary bg-primary/5 px-3 py-2 rounded-lg border border-primary/20">
+                           <span className="material-symbols-outlined text-primary text-lg">business</span>
+                           {p.type === 'DEMO' ? '1 Entidade & 1 Usuário' :
+                            p.type === 'SEMESTRAL' ? '1 Entidade & 1 Usuário' :
+                            p.type === 'ANUAL' ? '3 Entidades & 3 Usuários (Melhor Relação)' :
+                            '5 Entidades & 5 Usuários (Máxima Capacidade)'}
+                         </li>
+                       </ul>
 
                       <button 
                         onClick={() => handleUpgradePlan(p.id, p.name)}
@@ -1286,20 +1391,32 @@ const Configurações: React.FC = () => {
                     <h5 className="text-xl font-black uppercase tracking-tight mb-2">Precisa de Ajuda?</h5>
                     <p className="text-sm text-slate-400 font-medium">Tem dúvidas sobre qual plano escolher ou precisa de um plano customizado?</p>
                   </div>
-                  <a 
-                    href="mailto:solucoes@ilungi.ao" 
-                    className="relative px-8 py-4 bg-white text-slate-900 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center"
-                  >
-                    Ajuda
-                  </a>
+                  <div className="flex flex-col sm:flex-row gap-3 relative">
+                    <a 
+                      href="mailto:solucoes@ilungi.ao" 
+                      className="px-6 py-3 bg-white text-slate-900 rounded-xl font-bold uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-base">email</span>
+                      Email
+                    </a>
+                    <a 
+                      href="https://wa.me/244935793270" 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-6 py-3 bg-emerald-500 text-white rounded-xl font-bold uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-base">whatsapp</span>
+                      WhatsApp
+                    </a>
+                  </div>
                 </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      );
-    };
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default Configurações;

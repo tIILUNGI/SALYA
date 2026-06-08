@@ -7,6 +7,8 @@ import { Colaborador } from '../types';
 import { api } from '../services/api';
 import { taxasIRT } from '../data/mockData';
 import { countries } from '../data/countries';
+import { API_BASE_URL } from '../services/api';
+
 
 
 interface OutroGanhoInput {
@@ -538,6 +540,14 @@ const materiaColectavel = useMemo(() => {
       await loadHistórico();
       setShowFormModal(false);
       setShowReceiptModal(true);
+
+      const historicoId = result.historicoId;
+      if (historicoId) {
+        setTimeout(() => {
+          const el = document.getElementById('recibo-para-impressao');
+          if (el) api.post(`/processamentos/${historicoId}/recibo`, { html: el.innerHTML }).catch(() => {});
+        }, 100);
+      }
     } catch (error: any) {
       const text = error?.status === 409
         ? 'Este colaborador já foi processado para este mês/ano.'
@@ -573,15 +583,27 @@ const materiaColectavel = useMemo(() => {
     setFormOutrosGanhos((previous) => previous.filter((ganho) => ganho.id !== id));
   };
 
-  const handleDownloadHistoricalReceipt = (item: HistóricoProcessamento) => {
-    // Reconstruir o snapshot do recibo a partir do item do histórico
+  const handleDownloadHistoricalReceipt = async (item: HistóricoProcessamento) => {
+    try {
+      const htmlOrData = await api.get(`/processamentos/${item.id}/recibo`);
+      const html = typeof htmlOrData === 'string' ? htmlOrData : (htmlOrData?.html ?? '');
+
+      if (html && html.includes('<html')) {
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const w = window.open(url, '_blank');
+        if (!w) URL.revokeObjectURL(url);
+        return;
+      }
+    } catch { /* fallback */ }
+
     setReceiptSnapshot({
       colaborador: {
         id: item.colaboradorId || 0,
         nome: item.nomeColaborador,
         nif: item.nifColaborador || '',
         cargo: item.cargo || '',
-        salarioBase: item.salarioBaseProporcional || 0, // No histórico salvamos o proporcional, mas para o recibo usamos como base do que foi processado
+        salarioBase: item.salarioBaseProporcional || 0,
         status: 'Ativo',
         email: '',
         banco: item.banco,
@@ -599,14 +621,14 @@ const materiaColectavel = useMemo(() => {
       horasExtra: item.horasExtra || 0,
       bonus: item.bonus || 0,
       faltas: item.valorFaltas || 0,
-      outrosGanhos: [], // Histórico DTO simplified others for now
+      outrosGanhos: [],
       totalBruto: item.totalBruto,
       valorINSS: item.valorINSS || 0,
       valorIRT: item.valorIRT || 0,
       percentualIRT: item.percentualIRT ? item.percentualIRT * 100 : 0,
       totalDescontos: item.descontos,
       salarioLiquido: item.salarioLiquido,
-      materiaColetavel: item.totalBruto, // Para recibo histórico, usamos o total bruto como matéria colectável
+      materiaColetavel: item.totalBruto,
     });
     setShowReceiptModal(true);
   };
@@ -898,32 +920,36 @@ const materiaColectavel = useMemo(() => {
                     <span className="text-slate-500">Salário ({formDiasTrabalhados} dias)</span>
                     <span className="font-medium text-slate-700">{formatMoney(salarioProporcional)}</span>
                   </div>
-                   {alimentacao > 0 && (
-                     <div className="flex justify-between text-sm">
-                       <div>
-                         <span className="text-slate-500">Alimentação</span>
-                         {!isPrestador && alimentacaoTributavel === 0
-                           ? <span className="ml-1 text-[9px] text-emerald-500">isento</span>
-                           : !isPrestador && alimentacaoTributavel > 0
-                             ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(alimentacaoTributavel)} trib.</span>
-                             : null}
-                       </div>
-                       <span className="font-medium text-slate-700">{formatMoney(alimentacao)}</span>
-                     </div>
-                   )}
-                   {transporte > 0 && (
-                     <div className="flex justify-between text-sm">
-                       <div>
-                         <span className="text-slate-500">Transporte</span>
-                         {!isPrestador && transporteTributavel === 0
-                           ? <span className="ml-1 text-[9px] text-emerald-500">isento</span>
-                           : !isPrestador && transporteTributavel > 0
-                             ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(transporteTributavel)} trib.</span>
-                             : null}
-                       </div>
-                       <span className="font-medium text-slate-700">{formatMoney(transporte)}</span>
-                     </div>
-                   )}
+{alimentacao > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <div>
+                          <span className="text-slate-500">Alimentação</span>
+                          {!isPrestador && alimentacaoTributavel === 0
+                            ? <span className="ml-1 text-[9px] text-emerald-500">isento</span>
+                            : !isPrestador && alimentacaoTributavel > 0
+                              ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(alimentacaoTributavel)} trib.</span>
+                              : isPrestador
+                                ? <span className="ml-1 text-[9px] text-primary font-bold">{formatMoney(alimentacao)}</span>
+                                : null}
+                        </div>
+                        <span className="font-medium text-slate-700">{formatMoney(alimentacao)}</span>
+                      </div>
+                    )}
+                    {transporte > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <div>
+                          <span className="text-slate-500">Transporte</span>
+                          {!isPrestador && transporteTributavel === 0
+                            ? <span className="ml-1 text-[9px] text-emerald-500">isento</span>
+                            : !isPrestador && transporteTributavel > 0
+                              ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(transporteTributavel)} trib.</span>
+                              : isPrestador
+                                ? <span className="ml-1 text-[9px] text-primary font-bold">{formatMoney(transporte)}</span>
+                                : null}
+                        </div>
+                        <span className="font-medium text-slate-700">{formatMoney(transporte)}</span>
+                      </div>
+                    )}
                   {formGanhoFerias > 0 && (
                     <div className="flex justify-between text-sm">
                       <div>
@@ -1059,7 +1085,7 @@ const materiaColectavel = useMemo(() => {
       ...receiptSnapshot.outrosGanhos.map((ganho) => ({ label: ganho.descricao, valorRemun: ganho.valor, valorDesc: 0, qtd: '1' })),
       { label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: receiptSnapshot.valorINSS > 0 ? '3%' : '0%' },
       { label: receiptSnapshot.colaborador.tipoContrato === 'Prestador' ? 'IRT Grupo B/C (Independente)' : 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: receiptSnapshot.percentualIRT ? (receiptSnapshot.percentualIRT % 1 === 0 ? `${receiptSnapshot.percentualIRT}%` : `${receiptSnapshot.percentualIRT.toFixed(1)}%`) : '-' },
-      { label: 'Matéria Colectável', valorRemun: 0, valorDesc: 0, qtd: formatMoney(receiptSnapshot.materiaColetavel) },
+      {label: receiptSnapshot.colaborador.tipoContrato === 'Prestador' ? 'Matéria Colectável' : 'Matéria Colectável', valorRemun: 0, valorDesc: 0, qtd: receiptSnapshot.colaborador.tipoContrato === 'Prestador' ? formatMoney(receiptSnapshot.totalBruto) : formatMoney(receiptSnapshot.materiaColetavel) },
       ...(receiptSnapshot.faltas > 0 ? [{ label: 'Faltas', valorRemun: 0, valorDesc: receiptSnapshot.faltas, qtd: receiptSnapshot.faltasDias ? `${receiptSnapshot.faltasDias} dias` : '-' }] : []),
     ];
 
@@ -1085,11 +1111,20 @@ const materiaColectavel = useMemo(() => {
               
               {/* Cabeçalho Empresa */}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10mm', borderBottom: '2px solid #000', paddingBottom: '5mm' }}>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ fontSize: '18px', fontWeight: '900', margin: '0 0 4px 0' }}>{empresa?.nome}</h2>
-                  <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
-                  <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>{empresa?.endereco}, {empresa?.municipio}</p>
-                  <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>{empresa?.email} | {empresa?.telefone}</p>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '6mm' }}>
+                  {empresa?.logoUrl && (
+                    <img
+                      src={`${API_BASE_URL}${empresa.logoUrl}`}
+                      alt="Logotipo"
+                      style={{ width: '18mm', height: '18mm', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#f8fafc', padding: '2px' }}
+                    />
+                  )}
+                  <div>
+                    <h2 style={{ fontSize: '18px', fontWeight: '900', margin: '0 0 4px 0' }}>{empresa?.nome}</h2>
+                    <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
+                    <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>{empresa?.endereco}, {empresa?.municipio}</p>
+                    <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>{empresa?.email} | {empresa?.telefone}</p>
+                  </div>
                 </div>
                 <div style={{ flex: 1, textAlign: 'right' }}>
                   <h1 style={{ fontSize: '16px', fontWeight: '900', margin: '0 0 8px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
