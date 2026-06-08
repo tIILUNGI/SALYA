@@ -33,13 +33,12 @@ export interface Plan {
   maxUsuarios?: number;
 }
 
-export type PlanType = 'DEMO' | 'SEMESTRAL' | 'ANUAL' | 'BIANUAL';
+export type PlanType = 'DEMO' | 'SEMESTRAL' | 'ANUAL';
 
 export const PLAN_LIMITS: Record<PlanType, { maxEmpresas: number; maxUsuarios: number }> = {
   DEMO: { maxEmpresas: 1, maxUsuarios: 1 },
-  SEMESTRAL: { maxEmpresas: 1, maxUsuarios: 1 },
-  ANUAL: { maxEmpresas: 3, maxUsuarios: 3 },
-  BIANUAL: { maxEmpresas: 5, maxUsuarios: 5 },
+  SEMESTRAL: { maxEmpresas: 2, maxUsuarios: 2 },
+  ANUAL: { maxEmpresas: 5, maxUsuarios: 999 },
 };
 
 export interface Empresa {

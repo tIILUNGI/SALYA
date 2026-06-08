@@ -1361,13 +1361,14 @@ const Configurações: React.FC = () => {
                              {feat}
                            </li>
                          ))}
-                         <li className="flex items-center gap-3 text-xs font-bold text-primary bg-primary/5 px-3 py-2 rounded-lg border border-primary/20">
-                           <span className="material-symbols-outlined text-primary text-lg">business</span>
-                           {p.type === 'DEMO' ? '1 Entidade & 1 Usuário' :
-                            p.type === 'SEMESTRAL' ? '1 Entidade & 1 Usuário' :
-                            p.type === 'ANUAL' ? '3 Entidades & 3 Usuários (Melhor Relação)' :
-                            '5 Entidades & 5 Usuários (Máxima Capacidade)'}
-                         </li>
+                          {p.type !== 'DEMO' && (
+                            <li className="flex items-center gap-3 text-xs font-bold text-primary bg-primary/5 px-3 py-2 rounded-lg border border-primary/20">
+                              <span className="material-symbols-outlined text-primary text-lg">business</span>
+                              {p.type === 'SEMESTRAL' ? '2 Entidades & 2 Usuários' :
+                               p.type === 'ANUAL' ? '5 Entidades & Utilizadores Ilimitados' :
+                               ''}
+                            </li>
+                          )}
                        </ul>
 
                       <button 
