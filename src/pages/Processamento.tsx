@@ -1358,9 +1358,10 @@ const materiaColectavel = useMemo(() => {
         </div>
       </div>
       {periodoLocked && (
-        <div className="mb-4 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {periodoLockedMessage}
-        </div>
+          <div className="px-5 py-3.5 bg-white border border-slate-200 rounded-2xl flex items-center gap-3">
+            <span className="material-symbols-outlined text-slate-900 text-sm">lock</span>
+            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">{periodoLockedMessage}</span>
+          </div>
       )}
 
       {renderMainContent()}

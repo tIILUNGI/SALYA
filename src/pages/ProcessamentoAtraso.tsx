@@ -483,19 +483,19 @@ const ProcessamentoAtraso: React.FC = () => {
   return (
     <div className="p-4 md:p-8 w-full max-w-full font-app">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-800">Processamento em Atraso</h1>
-        <p className="text-sm text-slate-500 mt-1">Regularize salários de meses anteriores que ainda não foram liquidados.</p>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Processamento em Atraso</h1>
+        <p className="text-sm text-slate-500 mt-1.5 font-medium">Regularize salários de meses anteriores que ainda não foram liquidados.</p>
       </div>
 
       {loading ? (
         <div className="flex justify-center p-12">
-          <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent" />
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-900 border-t-transparent" />
         </div>
       ) : grupos.length === 0 ? (
-        <div className="glass-card p-16 text-center">
-          <span className="material-symbols-outlined text-6xl text-emerald-500 block mb-4">check_circle</span>
-          <h2 className="text-xl font-bold text-slate-800">Tudo em dia!</h2>
-          <p className="text-slate-500 mt-1">Não existem processamentos pendentes de meses anteriores.</p>
+        <div className="bg-white border border-slate-200 rounded-3xl p-16 text-center">
+          <span className="material-symbols-outlined text-5xl text-slate-900 block mb-4">check_circle</span>
+          <h2 className="text-xl font-bold text-slate-900">Tudo em dia!</h2>
+          <p className="text-slate-500 mt-1.5 text-sm font-medium">Não existem processamentos pendentes de meses anteriores.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -509,30 +509,30 @@ const ProcessamentoAtraso: React.FC = () => {
              return (
                <div
                  key={colaborador.id}
-                 className="glass-card overflow-hidden border border-slate-100 transition-all"
+                 className="bg-white border border-slate-200 rounded-2xl transition-all"
                >
                  {/* Collaborator header — clickable */}
                  <button
                    onClick={() => setExpandedId(isExpanded ? null : colaborador.id)}
-                   className="w-full flex items-center gap-4 p-5 text-left hover:bg-slate-50/60 transition-all"
+                   className="w-full flex items-center gap-4 p-5 text-left hover:bg-slate-50 transition-colors"
                  >
                    {/* Avatar */}
-                   <div className="size-11 shrink-0 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold">
+                   <div className="size-11 shrink-0 rounded-full bg-slate-900 text-white flex items-center justify-center text-sm font-bold">
                      {colaborador.nome.substring(0, 2).toUpperCase()}
                    </div>
 
                    {/* Info */}
                    <div className="flex-1 min-w-0">
-                     <p className="text-sm font-semibold text-slate-800 truncate">{colaborador.nome}</p>
-                     <p className="text-xs text-slate-400 truncate">{colaborador.cargo}</p>
+                     <p className="text-sm font-semibold text-slate-900 truncate">{colaborador.nome}</p>
+                     <p className="text-xs text-slate-400 truncate font-medium">{colaborador.cargo}</p>
                    </div>
 
                    {/* Badge: pending months */}
                    <div className="flex items-center gap-3 shrink-0">
-                     <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-600 text-[11px] font-bold border border-amber-100">
+                     <span className="px-3 py-1 rounded-full bg-slate-900 text-white text-[11px] font-bold">
                      {formatMoney(valorEmAtrasoTopo * pendencias.length)} Valor em atraso
                      </span>
-                     <span className="text-sm text-slate-400 font-medium hidden sm:block whitespace-nowrap">
+                     <span className="text-sm text-slate-500 font-medium hidden sm:block whitespace-nowrap">
                        {formatMoney(colaborador.salarioBase)}
                      </span>
                      <span className={`material-symbols-outlined text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
@@ -552,12 +552,12 @@ const ProcessamentoAtraso: React.FC = () => {
                           type="checkbox"
                           checked={allSelected}
                           onChange={() => toggleTodos(colaborador.id, pendencias)}
-                          className="rounded border-slate-300 text-primary focus:ring-primary"
+                          className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
                         />
                         <span className="text-xs font-medium text-slate-600">Seleccionar todos os meses</span>
                       </label>
                       {numSelected > 0 && (
-                        <span className="text-xs text-primary font-semibold">
+                        <span className="text-xs text-slate-900 font-semibold">
                           {numSelected} {numSelected === 1 ? 'mês seleccionado' : 'meses seleccionados'}
                         </span>
                       )}
@@ -571,17 +571,17 @@ const ProcessamentoAtraso: React.FC = () => {
                         return (
                           <label
                             key={key}
-                            className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer select-none transition-all ${checked ? 'bg-primary/5 border-primary/30' : 'bg-white border-slate-100 hover:border-slate-200'}`}
+                            className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer select-none transition-all ${checked ? 'bg-slate-900 text-white border-slate-900' : 'bg-white border-slate-200 hover:border-slate-300'}`}
                           >
                             <input
                               type="checkbox"
                               checked={checked}
                               onChange={() => toggleMes(colaborador.id, p.mes, p.ano)}
-                              className="rounded border-slate-300 text-primary focus:ring-primary"
+                              className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
                             />
                             <div>
-                              <p className="text-xs font-semibold text-slate-700">{numToMonth(p.mes)}</p>
-                              <p className="text-[10px] text-slate-400">{p.ano}</p>
+                              <p className={`text-xs font-semibold ${checked ? 'text-white' : 'text-slate-700'}`}>{numToMonth(p.mes)}</p>
+                              <p className={`text-[10px] ${checked ? 'text-slate-200' : 'text-slate-400'}`}>{p.ano}</p>
                             </div>
                           </label>
                         );
@@ -596,7 +596,7 @@ const ProcessamentoAtraso: React.FC = () => {
                         className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
                           numSelected === 0 || processando
                             ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                            : 'bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20'
+                            : 'bg-slate-900 text-white hover:bg-slate-800'
                         }`}
                       >
                         {processando ? (
