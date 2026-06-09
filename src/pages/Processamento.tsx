@@ -488,11 +488,11 @@ const Processamento: React.FC = () => {
     cloned.style.position = 'absolute';
     cloned.style.left = '-9999px';
     cloned.style.top = '0';
-   cloned.style.width = '190mm';
-cloned.style.minHeight = '270mm';
-cloned.style.padding = '6mm';
-cloned.style.overflow = 'visible';
-cloned.style.maxWidth = '190mm';;
+cloned.style.width = '190mm';
+    cloned.style.minHeight = '270mm';
+    cloned.style.padding = '4mm';
+    cloned.style.overflow = 'hidden';
+    cloned.style.maxWidth = '190mm';;
     document.body.appendChild(cloned);
     html2pdf().from(cloned).set({
       margin: 0,
@@ -572,7 +572,6 @@ cloned.style.maxWidth = '190mm';;
       ...receiptSnapshot.outrosGanhos.map((ganho) => ({ label: ganho.descricao, valorRemun: ganho.valor, valorDesc: 0, qtd: '1' })),
       { label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: receiptSnapshot.valorINSS > 0 ? '3%' : '0%' },
       { label: receiptSnapshot.colaborador.tipoContrato === 'Prestador' ? 'IRT Grupo B/C (Independente)' : 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: receiptSnapshot.percentualIRT ? (receiptSnapshot.percentualIRT % 1 === 0 ? `${receiptSnapshot.percentualIRT}%` : `${receiptSnapshot.percentualIRT.toFixed(1)}%`) : '-' },
-      { label: 'Matéria Colectável', valorRemun: 0, valorDesc: 0, qtd: formatMoney(materiaColetavelExibida) },
       ...(receiptSnapshot.faltas > 0 ? [{ label: 'Faltas', valorRemun: 0, valorDesc: receiptSnapshot.faltas, qtd: receiptSnapshot.faltasDias ? `${receiptSnapshot.faltasDias} dias` : '-' }] : []),
     ];
 
@@ -580,149 +579,117 @@ cloned.style.maxWidth = '190mm';;
       <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[110] p-4 backdrop-blur-sm">
         <div className="bg-white rounded-[40px] max-w-[220mm] w-full max-h-[95vh] overflow-hidden shadow-2xl relative flex flex-col">
           <div className="flex-1 overflow-x-auto overflow-y-auto p-4 sm:p-8 bg-slate-100">
-            <div id="recibo-para-impressao"
-  style={{
-    width: '190mm',
-    minHeight: '270mm',
-    backgroundColor: '#fff',
-    margin: '0 auto',
-    padding: '6mm',
-    boxSizing: 'border-box',
-    display: 'flex',
-    flexDirection: 'column',
-    fontFamily: 'Arial, sans-serif',
-    color: '#000',
-    fontSize: '9px',
-    lineHeight: '1.2',
-    maxWidth: '100%',
-    pageBreakInside: 'avoid',
-    breakInside: 'avoid'
-  }}
+<div id="recibo-para-impressao"
+   style={{
+     width: '190mm',
+     minHeight: '270mm',
+     maxHeight: '270mm',
+     backgroundColor: '#fff',
+     margin: '0 auto',
+     padding: '4mm',
+     boxSizing: 'border-box',
+     display: 'flex',
+     flexDirection: 'column',
+     fontFamily: 'Arial, sans-serif',
+     color: '#000',
+     fontSize: '8px',
+     lineHeight: '1.2',
+     maxWidth: '100%',
+     pageBreakInside: 'avoid',
+     breakInside: 'avoid',
+     overflow: 'hidden'
+   }}
 >
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3mm', borderBottom: '1.5px solid #000', paddingBottom: '4mm' }}>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '5mm' }}>
-                  {empresa?.logoUrl && <img src={`${API_BASE_URL}${empresa.logoUrl}`} alt="Logotipo" style={{ width: '16mm', height: '16mm', objectFit: 'contain', borderRadius: '3px', backgroundColor: '#f8fafc', padding: '1px' }} />}
-                  <div>
-                    <h2 style={{ fontSize: '16px', fontWeight: '900', margin: '0 0 3px 0' }}>{empresa?.nome}</h2>
-                    <p style={{ fontSize: '9px', margin: '1px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
-                    <p style={{ fontSize: '9px', margin: '1px 0', color: '#333' }}>{empresa?.endereco}, {empresa?.municipio}</p>
-                    <p style={{ fontSize: '9px', margin: '1px 0', color: '#333' }}>{empresa?.email} | {empresa?.telefone}</p>
+<div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2mm', borderBottom: '1px solid #000', paddingBottom: '2mm' }}>
+                 <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '3mm' }}>
+                   {empresa?.logoUrl && <img src={`${API_BASE_URL}${empresa.logoUrl}`} alt="Logotipo" style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }} />}
+                   <div>
+                     <h2 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 2px 0' }}>{empresa?.nome}</h2>
+                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
+                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>{empresa?.endereco}, {empresa?.municipio}</p>
+                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>{empresa?.email} | {empresa?.telefone}</p>
+                   </div>
+                 </div>
+                 <div style={{ flex: 1, textAlign: 'right' }}>
+                   <h1 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 4px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
+                   <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '8px', background: '#f1f5f9', padding: '1mm 2mm', borderRadius: '2px' }}>
+                     <p style={{ margin: '0 0 1px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {receiptSnapshot.mes} / {receiptSnapshot.ano}</p>
+                     <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Data:</span> {receiptSnapshot.dataProcessamento}</p>
+                   </div>
+                 </div>
+               </div>
+
+<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3mm', marginBottom: '2mm', padding: '1.5mm', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
+                 <div style={{ fontSize: '8px', lineHeight: '1.5' }}>
+                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Nome:</span> <span>{receiptSnapshot.colaborador.nome}</span></div>
+                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Nº Mec.:</span> <span>{(receiptSnapshot.colaborador as any).numeroColaborador || '---'}</span></div>
+                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Categoria:</span> <span>{receiptSnapshot.colaborador.cargo}</span></div>
+                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Contribuinte:</span> <span>{receiptSnapshot.colaborador.nif}</span></div>
+                 </div>
+                 <div style={{ fontSize: '8px', lineHeight: '1.5' }}>
+                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Vencimento:</span> <span>{formatMoney(receiptSnapshot.salarioBase)}</span></div>
+                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Venc./Hora:</span> <span>{formatMoney(valorHora)}</span></div>
+                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Dias Úteis:</span> <span>{receiptSnapshot.diasTrabalhados}</span></div>
+                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Departamento:</span> <span>{(receiptSnapshot.colaborador as any).departamento || '---'}</span></div>
+                 </div>
+               </div>
+
+<table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', marginBottom: '2mm' }}>
+                 <thead>
+                   <tr style={{ borderTop: '1px solid #000', borderBottom: '1px solid #000', textAlign: 'left', backgroundColor: '#f8fafc' }}>
+                     <th style={{ padding: '1.5mm 1mm' }}>Descrição</th>
+                     <th style={{ padding: '1.5mm 1mm', width: '16mm', textAlign: 'center' }}>Qtd.</th>
+                     <th style={{ padding: '1.5mm 1mm', width: '32mm', textAlign: 'right' }}>Remun.</th>
+                     <th style={{ padding: '1.5mm 1mm', width: '32mm', textAlign: 'right' }}>Desc.</th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                   {receiptLines.map((line, idx) => (
+                     <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                       <td style={{ padding: '1.5mm 1mm', fontWeight: '500' }}>{line.label}</td>
+                       <td style={{ padding: '1.5mm 1mm', textAlign: 'center', color: '#64748b' }}>{line.qtd}</td>
+                       <td style={{ padding: '1.5mm 1mm', textAlign: 'right' }}>{line.valorRemun > 0 ? formatMoney(line.valorRemun) : ''}</td>
+                       <td style={{ padding: '1.5mm 1mm', textAlign: 'right', color: line.valorDesc > 0 ? '#e11d48' : '#000' }}>{line.valorDesc > 0 ? formatMoney(line.valorDesc) : ''}</td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+
+<div style={{ flex: '1 1 auto', minHeight: '3mm' }}></div>
+
+                <div style={{ borderTop: '1px solid #000', paddingTop: '2mm' }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6mm', marginBottom: '2mm' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ fontSize: '8px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Remun.</p>
+                      <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0 }}>{formatMoney(totalBrutoExibido)}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ fontSize: '8px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Desc.</p>
+                      <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0, color: '#e11d48' }}>{formatMoney(totalDescontosExibido)}</p>
+                    </div>
+                  </div>
+                  <div style={{ background: '#000', color: '#fff', padding: '2mm 4mm', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '0.05em' }}>VALOR LÍQUIDO (KZ)</span>
+                    <span style={{ fontSize: '16px', fontWeight: '900' }}>{formatMoney(salarioLiquidoExibido)}</span>
                   </div>
                 </div>
-                <div style={{ flex: 1, textAlign: 'right' }}>
-                  <h1 style={{ fontSize: '14px', fontWeight: '900', margin: '0 0 6px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
-                  <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '9px', background: '#f1f5f9', padding: '1.5mm 3mm', borderRadius: '3px' }}>
-                    <p style={{ margin: '0 0 1px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {receiptSnapshot.mes} / {receiptSnapshot.ano}</p>
-                    <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Data:</span> {receiptSnapshot.dataProcessamento}</p>
+
+                {/* Footer / Dados Bancários — compacto */}
+                <div style={{ marginTop: '2mm', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '4mm' }}>
+                  <div style={{ fontSize: '8px', background: '#f8fafc', padding: '1mm', borderRadius: '4px' }}>
+                    <p style={{ margin: 0, fontWeight: 'bold' }}>Banco: {(receiptSnapshot.colaborador as any).banco || '---'} | IBAN: {(receiptSnapshot.colaborador as any).iban || '---'}</p>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ borderBottom: '1px solid #000', height: '8mm', marginBottom: '1mm' }}></div>
+                    <p style={{ fontSize: '8px', fontWeight: 'bold', margin: 0 }}>Assinatura</p>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5mm', marginBottom: '3mm', padding: '2mm', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-                <div style={{ fontSize: '9px', lineHeight: '1.6' }}>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Nome:</span> <span>{receiptSnapshot.colaborador.nome}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Nº Mec.:</span> <span>{(receiptSnapshot.colaborador as any).numeroColaborador || '---'}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Categoria:</span> <span>{receiptSnapshot.colaborador.cargo}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Contribuinte:</span> <span>{receiptSnapshot.colaborador.nif}</span></div>
+                <div style={{ marginTop: '2mm', textAlign: 'center', fontSize: '7px', color: '#94a3b8', fontWeight: 'bold' }}>
+                  Processado por SALYA
                 </div>
-                <div style={{ fontSize: '9px', lineHeight: '1.6' }}>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Vencimento:</span> <span>{formatMoney(receiptSnapshot.salarioBase)}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Venc./Hora:</span> <span>{formatMoney(valorHora)}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Dias Úteis:</span> <span>{receiptSnapshot.diasTrabalhados}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Departamento:</span> <span>{(receiptSnapshot.colaborador as any).departamento || '---'}</span></div>
-                </div>
-              </div>
-
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', marginBottom: '5mm' }}>
-                <thead>
-                  <tr style={{ borderTop: '1.5px solid #000', borderBottom: '1px solid #000', textAlign: 'left', backgroundColor: '#f8fafc' }}>
-                    <th style={{ padding: '2.5mm 1.5mm' }}>Descrição</th>
-                    <th style={{ padding: '2.5mm 1.5mm', width: '18mm', textAlign: 'center' }}>Qtd.</th>
-                    <th style={{ padding: '2.5mm 1.5mm', width: '38mm', textAlign: 'right' }}>Remunerações</th>
-                    <th style={{ padding: '2.5mm 1.5mm', width: '38mm', textAlign: 'right' }}>Descontos</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {receiptLines.map((line, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '2.5mm 1.5mm', fontWeight: '500' }}>{line.label}</td>
-                      <td style={{ padding: '2.5mm 1.5mm', textAlign: 'center', color: '#64748b' }}>{line.qtd}</td>
-                      <td style={{ padding: '2.5mm 1.5mm', textAlign: 'right' }}>{line.valorRemun > 0 ? formatMoney(line.valorRemun) : ''}</td>
-                      <td style={{ padding: '2.5mm 1.5mm', textAlign: 'right', color: line.valorDesc > 0 ? '#e11d48' : '#000' }}>{line.valorDesc > 0 ? formatMoney(line.valorDesc) : ''}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <div style={{ flex: '1 1 auto', minHeight: '6mm' }}></div>
-
-              <div style={{ borderTop: '1.5px solid #000', paddingTop: '3mm' }}>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10mm', marginBottom: '3mm' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '9px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Remunerações</p>
-                    <p style={{ fontSize: '13px', fontWeight: 'bold', margin: 0 }}>{formatMoney(totalBrutoExibido)}</p>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '9px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Descontos</p>
-                    <p style={{ fontSize: '13px', fontWeight: 'bold', margin: 0, color: '#e11d48' }}>{formatMoney(totalDescontosExibido)}</p>
-                  </div>
-                </div>
-                <div style={{ background: '#000', color: '#fff', padding: '4mm 6mm', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '900', letterSpacing: '0.05em' }}>VALOR LÍQUIDO (KZ)</span>
-                  <span style={{ fontSize: '20px', fontWeight: '900' }}>{formatMoney(salarioLiquidoExibido)}</span>
-                </div>
-              </div>
-
-              <div style={{ marginTop: '5mm', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8mm' }}>
-                <div
-  style={{
-    fontSize: '8px',
-    background: '#f8fafc',
-    padding: '2mm',
-    borderRadius: '4px',
-    lineHeight: '1.1'
-  }}
->
-  <p
-    style={{
-      fontWeight: 'bold',
-      margin: '0 0 1px 0',
-      color: '#333',
-      fontSize: '8px'
-    }}
-  >
-    DADOS BANCÁRIOS
-  </p>
-
-  <p style={{ margin: 0 }}>
-    Banco: {(receiptSnapshot.colaborador as any).banco || '---'}
-  </p>
-
-  <p style={{ margin: 0 }}>
-    IBAN: {(receiptSnapshot.colaborador as any).iban || '---'}
-  </p>
-
-  <p
-    style={{
-      margin: '1px 0 0 0',
-      color: '#64748b',
-      fontSize: '7px'
-    }}
-  >
-    Este documento serve como comprovante de pagamento.
-  </p>
-</div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ borderBottom: '1px solid #000', height: '12mm', marginBottom: '1.5mm' }}></div>
-                  <p style={{ fontSize: '9px', fontWeight: 'bold', margin: 0 }}>Assinatura e Carimbo</p>
-                </div>
-              </div>
-
-              <div style={{ marginTop: '4mm', textAlign: 'center', fontSize: '8px', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '3mm', fontWeight: 'bold' }}>
-                Processado por SALYA, Sistema de Recibo Salarial
               </div>
             </div>
-          </div>
           <div className="p-6 border-t flex gap-4 no-print bg-white">
             <button onClick={handleGuardarPDF} className="flex-[2] py-4 bg-primary text-white rounded-2xl font-bold px-8 shadow-lg hover:shadow-primary/20 transition-all flex items-center justify-center gap-2">
               <span className="material-symbols-outlined">download</span> Exportar Recibo (PDF)
