@@ -258,7 +258,7 @@ const ProcessamentoAtraso: React.FC = () => {
       await carregarPendencias();
 
       // Show receipts
-      setRecibos(novosRecibos);
+      setRecibos(prev => [...prev, ...novosRecibos]);
       setReciboIndex(0);
       setShowReciboModal(true);
     } catch (error: any) {
@@ -276,13 +276,17 @@ const ProcessamentoAtraso: React.FC = () => {
     if (!snap) return;
 
     try {
-      html2pdf().from(element).set({
+      await html2pdf().from(element).set({
         margin: 0,
         filename: `Recibo_${snap.colaborador.nome.replace(/ /g, '_')}_${snap.mes}_${snap.ano}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 3 },
+        image: { type: 'jpeg', quality: 0.95 },
+       html2canvas: {
+  scale: 1.4,
+  useCORS: true,
+  logging: false
+},
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-       }).save();
+      }).save();
 
       if (snap.historicoId) {
         api.post(`/processamentos/${snap.historicoId}/recibo`, { html: element.innerHTML }).catch(() => {});
@@ -291,7 +295,6 @@ const ProcessamentoAtraso: React.FC = () => {
       console.error('Erro ao exportar PDF:', e);
     }
   };
-
 
   // ── Render: Receipt Modal ────────────────────────────────────────────────────
   const renderReciboModal = () => {
@@ -341,118 +344,156 @@ const ProcessamentoAtraso: React.FC = () => {
           <div className="flex-1 overflow-x-auto overflow-y-auto p-4 sm:p-8 bg-slate-100">
             <div
               id="recibo-atraso-impressao"
-              style={{
-                width: '210mm',
-                minHeight: '297mm',
-                backgroundColor: '#fff',
-                margin: '0 auto',
-                padding: '15mm',
-                boxSizing: 'border-box',
-                display: 'flex',
-                flexDirection: 'column',
-                fontFamily: 'Arial, sans-serif',
-                color: '#000',
-                maxWidth: '100%',
-              }}
+style={{
+  width: '190mm',
+  minHeight: '270mm',
+  backgroundColor: '#fff',
+  margin: '0 auto',
+  padding: '6mm',
+  boxSizing: 'border-box',
+  display: 'flex',
+  flexDirection: 'column',
+  fontFamily: 'Arial, sans-serif',
+  color: '#000',
+  fontSize: '9px',
+  lineHeight: '1.2',
+  maxWidth: '100%',
+  pageBreakInside: 'avoid',
+  breakInside: 'avoid',
+}}
             >
               {/* Company header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10mm', borderBottom: '2px solid #000', paddingBottom: '5mm' }}>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '6mm' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3mm', borderBottom: '1.5px solid #000', paddingBottom: '4mm' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '5mm' }}>
                   {empresa?.logoUrl && (
                     <img
                       src={`${API_BASE_URL}${empresa.logoUrl}`}
                       alt="Logotipo"
-                      style={{ width: '18mm', height: '18mm', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#f8fafc', padding: '2px' }}
+                      style={{ width: '16mm', height: '16mm', objectFit: 'contain', borderRadius: '3px', backgroundColor: '#f8fafc', padding: '1px' }}
                     />
                   )}
                   <div>
-                    <h2 style={{ fontSize: '18px', fontWeight: '900', margin: '0 0 4px 0' }}>{empresa?.nome}</h2>
-                    <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
-                    <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>{empresa?.endereco}, {empresa?.municipio}</p>
-                    <p style={{ fontSize: '10px', margin: '2px 0', color: '#333' }}>{empresa?.email} | {empresa?.telefone}</p>
+                    <h2 style={{ fontSize: '16px', fontWeight: '900', margin: '0 0 3px 0' }}>{empresa?.nome}</h2>
+                    <p style={{ fontSize: '9px', margin: '1px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
+                    <p style={{ fontSize: '9px', margin: '1px 0', color: '#333' }}>{empresa?.endereco}, {empresa?.municipio}</p>
+                    <p style={{ fontSize: '9px', margin: '1px 0', color: '#333' }}>{empresa?.email} | {empresa?.telefone}</p>
                   </div>
                 </div>
                 <div style={{ flex: 1, textAlign: 'right' }}>
-                  <h1 style={{ fontSize: '16px', fontWeight: '900', margin: '0 0 8px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
-                  <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '10px', background: '#f1f5f9', padding: '2mm 4mm', borderRadius: '4px' }}>
-                    <p style={{ margin: '0 0 2px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {snap.mes} / {snap.ano}</p>
+                  <h1 style={{ fontSize: '14px', fontWeight: '900', margin: '0 0 6px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
+                  <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '9px', background: '#f1f5f9', padding: '1.5mm 3mm', borderRadius: '3px' }}>
+                    <p style={{ margin: '0 0 1px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {snap.mes} / {snap.ano}</p>
                     <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Data:</span> {snap.dataProcessamento}</p>
                   </div>
                 </div>
               </div>
 
               {/* Employee info */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8mm', marginBottom: '8mm', padding: '4mm', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                <div style={{ fontSize: '10px', lineHeight: '1.8' }}>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Nome:</span> <span>{snap.colaborador.nome}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Nº Mec.:</span> <span>{(snap.colaborador as any).numeroColaborador || '---'}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Categoria:</span> <span>{snap.colaborador.cargo}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Contribuinte:</span> <span>{snap.colaborador.nif}</span></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4mm', marginBottom: '3mm', padding: '2mm', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                <div style={{ fontSize: '9px', lineHeight: '1.6' }}>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Nome:</span> <span>{snap.colaborador.nome}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Nº Mec.:</span> <span>{(snap.colaborador as any).numeroColaborador || '---'}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Categoria:</span> <span>{snap.colaborador.cargo}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Contribuinte:</span> <span>{snap.colaborador.nif}</span></div>
                 </div>
-                <div style={{ fontSize: '10px', lineHeight: '1.8' }}>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Vencimento:</span> <span>{formatMoney(snap.salarioBase)}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Venc./Hora:</span> <span>{formatMoney(valorHora)}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Dias Úteis:</span> <span>{snap.diasTrabalhados}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Departamento:</span> <span>{(snap.colaborador as any).departamento || '---'}</span></div>
+                <div style={{ fontSize: '9px', lineHeight: '1.6' }}>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Vencimento:</span> <span>{formatMoney(snap.salarioBase)}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Venc./Hora:</span> <span>{formatMoney(valorHora)}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Dias Úteis:</span> <span>{snap.diasTrabalhados}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '28mm' }}>Departamento:</span> <span>{(snap.colaborador as any).departamento || '---'}</span></div>
                 </div>
               </div>
 
               {/* Main table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginBottom: '10mm' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', marginBottom: '5mm' }}>
                 <thead>
-                  <tr style={{ borderTop: '2px solid #000', borderBottom: '1.5px solid #000', textAlign: 'left', backgroundColor: '#f8fafc' }}>
-                    <th style={{ padding: '3mm 2mm' }}>Descrição</th>
-                    <th style={{ padding: '3mm 2mm', width: '20mm', textAlign: 'center' }}>Qtd.</th>
-                    <th style={{ padding: '3mm 2mm', width: '40mm', textAlign: 'right' }}>Remunerações</th>
-                    <th style={{ padding: '3mm 2mm', width: '40mm', textAlign: 'right' }}>Descontos</th>
+                  <tr style={{ borderTop: '1.5px solid #000', borderBottom: '1px solid #000', textAlign: 'left', backgroundColor: '#f8fafc' }}>
+                    <th style={{ padding: '2.5mm 1.5mm' }}>Descrição</th>
+                    <th style={{ padding: '2.5mm 1.5mm', width: '18mm', textAlign: 'center' }}>Qtd.</th>
+                    <th style={{ padding: '2.5mm 1.5mm', width: '38mm', textAlign: 'right' }}>Remunerações</th>
+                    <th style={{ padding: '2.5mm 1.5mm', width: '38mm', textAlign: 'right' }}>Descontos</th>
                   </tr>
                 </thead>
                 <tbody>
                   {linhas.map((linha, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '3mm 2mm', fontWeight: '500' }}>{linha.label}</td>
-                      <td style={{ padding: '3mm 2mm', textAlign: 'center', color: '#64748b' }}>{linha.qtd}</td>
-                      <td style={{ padding: '3mm 2mm', textAlign: 'right' }}>{linha.valorRemun > 0 ? formatMoney(linha.valorRemun) : ''}</td>
-                      <td style={{ padding: '3mm 2mm', textAlign: 'right', color: linha.valorDesc > 0 ? '#e11d48' : '#000' }}>{linha.valorDesc > 0 ? formatMoney(linha.valorDesc) : ''}</td>
+                      <td style={{ padding: '2.5mm 1.5mm', fontWeight: '500' }}>{linha.label}</td>
+                      <td style={{ padding: '2.5mm 1.5mm', textAlign: 'center', color: '#64748b' }}>{linha.qtd}</td>
+                      <td style={{ padding: '2.5mm 1.5mm', textAlign: 'right' }}>{linha.valorRemun > 0 ? formatMoney(linha.valorRemun) : ''}</td>
+                      <td style={{ padding: '2.5mm 1.5mm', textAlign: 'right', color: linha.valorDesc > 0 ? '#e11d48' : '#000' }}>{linha.valorDesc > 0 ? formatMoney(linha.valorDesc) : ''}</td>
                     </tr>
                   ))}
-                  <tr style={{ height: '20mm' }}><td colSpan={4}></td></tr>
                 </tbody>
               </table>
 
+              {/* Spacer flexível para empurrar totais para o rodapé */}
+              <div style={{ flex: '1 1 auto', minHeight: '8mm' }}></div>
+
               {/* Totals */}
-              <div style={{ marginTop: 'auto', borderTop: '2px solid #000', paddingTop: '4mm' }}>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15mm', marginBottom: '4mm' }}>
+              <div style={{ borderTop: '1.5px solid #000', paddingTop: '3mm' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10mm', marginBottom: '3mm' }}>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Total Remunerações</p>
-                    <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{formatMoney(snap.totalBruto)}</p>
+                    <p style={{ fontSize: '9px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Remunerações</p>
+                    <p style={{ fontSize: '13px', fontWeight: 'bold', margin: 0 }}>{formatMoney(snap.totalBruto)}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Total Descontos</p>
-                    <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0, color: '#e11d48' }}>{formatMoney(snap.totalDescontos)}</p>
+                    <p style={{ fontSize: '9px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Descontos</p>
+                    <p style={{ fontSize: '13px', fontWeight: 'bold', margin: 0, color: '#e11d48' }}>{formatMoney(snap.totalDescontos)}</p>
                   </div>
                 </div>
-                <div style={{ background: '#000', color: '#fff', padding: '5mm 8mm', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', fontWeight: '900', letterSpacing: '0.1em' }}>VALOR LÍQUIDO A RECEBER (KZ)</span>
-                  <span style={{ fontSize: '24px', fontWeight: '900' }}>{formatMoney(snap.salarioLiquido)}</span>
+                <div style={{ background: '#000', color: '#fff', padding: '4mm 6mm', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '900', letterSpacing: '0.05em' }}>VALOR LÍQUIDO (KZ)</span>
+                  <span style={{ fontSize: '20px', fontWeight: '900' }}>{formatMoney(snap.salarioLiquido)}</span>
                 </div>
               </div>
 
-              {/* Footer */}
-              <div style={{ marginTop: '15mm', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '15mm' }}>
-                <div style={{ fontSize: '10px' }}>
-                  <p style={{ fontWeight: 'bold', margin: '0 0 4px 0', color: '#333' }}>NOTAS / COORDENADAS BANCÁRIAS:</p>
-                  <p style={{ margin: '2px 0', color: '#64748b' }}>Banco: {(snap.colaborador as any).banco || '---'}</p>
-                  <p style={{ margin: '2px 0', color: '#64748b' }}>IBAN: {(snap.colaborador as any).iban || '---'}</p>
-                  <p style={{ margin: '8px 0 0 0', fontStyle: 'italic', color: '#94a3b8' }}>Este documento serve como comprovativo de pagamento de vencimento.</p>
-                </div>
+              {/* Footer / Notas Bancárias — compacto */}
+              <div style={{ marginTop: '5mm', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8mm' }}>
+                <div
+  style={{
+    fontSize: '8px',
+    background: '#f8fafc',
+    padding: '2mm',
+    borderRadius: '4px',
+    lineHeight: '1.1'
+  }}
+>
+  <p
+    style={{
+      fontWeight: 'bold',
+      margin: '0 0 1px 0',
+      color: '#333',
+      fontSize: '8px'
+    }}
+  >
+    DADOS BANCÁRIOS
+  </p>
+
+  <p style={{ margin: 0 }}>
+    Banco: {(snap.colaborador as any).banco || '---'}
+  </p>
+
+  <p style={{ margin: 0 }}>
+    IBAN: {(snap.colaborador as any).iban || '---'}
+  </p>
+
+  <p
+    style={{
+      margin: '1px 0 0 0',
+      color: '#64748b',
+      fontSize: '7px'
+    }}
+  >
+    Este documento serve como comprovante de pagamento.
+  </p>
+</div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ borderBottom: '1px solid #000', height: '15mm', marginBottom: '2mm' }}></div>
-                  <p style={{ fontSize: '10px', fontWeight: 'bold', margin: 0 }}>Assinatura e Carimbo</p>
+                  <div style={{ borderBottom: '1px solid #000', height: '12mm', marginBottom: '1.5mm' }}></div>
+                  <p style={{ fontSize: '9px', fontWeight: 'bold', margin: 0 }}>Assinatura e Carimbo</p>
                 </div>
               </div>
 
-              <div style={{ marginTop: '10mm', textAlign: 'center', fontSize: '9px', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '4mm', fontWeight: 'bold' }}>
+              <div style={{ marginTop: '4mm', textAlign: 'center', fontSize: '8px', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '3mm', fontWeight: 'bold' }}>
                 Processado por SALYA, Sistema de Recibo Salarial
               </div>
             </div>
@@ -504,7 +545,6 @@ const ProcessamentoAtraso: React.FC = () => {
              const numSelected = countSelected(colaborador.id);
              const allSelected = numSelected === pendencias.length;
              const valorEmAtrasoTopo = (colaborador.salarioBase ?? 0) + (colaborador.subsidioAlimentacao ?? 0) + (colaborador.subsidioTransporte ?? 0);
-
 
              return (
                <div

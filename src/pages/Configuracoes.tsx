@@ -1330,12 +1330,11 @@ const Configurações: React.FC = () => {
                         <div className={`size-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:rotate-12 ${
                            user?.planType === p.type || p.type === 'ANUAL' ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                         }`}>
-                          <span className="material-symbols-outlined text-2xl">
-                            {p.type === 'DEMO' ? 'rocket_launch' : 
-                             p.type === 'SEMESTRAL' ? 'person' : 
-                             p.type === 'ANUAL' ? 'groups' : 
-                             'corporate_fare'}
-                          </span>
+<span className="material-symbols-outlined text-2xl">
+              {p.type === 'DEMO' ? 'rocket_launch' : 
+               p.type === 'SEMESTRAL' ? 'person' : 
+               'groups'}
+            </span>
                         </div>
                         <h5 className="font-black text-lg uppercase tracking-tight text-slate-800 dark:text-white mb-1">{p.name}</h5>
                         <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">{p.category}</p>
