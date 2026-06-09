@@ -295,7 +295,7 @@ const Login: React.FC = () => {
       <div className="relative flex h-auto w-full max-w-[1000px] flex-col md:flex-row bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800">
         
         {/* Left Side - Branding */}
-        <div className="hidden md:flex md:w-[45%] bg-primary flex-col justify-center items-center p-12 text-white relative">
+        <div className="hidden md:flex md:w-[45%] bg-[#8e34eb] flex-col justify-center items-center p-12 text-white relative">
           <div className="relative z-10 flex flex-col items-center">
              <div className="flex flex-col items-center">
                 <img
