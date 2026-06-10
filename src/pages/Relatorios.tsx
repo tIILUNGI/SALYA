@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { Download, AlertCircle, FileText } from 'lucide-react';
 
-import { api } from '../services/api';
+import { api, API_BASE_URL } from '../services/api';
 import { AppContext } from '../App';
 
 const Relatórios: React.FC = () => {
@@ -49,9 +49,8 @@ const Relatórios: React.FC = () => {
     setMessage('');
     try {
       const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
-      const baseUrl = (api as any).API_BASE_URL || 'http://localhost:8082/api';
       
-      const response = await fetch(`${baseUrl}/reports/entity/${entityId}`, {
+      const response = await fetch(`${API_BASE_URL}/reports/entity/${entityId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

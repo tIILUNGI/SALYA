@@ -70,7 +70,7 @@ const formatDateDisplay = (value?: string | null) => {
 };
 
 const Colaboradores: React.FC = () => {
-  const { colaboradores, setColaboradores, totalColaboradores, empresaId, setMessage } = useContext(AppContext);
+  const { colaboradores, setColaboradores, totalColaboradores, empresaId, setMessage, refreshData } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<FilterStatus>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -286,6 +286,7 @@ const Colaboradores: React.FC = () => {
       }
 
       refreshColaboradores();
+      refreshData();
       handleCloseModal();
     } catch {
     }
@@ -310,6 +311,7 @@ const Colaboradores: React.FC = () => {
           await api.delete(`/trabalhadores/${id}?empresaId=${empresaId}`);
           Swal.fire({ title: 'Removido', text: 'Colaborador removido com sucesso!', icon: 'success', confirmButtonColor: '#22c55e' });
           refreshColaboradores();
+          refreshData();
         } catch {
         }
       }

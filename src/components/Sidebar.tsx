@@ -71,6 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
     { id: 'colaboradores', label: 'Colaboradores', icon: 'group' },
     { id: 'processamento', label: 'Processamento', icon: 'account_balance_wallet' },
     { id: 'processamento-atraso', label: 'Salários em Atraso', icon: 'history' },
+    { id: 'relatorios', label: 'Relatórios', icon: 'assessment' },
     { id: 'configuracoes', label: 'Configurações', icon: 'settings' },
   ];
 

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 import { AppContext } from '../App';
+import { API_BASE_URL } from '../services/api';
 import { api } from '../services/api';
 import { countries } from '../data/countries';
 import { PLAN_LIMITS, PlanType } from '../types';
@@ -708,7 +709,7 @@ const Configurações: React.FC = () => {
                   <div className="flex flex-col items-center gap-4">
                     <div className="w-32 h-32 rounded-full border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-800">
                       {(logoPreview || config.logoUrl) ? (
-                        <img src={logoPreview || config.logoUrl} alt="Logotipo" className="w-full h-full object-cover" />
+                        <img src={logoPreview || (config.logoUrl?.startsWith('http') ? config.logoUrl : `${API_BASE_URL}${config.logoUrl}`)} alt="Logotipo" className="w-full h-full object-cover" />
                       ) : (
                         <span className="material-symbols-outlined text-4xl text-slate-300">image</span>
                       )}

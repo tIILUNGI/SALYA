@@ -74,7 +74,14 @@ interface ReceiptSnapshot {
 
 const MONTHS = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-const monthToNum = (month: string) => MONTHS.indexOf(month) + 1;
+const monthToNum = (month: string | number): number => {
+  if (typeof month === 'number') return month;
+  const str = String(month).trim();
+  const asNum = parseInt(str, 10);
+  if (!Number.isNaN(asNum)) return asNum;
+  const idx = MONTHS.indexOf(str);
+  return idx >= 0 ? idx + 1 : 0;
+};
 const numToMonth = (month: number) => MONTHS[month - 1] || `Mes ${month}`;
 const parseMoneyInput = (value: string) => Number(value.replace(/[^\d]/g, '')) || 0;
 const formatMoney = (value?: number | null) => {
@@ -509,7 +516,7 @@ const Processamento: React.FC = () => {
     
     html2pdf().from(cloned).set({
       margin: 0,
-      filename: `Recibo_${receiptSnapshot.colaborador.nome.replace(/ /g, '_')}_${receiptSnapshot.ano}${String(parseInt(receiptSnapshot.mes)).padStart(2, '0')}.pdf`,
+      filename: `Recibo_${receiptSnapshot.colaborador.nome.replace(/ /g, '_')}_${receiptSnapshot.ano}${String(monthToNum(receiptSnapshot.mes)).padStart(2, '0')}.pdf`,
       image: { type: 'jpeg', quality: 0.95 },
       html2canvas: {
         scale: 1.4,
@@ -615,7 +622,7 @@ const Processamento: React.FC = () => {
                  <div style={{ flex: 1, textAlign: 'right' }}>
                    <h1 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 4px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
                    <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '8px', background: '#f1f5f9', padding: '1mm 2mm', borderRadius: '2px' }}>
-                     <p style={{ margin: '0 0 1px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {String(parseInt(receiptSnapshot.mes)).padStart(2, '0')} / {receiptSnapshot.ano}</p>
+                      <p style={{ margin: '0 0 1px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {String(monthToNum(receiptSnapshot.mes)).padStart(2, '0')} / {receiptSnapshot.ano}</p>
                      <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Data:</span> {receiptSnapshot.dataProcessamento}</p>
                    </div>
                  </div>
