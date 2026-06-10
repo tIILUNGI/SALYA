@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { Download, AlertCircle, FileText } from 'lucide-react';
-import axios from 'axios';
 
 import { api } from '../services/api';
 import { AppContext } from '../App';
@@ -12,7 +11,6 @@ const Relatórios: React.FC = () => {
   const [chartAbsentismo, setChartAbsentismo] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [entities, setEntities] = useState<any[]>([]);
-  const [selectedEntity, setSelectedEntity] = useState<number | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -35,11 +33,8 @@ const Relatórios: React.FC = () => {
     
     const fetchEntities = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/reports/entities`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        });
-        setEntities(response.data || []);
+        const data = await api.get('/reports/entities');
+        setEntities(data || []);
       } catch (error) {
         console.error('Erro ao carregar entidades:', error);
       }
@@ -53,16 +48,22 @@ const Relatórios: React.FC = () => {
     setDownloading(true);
     setMessage('');
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/reports/entity/${entityId}`, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-        responseType: 'blob'
-      });
+      const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
+      const baseUrl = (api as any).API_BASE_URL || 'http://localhost:8082/api';
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const response = await fetch(`${baseUrl}/reports/entity/${entityId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Erro ao gerar PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Relatorio_${entityId}_${new Date().toISOString().split('T')[0]}.pdf`);
+      link.setAttribute('download', `Relatorio_Entidade_${entityId}_${new Date().toISOString().split('T')[0]}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
@@ -70,8 +71,7 @@ const Relatórios: React.FC = () => {
       setMessage('✅ Relatório baixado com sucesso!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error: any) {
-      setMessage('❌ Erro ao baixar relatório: ' + (error.response?.data?.message || error.message));
-      console.error('Erro:', error);
+      setMessage('❌ Erro ao baixar relatório: ' + error.message);
     } finally {
       setDownloading(false);
     }

@@ -593,24 +593,13 @@ const Processamento: React.FC = () => {
         <div className="bg-white rounded-[40px] max-w-[220mm] w-full max-h-[95vh] overflow-hidden shadow-2xl relative flex flex-col">
           <div className="flex-1 overflow-x-auto overflow-y-auto p-4 sm:p-8 bg-slate-100">
 <div id="recibo-para-impressao"
+   className="bg-white mx-auto p-[8mm] shadow-none flex flex-col font-sans text-black leading-relaxed"
    style={{
      width: '190mm',
-     minHeight: '270mm',
-     maxHeight: '270mm',
-     backgroundColor: '#fff',
-     margin: '0 auto',
-     padding: '4mm',
+     minHeight: '275mm',
+     maxHeight: '280mm',
      boxSizing: 'border-box',
-     display: 'flex',
-     flexDirection: 'column',
-     fontFamily: 'Arial, sans-serif',
-     color: '#000',
-     fontSize: '8px',
-     lineHeight: '1.2',
-     maxWidth: '100%',
-     pageBreakInside: 'avoid',
-     breakInside: 'avoid',
-     overflow: 'hidden'
+     fontSize: '11px'
    }}
 >
 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2mm', borderBottom: '1px solid #000', paddingBottom: '2mm' }}>
@@ -632,41 +621,41 @@ const Processamento: React.FC = () => {
                  </div>
                </div>
 
-<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3mm', marginBottom: '2mm', padding: '1.5mm', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-                 <div style={{ fontSize: '8px', lineHeight: '1.5' }}>
-                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Nome:</span> <span>{receiptSnapshot.colaborador.nome}</span></div>
-                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Nº Mec.:</span> <span>{(receiptSnapshot.colaborador as any).numeroColaborador || '---'}</span></div>
-                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Categoria:</span> <span>{receiptSnapshot.colaborador.cargo}</span></div>
-                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Contribuinte:</span> <span>{receiptSnapshot.colaborador.nif}</span></div>
-                 </div>
-                 <div style={{ fontSize: '8px', lineHeight: '1.5' }}>
-                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Vencimento:</span> <span>{formatMoney(receiptSnapshot.salarioBase)}</span></div>
-                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Venc./Hora:</span> <span>{formatMoney(valorHora)}</span></div>
-                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Dias Úteis:</span> <span>{receiptSnapshot.diasTrabalhados}</span></div>
-                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Departamento:</span> <span>{(receiptSnapshot.colaborador as any).departamento || '---'}</span></div>
-                 </div>
-               </div>
+<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5mm', marginBottom: '5mm', padding: '5mm', border: '1.5px solid #000', borderRadius: '6px', background: '#fcfcfc' }}>
+                  <div style={{ fontSize: '13px', lineHeight: '1.6' }}>
+                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>NOME:</span> <span style={{ fontWeight: 'bold' }}>{receiptSnapshot.colaborador.nome}</span></div>
+                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Nº MEC.:</span> <span>{(receiptSnapshot.colaborador as any).numeroColaborador || '---'}</span></div>
+                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>CATEGORIA:</span> <span>{receiptSnapshot.colaborador.cargo}</span></div>
+                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>CONTRIBUINTE:</span> <span>{receiptSnapshot.colaborador.nif}</span></div>
+                  </div>
+                  <div style={{ fontSize: '13px', lineHeight: '1.6' }}>
+                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>VENCIMENTO:</span> <span>{formatMoney(receiptSnapshot.salarioBase)}</span></div>
+                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>VENC./HORA:</span> <span>{formatMoney(valorHora)}</span></div>
+                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>DIAS ÚTEIS:</span> <span>{receiptSnapshot.diasTrabalhados}</span></div>
+                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>IBAN:</span> <span style={{ fontSize: '9px' }}>{(receiptSnapshot.colaborador as any).iban || '---'}</span></div>
+                  </div>
+                </div>
 
-<table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', marginBottom: '2mm' }}>
-                 <thead>
-                   <tr style={{ borderTop: '1px solid #000', borderBottom: '1px solid #000', textAlign: 'left', backgroundColor: '#f8fafc' }}>
-                     <th style={{ padding: '1.5mm 1mm' }}>Descrição</th>
-                     <th style={{ padding: '1.5mm 1mm', width: '16mm', textAlign: 'center' }}>Qtd.</th>
-                     <th style={{ padding: '1.5mm 1mm', width: '32mm', textAlign: 'right' }}>Remun.</th>
-                     <th style={{ padding: '1.5mm 1mm', width: '32mm', textAlign: 'right' }}>Desc.</th>
-                   </tr>
-                 </thead>
-                 <tbody>
-                   {receiptLines.map((line, idx) => (
-                     <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                       <td style={{ padding: '1.5mm 1mm', fontWeight: '500' }}>{line.label}</td>
-                       <td style={{ padding: '1.5mm 1mm', textAlign: 'center', color: '#64748b' }}>{line.qtd}</td>
-                       <td style={{ padding: '1.5mm 1mm', textAlign: 'right' }}>{line.valorRemun > 0 ? formatMoney(line.valorRemun) : ''}</td>
-                       <td style={{ padding: '1.5mm 1mm', textAlign: 'right', color: line.valorDesc > 0 ? '#e11d48' : '#000' }}>{line.valorDesc > 0 ? formatMoney(line.valorDesc) : ''}</td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
+<table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '6mm' }}>
+                  <thead>
+                    <tr style={{ borderTop: '2px solid #000', borderBottom: '2px solid #000', textAlign: 'left', backgroundColor: '#fdfdfd' }}>
+                      <th style={{ padding: '3mm 2mm', fontWeight: 'bold' }}>DESCRIÇÃO</th>
+                      <th style={{ padding: '3mm 2mm', width: '20mm', textAlign: 'center', fontWeight: 'bold' }}>QTD.</th>
+                      <th style={{ padding: '3mm 2mm', width: '35mm', textAlign: 'right', fontWeight: 'bold' }}>REMUN.</th>
+                      <th style={{ padding: '3mm 2mm', width: '35mm', textAlign: 'right', fontWeight: 'bold' }}>DESC.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {receiptLines.map((line, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: '2.5mm 2mm', fontWeight: '600' }}>{line.label.toUpperCase()}</td>
+                        <td style={{ padding: '2.5mm 2mm', textAlign: 'center', color: '#333' }}>{line.qtd}</td>
+                        <td style={{ padding: '2.5mm 2mm', textAlign: 'right' }}>{line.valorRemun > 0 ? formatMoney(line.valorRemun) : ''}</td>
+                        <td style={{ padding: '2.5mm 2mm', textAlign: 'right', fontWeight: line.valorDesc > 0 ? '700' : '400', color: line.valorDesc > 0 ? '#b91c1c' : '#000' }}>{line.valorDesc > 0 ? formatMoney(line.valorDesc) : ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
 
 <div style={{ flex: '1 1 auto', minHeight: '3mm' }}></div>
 

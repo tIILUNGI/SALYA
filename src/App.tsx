@@ -47,6 +47,8 @@ interface AppContextType {
   setEmpresaId: (value: number | null) => void;
   colaboradores: Colaborador[];
   setColaboradores: (value: Colaborador[]) => void;
+  totalColaboradores: number;
+  setTotalColaboradores: (value: number) => void;
   setMessage: (msg: { title: string; text: string; type: 'success' | 'error' | 'info' | 'warning' } | null) => void;
   showConfirm: (config: { title: string; text: string; onConfirm: () => void }) => void;
   refreshData: () => Promise<void>;
@@ -71,6 +73,8 @@ export const AppContext = React.createContext<AppContextType>({
   setEmpresaId: () => {},
   colaboradores: [],
   setColaboradores: () => {},
+  totalColaboradores: 0,
+  setTotalColaboradores: () => {},
   setMessage: () => {},
   showConfirm: () => {},
   refreshData: async () => {},
@@ -89,6 +93,7 @@ function App() {
   const [empresa, setEmpresa] = useState<Empresa | null>(null);
   const [empresaId, setEmpresaId] = useState<number | null>(null);
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
+  const [totalColaboradores, setTotalColaboradores] = useState(0);
   const [effectivePlan, setEffectivePlan] = useState<{ tipo: string; status: string } | null>(null);
   
   // Track if subscription is currently blocked to prevent loop of failed requests
@@ -151,6 +156,14 @@ function App() {
       } else if (empresasList.length === 0) {
         clearCompanyState();
         return;
+      }
+
+      // Fetch total global collaborators (for limit enforcement)
+      try {
+        const totalData = await api.get('/trabalhadores/total-count');
+        setTotalColaboradores(totalData.total || 0);
+      } catch (e) {
+        console.error('Erro ao buscar total de colaboradores:', e);
       }
 
       // Só busca colaboradores se tiver uma empresa activa válida
@@ -379,6 +392,7 @@ function App() {
        isLoadingData,
        empresas, setEmpresas, empresa, setEmpresa, empresaId, setEmpresaId, 
        colaboradores, setColaboradores, 
+       totalColaboradores, setTotalColaboradores,
        setMessage: setAppMessage, showConfirm, refreshData, refreshSubscriptionStatus,
        effectivePlan
      }}>

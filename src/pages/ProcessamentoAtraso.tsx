@@ -1,4 +1,5 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
+import Swal from 'sweetalert2';
 
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
@@ -114,8 +115,24 @@ const ProcessamentoAtraso: React.FC = () => {
     if (!empresaId) return;
     setLoading(true);
     try {
+      // 1. Carregar histórico de processamentos
       const historico: any[] = await api.get(`/processamentos/historico?empresaId=${empresaId}`);
       const processados = new Set(historico.map((h: any) => `${h.colaboradorId}-${h.ano}-${h.mes}`));
+
+      // 2. Carregar anulamentos para excluir da lista de pendências
+      let anuladosSet = new Set<string>();
+      try {
+        const resAnulamentos = await api.get('/salarios/annulments');
+        if (resAnulamentos.success && Array.isArray(resAnulamentos.data)) {
+          resAnulamentos.data.forEach((ann: any) => {
+            if (ann.colaboradorId && ann.mes && ann.ano && ann.status === 'ANULADO') {
+              anuladosSet.add(`${ann.colaboradorId}-${ann.ano}-${ann.mes}`);
+            }
+          });
+        }
+      } catch (e) {
+        console.error('Erro ao carregar anulamentos:', e);
+      }
 
       const hoje = new Date();
       const mesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
@@ -133,7 +150,9 @@ const ProcessamentoAtraso: React.FC = () => {
         while (checkDate <= mesAnterior) {
           const mes = checkDate.getMonth() + 1;
           const ano = checkDate.getFullYear();
-          if (!processados.has(`${colab.id}-${ano}-${mes}`)) {
+          const key = `${colab.id}-${ano}-${mes}`;
+          
+          if (!processados.has(key) && !anuladosSet.has(key)) {
             pendencias.push({ mes, ano });
           }
           checkDate.setMonth(checkDate.getMonth() + 1);
@@ -189,8 +208,9 @@ const ProcessamentoAtraso: React.FC = () => {
     const selecionados = [...(selecoes[colabId] || [])];
     if (selecionados.length === 0) return;
 
-    const colab = grupos.find(g => g.colaborador.id === colabId)?.colaborador;
-    if (!colab) return;
+    const colabData = grupos.find(g => g.colaborador.id === colabId);
+    if (!colabData) return;
+    const colab = colabData.colaborador;
 
     const mesesParaProcessar = pendencias.filter(p => selecionados.includes(mesKey(p.mes, p.ano)));
 
@@ -263,6 +283,68 @@ const ProcessamentoAtraso: React.FC = () => {
       setShowReciboModal(true);
     } catch (error: any) {
       alert(error?.message || 'Erro ao processar salários.');
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const handleAnular = async (colabId: number) => {
+    const selecionadosKeys = [...(selecoes[colabId] || [])];
+    if (selecionadosKeys.length === 0) {
+      Swal.fire('Aviso', 'Seleccione pelo menos um mês para anular.', 'warning');
+      return;
+    }
+
+    const colab = grupos.find(g => g.colaborador.id === colabId);
+    if (!colab) return;
+
+    // Pedir justificação
+    const { value: justificacao } = await Swal.fire({
+      title: 'Justificar Anulação',
+      input: 'textarea',
+      inputLabel: 'Descreva o motivo da anulação deste atraso (mín. 20 caracteres)',
+      inputPlaceholder: 'Ex: Este salário já foi processado e pago manualmente via sistema legiado...',
+      inputAttributes: {
+        'aria-label': 'Motivo da anulação'
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Anular Atraso',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444',
+      preConfirm: (value) => {
+        if (!value || value.trim().length < 20) {
+          Swal.showValidationMessage('A justificação deve ter pelo menos 20 caracteres para fins de auditoria.');
+          return false;
+        }
+        return value;
+      }
+    });
+
+    if (!justificacao) return;
+
+    setProcessando(true);
+    try {
+      // Processar cada mês selecionado
+      for (const key of selecionadosKeys) {
+        const [ano, mes] = key.split('-').map(Number);
+        
+        await api.post(`/salarios/annul-arrear?colaboradorId=${colabId}&mes=${mes}&ano=${ano}&justificacao=${encodeURIComponent(justificacao)}`, {});
+      }
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Sucesso!',
+        text: `${selecionadosKeys.length} meses em atraso foram anulados e registados para auditoria.`,
+        timer: 3000
+      });
+
+      // Clear selection
+      setSelecoes(prev => ({ ...prev, [colabId]: new Set<string>() }));
+      
+      // Reload list
+      await carregarPendencias();
+    } catch (error: any) {
+      Swal.fire('Erro', error?.message || 'Erro ao anular salários.', 'error');
     } finally {
       setProcessando(false);
     }
@@ -584,8 +666,22 @@ return (
                       })}
                     </div>
 
-                    {/* Process button */}
-                    <div className="flex justify-end pt-2">
+                    {/* Action buttons */}
+                    <div className="flex justify-end pt-2 gap-3">
+                      <button
+                        onClick={() => handleAnular(colaborador.id)}
+                        disabled={numSelected === 0 || processando}
+                        title="Anular meses seleccionados que já foram processados fora do sistema"
+                        className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
+                          numSelected === 0 || processando
+                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                            : 'bg-white border border-red-200 text-red-600 hover:bg-red-50'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-base">block</span>
+                        Anular {numSelected > 0 ? `${numSelected} ${numSelected === 1 ? 'mês' : 'meses'}` : ''}
+                      </button>
+
                       <button
                         onClick={() => handleProcessar(colaborador.id, pendencias)}
                         disabled={numSelected === 0 || processando}
