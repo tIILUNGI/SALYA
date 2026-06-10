@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
+import { Download, AlertCircle, FileText } from 'lucide-react';
+import axios from 'axios';
 
 import { api } from '../services/api';
 import { AppContext } from '../App';
@@ -9,6 +11,10 @@ const Relatórios: React.FC = () => {
   const [chartProcessamento, setChartProcessamento] = useState<any[]>([]);
   const [chartAbsentismo, setChartAbsentismo] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [entities, setEntities] = useState<any[]>([]);
+  const [selectedEntity, setSelectedEntity] = useState<number | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     const fetchCharts = async () => {
@@ -26,8 +32,50 @@ const Relatórios: React.FC = () => {
         setLoading(false);
       }
     };
+    
+    const fetchEntities = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/reports/entities`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        setEntities(response.data || []);
+      } catch (error) {
+        console.error('Erro ao carregar entidades:', error);
+      }
+    };
+    
     fetchCharts();
+    fetchEntities();
   }, [empresaId]);
+
+  const handleDownloadReport = async (entityId: number) => {
+    setDownloading(true);
+    setMessage('');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/reports/entity/${entityId}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Relatorio_${entityId}_${new Date().toISOString().split('T')[0]}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      
+      setMessage('✅ Relatório baixado com sucesso!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error: any) {
+      setMessage('❌ Erro ao baixar relatório: ' + (error.response?.data?.message || error.message));
+      console.error('Erro:', error);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="p-4 md:p-8 w-full max-w-full space-y-6 md:space-y-10">
@@ -41,10 +89,60 @@ const Relatórios: React.FC = () => {
             <span className="material-symbols-outlined text-base">calendar_today</span>
             Últimos 12 Meses
           </button>
-          <button className="flex-1 md:flex-none px-6 py-3 bg-primary text-white rounded-2xl font-bold text-xs shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center justify-center gap-2">
-            <span className="material-symbols-outlined text-base">download</span>
-            Exportar BI
-          </button>
+        </div>
+      </div>
+
+      {/* Seção de Download de Relatórios PDF */}
+      <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-card">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <FileText className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Relatórios Completos em PDF</h3>
+          </div>
+        </div>
+
+        {message && (
+          <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${message.includes('✅') ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
+            {message}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {entities.length > 0 ? (
+            entities.map((entity: any) => (
+              <div key={entity.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div>
+                  <p className="font-semibold text-slate-900 dark:text-white">{entity.nome}</p>
+                  <p className="text-xs text-slate-500">ID: {entity.id}</p>
+                </div>
+                <button
+                  onClick={() => handleDownloadReport(entity.id)}
+                  disabled={downloading}
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center gap-2 font-medium text-sm"
+                >
+                  <Download className="w-4 h-4" />
+                  {downloading ? 'Gerando...' : 'Baixar'}
+                </button>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full p-8 text-center">
+              <p className="text-slate-500 dark:text-slate-400">Nenhuma entidade disponível</p>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex gap-3">
+          <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-800 dark:text-blue-200">
+            <p className="font-medium mb-1">O PDF contém:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Informações completas da entidade</li>
+              <li>Lista de colaboradores</li>
+              <li>Histórico de processamentos de salários</li>
+              <li>Estatísticas e totalizações</li>
+            </ul>
+          </div>
         </div>
       </div>
 

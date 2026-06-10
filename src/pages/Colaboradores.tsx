@@ -701,23 +701,59 @@ const Colaboradores: React.FC = () => {
         </div>
         <button 
           onClick={() => handleOpenModal()} 
-          className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl font-semibold shadow-soft hover:shadow-lg transition-all flex items-center justify-center gap-2"
+          disabled={colaboradores.length >= 100}
+          className="bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-semibold shadow-soft hover:shadow-lg transition-all flex items-center justify-center gap-2"
+          title={colaboradores.length >= 100 ? "Limite de 100 colaboradores atingido" : ""}
         >
           <span className="material-symbols-outlined text-lg">person_add</span>
           Adicionar Funcionário
         </button>
       </div>
 
+      {/* Alert de limite */}
+      {colaboradores.length >= 100 && (
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex gap-3 items-start">
+          <span className="material-symbols-outlined text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5">error</span>
+          <div>
+            <p className="font-semibold text-red-900 dark:text-red-200">Limite de colaboradores atingido</p>
+            <p className="text-sm text-red-800 dark:text-red-300 mt-1">Você atingiu o limite de 100 colaboradores para o plano anual. Para adicionar mais colaboradores, faça upgrade do seu plano.</p>
+          </div>
+        </div>
+      )}
+
+      {colaboradores.length >= 80 && colaboradores.length < 100 && (
+        <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex gap-3 items-start">
+          <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5">warning</span>
+          <div>
+            <p className="font-semibold text-amber-900 dark:text-amber-200">Aproximando-se do limite</p>
+            <p className="text-sm text-amber-800 dark:text-amber-300 mt-1">Você tem {100 - colaboradores.length} colaboradores restantes até atingir o limite de 100 para o plano anual.</p>
+          </div>
+        </div>
+      )}
+
       <div className="glass-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft mb-8 flex flex-col md:flex-row gap-6 items-center justify-between">
-        <div className="relative w-full max-w-lg">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
-          <input
-            className="w-full pl-12 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-400"
-            placeholder="Pesquisar por nome, NIF ou cargo..."
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex items-center gap-4">
+          <div className="relative w-full max-w-lg">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+            <input
+              className="w-full pl-12 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-400"
+              placeholder="Pesquisar por nome, NIF ou cargo..."
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-lg whitespace-nowrap">
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+              {colaboradores.length}/100
+            </span>
+            <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div 
+                className={`h-full transition-all ${colaboradores.length >= 100 ? 'bg-red-500' : colaboradores.length >= 80 ? 'bg-amber-500' : 'bg-green-500'}`}
+                style={{ width: `${Math.min(colaboradores.length, 100)}%` }}
+              />
+            </div>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {[
