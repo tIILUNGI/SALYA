@@ -485,24 +485,37 @@ const Processamento: React.FC = () => {
     const element = document.getElementById('recibo-para-impressao');
     if (!element || !receiptSnapshot) return;
     const cloned = element.cloneNode(true) as HTMLElement;
+    
+    // Remove matéria coletável do recibo para PDF - procura por div que contém "Matéria Colectável"
+    const allDivs = cloned.querySelectorAll('div');
+    allDivs.forEach(div => {
+      if (div.textContent && div.textContent.includes('Matéria Colectável')) {
+        const parentDiv = div.parentElement;
+        if (parentDiv) {
+          parentDiv.removeChild(div);
+        }
+      }
+    });
+    
     cloned.style.position = 'absolute';
     cloned.style.left = '-9999px';
     cloned.style.top = '0';
-cloned.style.width = '190mm';
+    cloned.style.width = '190mm';
     cloned.style.minHeight = '270mm';
     cloned.style.padding = '4mm';
     cloned.style.overflow = 'hidden';
-    cloned.style.maxWidth = '190mm';;
+    cloned.style.maxWidth = '190mm';
     document.body.appendChild(cloned);
+    
     html2pdf().from(cloned).set({
       margin: 0,
-      filename: `Recibo_${receiptSnapshot.colaborador.nome.replace(/ /g, '_')}.pdf`,
+      filename: `Recibo_${receiptSnapshot.colaborador.nome.replace(/ /g, '_')}_${receiptSnapshot.ano}${String(parseInt(receiptSnapshot.mes)).padStart(2, '0')}.pdf`,
       image: { type: 'jpeg', quality: 0.95 },
-     html2canvas: {
-  scale: 1.4,
-  useCORS: true,
-  logging: false
-},
+      html2canvas: {
+        scale: 1.4,
+        useCORS: true,
+        logging: false
+      },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).save().then(() => { document.body.removeChild(cloned); });
   };
@@ -613,7 +626,7 @@ cloned.style.width = '190mm';
                  <div style={{ flex: 1, textAlign: 'right' }}>
                    <h1 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 4px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
                    <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '8px', background: '#f1f5f9', padding: '1mm 2mm', borderRadius: '2px' }}>
-                     <p style={{ margin: '0 0 1px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {receiptSnapshot.mes} / {receiptSnapshot.ano}</p>
+                     <p style={{ margin: '0 0 1px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {String(parseInt(receiptSnapshot.mes)).padStart(2, '0')} / {receiptSnapshot.ano}</p>
                      <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Data:</span> {receiptSnapshot.dataProcessamento}</p>
                    </div>
                  </div>
