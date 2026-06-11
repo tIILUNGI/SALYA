@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect, useCallback, useMemo } from 'react';
 import Swal from 'sweetalert2';
-import html2pdf from 'html2pdf.js';
+import jsPDF from 'jspdf';
 
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
@@ -148,6 +148,10 @@ const Processamento: React.FC = () => {
   const [formHorasExtra, setFormHorasExtra] = useState(0);
   const [formBonus, setFormBonus] = useState(0);
   const [formFaltas, setFormFaltas] = useState(0);
+  const [faltaJustificada, setFaltaJustificada] = useState(false);
+  const [descontarBaseJ, setDescontarBaseJ] = useState(false);
+  const [descontarAlimentacaoJ, setDescontarAlimentacaoJ] = useState(false);
+  const [descontarTransporteJ, setDescontarTransporteJ] = useState(false);
   const [formOutrosGanhos, setFormOutrosGanhos] = useState<OutroGanhoInput[]>([]);
   const [incluirFerias, setIncluirFerias] = useState(false);
   const [incluirNatal, setIncluirNatal] = useState(false);
@@ -220,20 +224,40 @@ const Processamento: React.FC = () => {
     fetchHolidays();
   }, [empresa?.pais, selectedYear]);
 
-  const salarioProporcional = useMemo(
-    () => Math.round(formSalario / baseDays * formDiasTrabalhados),
-    [formSalario, formDiasTrabalhados, baseDays]
-  );
+  const salarioProporcional = useMemo(() => {
+    // Se for injustificada, desconta sempre (formDiasTrabalhados ja reflete dias efetivos)
+    // Se for justificada, so desconta do base se o user marcar descontarBaseJ
+    if (formFaltas > 0 && faltaJustificada && !descontarBaseJ) {
+      return formSalario;
+    }
+    return Math.round(formSalario / baseDays * formDiasTrabalhados);
+  }, [formSalario, formDiasTrabalhados, baseDays, formFaltas, faltaJustificada, descontarBaseJ]);
 
   const descontoFaltasPorDia = useMemo(() => formSalario / baseDays, [formSalario, baseDays]);
 
   const descontoFaltas = useMemo(() => {
+    if (formFaltas > 0 && faltaJustificada && !descontarBaseJ) return 0;
     const faltasDias = Number.isFinite(formFaltas) ? formFaltas : 0;
     return Math.round(Math.max(0, faltasDias) * descontoFaltasPorDia);
-  }, [formFaltas, descontoFaltasPorDia]);
+  }, [formFaltas, descontoFaltasPorDia, faltaJustificada, descontarBaseJ]);
 
-  const alimentacao = formGanhoAlimentacao;
-  const transporte = formGanhoTransporte;
+  const alimentacao = useMemo(() => {
+    if (formFaltas > 0 && faltaJustificada && !descontarAlimentacaoJ) return formGanhoAlimentacao;
+    if (formFaltas > 0 && !faltaJustificada) {
+      // Injustificada: desconta proporcional aos dias trabalhados
+      return Math.round(formGanhoAlimentacao / baseDays * formDiasTrabalhados);
+    }
+    return formGanhoAlimentacao;
+  }, [formGanhoAlimentacao, baseDays, formDiasTrabalhados, formFaltas, faltaJustificada, descontarAlimentacaoJ]);
+
+  const transporte = useMemo(() => {
+    if (formFaltas > 0 && faltaJustificada && !descontarTransporteJ) return formGanhoTransporte;
+    if (formFaltas > 0 && !faltaJustificada) {
+      // Injustificada: desconta proporcional aos dias trabalhados
+      return Math.round(formGanhoTransporte / baseDays * formDiasTrabalhados);
+    }
+    return formGanhoTransporte;
+  }, [formGanhoTransporte, baseDays, formDiasTrabalhados, formFaltas, faltaJustificada, descontarTransporteJ]);
 
   const alimentacaoTributavel = useMemo(() => Math.max(0, alimentacao - 30000), [alimentacao]);
   const transporteTributavel = useMemo(() => Math.max(0, transporte - 30000), [transporte]);
@@ -491,43 +515,22 @@ const Processamento: React.FC = () => {
   const handleGuardarPDF = () => {
     const element = document.getElementById('recibo-para-impressao');
     if (!element || !receiptSnapshot) return;
-    const cloned = element.cloneNode(true) as HTMLElement;
-    
-    // Remove matéria coletável do recibo para PDF - procura por div que contém "Matéria Colectável"
-    const allDivs = cloned.querySelectorAll('div');
-    allDivs.forEach(div => {
-      if (div.textContent && div.textContent.includes('Matéria Colectável')) {
-        const parentDiv = div.parentElement;
-        if (parentDiv) {
-          parentDiv.removeChild(div);
-        }
-      }
-    });
-    
-    cloned.style.position = 'absolute';
-    cloned.style.left = '-9999px';
-    cloned.style.top = '0';
-    cloned.style.width = '190mm';
-    cloned.style.minHeight = '270mm';
-    cloned.style.padding = '4mm';
-    cloned.style.overflow = 'hidden';
-    cloned.style.maxWidth = '190mm';
-    document.body.appendChild(cloned);
-    
-    html2pdf().from(cloned).set({
-      margin: 0,
-      filename: `Recibo_${receiptSnapshot.colaborador.nome.replace(/ /g, '_')}_${receiptSnapshot.ano}${String(monthToNum(receiptSnapshot.mes)).padStart(2, '0')}.pdf`,
-      image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: {
-        scale: 1.4,
-        useCORS: true,
-        logging: false
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    doc.html(element, {
+      callback: (pdf) => {
+        const filename = 'Recibo_' + receiptSnapshot.colaborador.nome.replace(/ /g, '_') + '_' + receiptSnapshot.ano + String(monthToNum(receiptSnapshot.mes)).padStart(2, '0') + '.pdf';
+        pdf.save(filename);
       },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).save().then(() => { document.body.removeChild(cloned); });
+      x: 0,
+      y: 0,
+      width: 210,
+      windowWidth: element.scrollWidth || 794,
+      autoPaging: 'text',
+      margin: [0, 0, 0, 0],
+    });
   };
 
-  const handleUpdateOtherGain = (id: string, field: 'descricao' | 'valor', value: string) => {
+    const handleUpdateOtherGain = (id: string, field: 'descricao' | 'valor', value: string) => {
     setFormOutrosGanhos((previous) => previous.map((ganho) => ganho.id === id ? { ...ganho, [field]: field === 'valor' ? parseMoneyInput(value) : value } : ganho));
   };
 
@@ -611,7 +614,7 @@ const Processamento: React.FC = () => {
 >
 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2mm', borderBottom: '1px solid #000', paddingBottom: '2mm' }}>
                  <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '3mm' }}>
-                   {empresa?.logoUrl && <img src={`${API_BASE_URL}${empresa.logoUrl}`} alt="Logotipo" style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }} />}
+                   {empresa?.logoUrl && <img src={empresa.logoUrl.startsWith("http") ? empresa.logoUrl : empresa.logoUrl.startsWith("/logos/") ? `${API_BASE_URL}/logos/${empresa.logoUrl.replace("/logos/", "")}` : `${API_BASE_URL}/logos/${empresa.logoUrl.split("/").pop()}`} alt="Logotipo" style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }} />}
                    <div>
                      <h2 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 2px 0' }}>{empresa?.nome}</h2>
                      <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
@@ -622,7 +625,7 @@ const Processamento: React.FC = () => {
                  <div style={{ flex: 1, textAlign: 'right' }}>
                    <h1 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 4px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
                    <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '8px', background: '#f1f5f9', padding: '1mm 2mm', borderRadius: '2px' }}>
-                      <p style={{ margin: '0 0 1px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {String(monthToNum(receiptSnapshot.mes)).padStart(2, '0')} / {receiptSnapshot.ano}</p>
+                      <p style={{ margin: '0 0 1px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {isNaN(Number(receiptSnapshot.mes)) ? receiptSnapshot.mes : ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][Number(receiptSnapshot.mes) - 1]} / {receiptSnapshot.ano}</p>
                      <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Data:</span> {receiptSnapshot.dataProcessamento}</p>
                    </div>
                  </div>
@@ -781,7 +784,49 @@ const Processamento: React.FC = () => {
                 <div className="space-y-2"><label className="block text-xs text-slate-500">Bónus</label><input type="text" value={formatMoneyInput(formBonus)} onChange={(e) => setFormBonus(parseMoneyInput(e.target.value))} className="w-full bg-white rounded-lg p-3 font-medium border border-slate-100" /></div>
               </div>
             </div>
-            <div className="p-5 bg-rose-50/30 rounded-2xl space-y-4 border border-rose-100"><h4 className="text-sm font-medium text-rose-600">Descontos / Faltas</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="space-y-2"><label className="block text-xs text-slate-500 uppercase font-bold tracking-tight">Número de Faltas (Dias)</label><input type="number" min="0" max={baseDays} value={formFaltas} onChange={(e) => setFormFaltas(Number(e.target.value) || 0)} className="w-full rounded-lg p-3 font-medium border border-rose-100 bg-white outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all" /></div><div className="space-y-2"><label className="block text-xs text-slate-500 uppercase font-bold tracking-tight opacity-50">Outros Descontos</label><input disabled type="text" placeholder="0 Kz" className="w-full rounded-lg p-3 font-medium border border-slate-100 bg-slate-50/50 cursor-not-allowed" /></div></div></div>
+            <div className="p-5 bg-rose-50/30 rounded-2xl space-y-4 border border-rose-100 italic">
+              <h4 className="text-sm font-medium text-rose-600 flex items-center justify-between">
+                Descontos / Faltas
+                {formFaltas > 0 && (
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white px-3 py-1.5 rounded-full border border-slate-200 cursor-pointer hover:bg-slate-50 transition-all not-italic">
+                    <input type="checkbox" checked={faltaJustificada} onChange={(e) => setFaltaJustificada(e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    Falta Justificada?
+                  </label>
+                )}
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-xs text-slate-500 uppercase font-bold tracking-tight">Número de Faltas (Dias)</label>
+                  <input type="number" min="0" max={baseDays} value={formFaltas} onChange={(e) => {
+                    const val = Number(e.target.value) || 0;
+                    setFormFaltas(val);
+                    // Ao adicionar faltas unjustly, reduzimos os dias trabalhados automaticamente
+                    if (!faltaJustificada) {
+                      setFormDiasTrabalhados(baseDays - val);
+                    }
+                  }} className="w-full rounded-lg p-3 font-medium border border-rose-100 bg-white outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all" />
+                </div>
+                {formFaltas > 0 && faltaJustificada && (
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-3 not-italic">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">O que descontar?</p>
+                    <div className="flex flex-wrap gap-4">
+                      <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input type="checkbox" checked={descontarBaseJ} onChange={(e) => setDescontarBaseJ(e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                        Salário Base
+                      </label>
+                      <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input type="checkbox" checked={descontarAlimentacaoJ} onChange={(e) => setDescontarAlimentacaoJ(e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                        Alimentação
+                      </label>
+                      <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input type="checkbox" checked={descontarTransporteJ} onChange={(e) => setDescontarTransporteJ(e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                        Transporte
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
             <div className="p-5 bg-slate-50 rounded-2xl space-y-4"><div className="flex items-center justify-between gap-4"><h4 className="text-sm font-medium text-slate-600">Outros Ganhos</h4><button type="button" onClick={handleAddOtherGain} className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-medium flex items-center gap-1"><span className="material-symbols-outlined text-sm">add</span>Adicionar</button></div>{formOutrosGanhos.length === 0 ? <div className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center"><p className="text-xs text-slate-400">Sem outros ganhos</p></div> : <div className="space-y-3">{formOutrosGanhos.map((ganho) => (<div key={ganho.id} className="grid grid-cols-1 md:grid-cols-[1fr_150px_40px] gap-3 items-end bg-white border border-slate-100 rounded-xl p-3"><div className="space-y-1"><label className="block text-xs text-slate-500">Descrição</label><input type="text" value={ganho.descricao} onChange={(e) => handleUpdateOtherGain(ganho.id, 'descricao', e.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none focus:ring-2 focus:ring-primary" /></div><div className="space-y-1"><label className="block text-xs text-slate-500">Valor</label><input type="text" value={formatMoneyInput(ganho.valor)} onChange={(e) => handleUpdateOtherGain(ganho.id, 'valor', e.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2 font-medium outline-none focus:ring-2 focus:ring-primary" /></div><button type="button" onClick={() => handleRemoveOtherGain(ganho.id)} className="size-9 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center"><span className="material-symbols-outlined text-lg">delete</span></button></div>))}</div>}</div>
             <div className="rounded-[24px] border-2 border-primary/10 bg-slate-50/50 p-6 space-y-5"><div className="flex items-center justify-between border-b border-slate-200 pb-3"><h4 className="text-sm font-bold text-slate-800 uppercase tracking-tight flex items-center gap-2"><span className="material-symbols-outlined text-primary text-lg">analytics</span>Resumo</h4><span className="px-2 py-1 bg-primary/10 text-primary rounded-md text-[10px] font-bold uppercase">{formDiasTrabalhados}/{diasUteisReal} Dias ({empresa?.tipoProcessamento || 'Dias Variáveis'})</span></div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="space-y-2"><p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Rendimentos</p><div className="flex justify-between text-sm"><span className="text-slate-500">Salário ({formDiasTrabalhados} dias)</span><span className="font-medium text-slate-700">{formatMoney(salarioProporcional)}</span></div>{alimentacao > 0 && <div className="flex justify-between text-sm"><div><span className="text-slate-500">Alimentação</span>{!isPrestador && alimentacaoTributavel === 0 ? <span className="ml-1 text-[9px] text-emerald-500">isento</span> : !isPrestador && alimentacaoTributavel > 0 ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(alimentacaoTributavel)} trib.</span> : isPrestador ? <span className="ml-1 text-[9px] text-primary font-bold">{formatMoney(alimentacao)}</span> : null}</div><span className="font-medium text-slate-700">{formatMoney(alimentacao)}</span></div>}{transporte > 0 && <div className="flex justify-between text-sm"><div><span className="text-slate-500">Transporte</span>{!isPrestador && transporteTributavel === 0 ? <span className="ml-1 text-[9px] text-emerald-500">isento</span> : !isPrestador && transporteTributavel > 0 ? <span className="ml-1 text-[9px] text-amber-500">+{formatMoney(transporteTributavel)} trib.</span> : isPrestador ? <span className="ml-1 text-[9px] text-primary font-bold">{formatMoney(transporte)}</span> : null}</div><span className="font-medium text-slate-700">{formatMoney(transporte)}</span></div>}{formGanhoFerias > 0 && <div className="flex justify-between text-sm"><div><span className="text-slate-500">Férias</span><span className="ml-1 text-[9px] text-amber-500">ret. 15%</span></div><span className="font-medium text-slate-700">{formatMoney(formGanhoFerias)}</span></div>}{formGanhoNatal > 0 && <div className="flex justify-between text-sm"><div><span className="text-slate-500">Natal</span><span className="ml-1 text-[9px] text-amber-500">ret. 15%</span></div><span className="font-medium text-slate-700">{formatMoney(formGanhoNatal)}</span></div>}{(formHorasExtra + formBonus + totalOutrosGanhos) > 0 && <div className="flex justify-between text-sm"><span className="text-slate-500">Outros Abonos</span><span className="font-medium text-slate-700">{formatMoney(formHorasExtra + formBonus + totalOutrosGanhos)}</span></div>}<div className="border-t border-slate-200 pt-2 flex justify-between text-sm font-bold"><span className="text-slate-800">Total Bruto</span><span className="text-slate-900">{formatMoney(totalBruto)}</span></div></div><div className="space-y-2"><p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Descontos</p><div className="flex justify-between text-sm"><div><span className="text-slate-500">INSS 3% s/ sal. base</span></div><span className="font-medium text-rose-500">-{formatMoney(inssEstimado)}</span></div><div className="flex flex-col gap-1 text-sm"><div className="flex justify-between"><div><span className="text-slate-500">{isPrestador ? 'IRT Grupo B/C (Independente)' : 'IRT'}</span>{!isPrestador && <span className="ml-1 text-[9px] text-slate-400">{irtEstimado.faixa}</span>}</div><span className="font-medium text-rose-500">-{formatMoney(irtEstimado.valor)}</span></div></div><div className="flex justify-between text-[10px] text-slate-400"><span>Matéria Colectável</span><span>{formatMoney(materiaColectavel)}</span></div>{retencaoFerias > 0 && <div className="flex justify-between text-sm"><div><span className="text-slate-500">Ret. Férias</span><span className="ml-1 text-[9px] text-slate-400">15% autónomo</span></div><span className="font-medium text-rose-500">-{formatMoney(retencaoFerias)}</span></div>}{retencaoNatal > 0 && <div className="flex justify-between text-sm"><div><span className="text-slate-500">Ret. Natal</span><span className="ml-1 text-[9px] text-slate-400">15% autónomo</span></div><span className="font-medium text-rose-500">-{formatMoney(retencaoNatal)}</span></div>}{formFaltas > 0 && <div className="flex justify-between text-sm"><span className="text-slate-500">Faltas ({formFaltas} dias)</span><span className="font-medium text-rose-500">-{formatMoney(descontoFaltas)}</span></div>}<div className="border-t border-slate-200 pt-2 flex justify-between text-sm font-bold"><span className="text-slate-800">Total Descontos</span><span className="text-rose-600">-{formatMoney(totalDescontos)}</span></div></div></div><div className="bg-white border-2 border-primary rounded-2xl p-5 shadow-sm overflow-hidden relative"><div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-8 -mt-8" /><div className="relative z-10 flex items-center justify-between"><div><p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Salário Líquido Estimado</p><p className="text-3xl font-black text-slate-900 tracking-tighter">{formatMoney(salarioLiquidoEstimado)}</p></div><span className="material-symbols-outlined text-4xl text-primary/20">payments</span></div></div></div>
             <button type="submit" className="w-full py-4 bg-primary text-white rounded-xl font-medium shadow-lg hover:bg-primary/90 transition-all">Confirmar e Gerar Recibo</button>

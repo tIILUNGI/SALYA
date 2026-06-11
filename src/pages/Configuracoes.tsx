@@ -335,11 +335,18 @@ const Configurações: React.FC = () => {
     setActiveTab('empresa');
   };
 
+  const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2 MB
+
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
       Swal.fire('Formato inválido', 'Seleccione um ficheiro de imagem (PNG/JPG/WebP).', 'warning');
+      return;
+    }
+    if (file.size > MAX_LOGO_SIZE) {
+      Swal.fire('Ficheiro demasiado grande', 'O logotipo não pode exceder 2 MB. Por favor, comprima ou redimensione a imagem.', 'warning');
+      if (logoInputRef.current) logoInputRef.current.value = '';
       return;
     }
     setLogoFile(file);
@@ -354,16 +361,23 @@ const Configurações: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('logo', logoFile);
+      // POST /api/empresas/{id}/logo — multipart upload
       const result: any = await api.postForm(`/empresas/${empresa.id}/logo`, formData, true);
-      const updatedLogoUrl = result?.logoUrl || undefined;
+      const updatedLogoUrl: string | undefined = result?.logoUrl || undefined;
+      // Update local config state
       setConfig((prev) => ({ ...prev, logoUrl: updatedLogoUrl }));
-      setMessage({ title: 'SUCESSO!', text: 'Logotipo actualizado com sucesso!', type: 'success' });
-    } catch (error: any) {
-      setMessage({ title: 'ERRO!', text: 'Não foi possível actualizar o logotipo.', type: 'error' });
-    } finally {
-      setLogoLoading(false);
+      // Update empresa context so receipts pick up the new logo immediately
+      if (updatedLogoUrl) {
+        setEmpresa({ ...empresa, logoUrl: updatedLogoUrl } as any);
+      }
       setLogoFile(null);
       setLogoPreview(null);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+      setMessage({ title: 'SUCESSO!', text: 'Logotipo actualizado com sucesso! Aparecerá nos próximos recibos.', type: 'success' });
+    } catch (error: any) {
+      setMessage({ title: 'ERRO!', text: 'Não foi possível actualizar o logotipo. Verifique o tamanho (máx. 2 MB) e tente novamente.', type: 'error' });
+    } finally {
+      setLogoLoading(false);
     }
   };
 
@@ -709,7 +723,19 @@ const Configurações: React.FC = () => {
                   <div className="flex flex-col items-center gap-4">
                     <div className="w-32 h-32 rounded-full border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-800">
                       {(logoPreview || config.logoUrl) ? (
-                        <img src={logoPreview || (config.logoUrl?.startsWith('http') ? config.logoUrl : `${API_BASE_URL}${config.logoUrl}`)} alt="Logotipo" className="w-full h-full object-cover" />
+                        <img
+                          src={
+                            logoPreview
+                              ? logoPreview
+                              : config.logoUrl?.startsWith('http')
+                                ? config.logoUrl
+                                : config.logoUrl?.startsWith('/logos/')
+                                  ? `${API_BASE_URL}/logos/${config.logoUrl.replace('/logos/', '')}`
+                                  : `${API_BASE_URL}/logos/${config.logoUrl?.split('/').pop()}`
+                          }
+                          alt="Logotipo"
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <span className="material-symbols-outlined text-4xl text-slate-300">image</span>
                       )}

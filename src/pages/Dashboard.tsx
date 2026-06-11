@@ -218,8 +218,8 @@ const Dashboard: React.FC = () => {
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '20px' }} />
-                  <Bar isAnimationActive={false} dataKey="faltas" fill="#f43f5e" radius={[4, 4, 4, 4]} barSize={12} />
-                  <Bar isAnimationActive={false} dataKey="justificadas" fill="#10b981" radius={[4, 4, 4, 4]} barSize={12} />
+                  <Bar name="Faltas Injustificadas" isAnimationActive={false} dataKey="faltas" fill="#cbd5e1" radius={[4, 4, 4, 4]} barSize={12} />
+                  <Bar name="Faltas Justificadas" isAnimationActive={false} dataKey="justificadas" fill="#9333ea" radius={[4, 4, 4, 4]} barSize={12} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

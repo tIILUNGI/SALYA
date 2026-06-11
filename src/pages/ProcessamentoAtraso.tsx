@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
 import { API_BASE_URL, api } from '../services/api';
-import html2pdf from 'html2pdf.js';
+import jsPDF from 'jspdf';
 import { countries } from '../data/countries';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -357,28 +357,22 @@ const ProcessamentoAtraso: React.FC = () => {
     const snap = recibos[reciboIndex];
     if (!snap) return;
 
-    try {
-      await html2pdf().from(element).set({
-        margin: 0,
-        filename: `Recibo_${snap.colaborador.nome.replace(/ /g, '_')}_${snap.mes}_${snap.ano}.pdf`,
-        image: { type: 'jpeg', quality: 0.95 },
-       html2canvas: {
-  scale: 1.4,
-  useCORS: true,
-  logging: false
-},
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      }).save();
-
-      if (snap.historicoId) {
-        api.post(`/processamentos/${snap.historicoId}/recibo`, { html: element.innerHTML }).catch(() => {});
-      }
-    } catch (e) {
-      console.error('Erro ao exportar PDF:', e);
-    }
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    doc.html(element, {
+      callback: (pdf) => {
+        const filename = 'Recibo_' + snap.colaborador.nome.replace(/ /g, '_') + '_' + snap.mes + '_' + snap.ano + '.pdf';
+        pdf.save(filename);
+      },
+      x: 0,
+      y: 0,
+      width: 210,
+      windowWidth: element.scrollWidth || 794,
+      autoPaging: 'text',
+      margin: [0, 0, 0, 0],
+    });
   };
 
-  // ── Render: Receipt Modal ────────────────────────────────────────────────────
+    // ── Render: Receipt Modal ────────────────────────────────────────────────────
 const renderReciboModal = () => {
     if (!showReciboModal || recibos.length === 0) return null;
     const snap = recibos[reciboIndex];
@@ -446,7 +440,7 @@ return (
             <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '3mm' }}>
               {empresa?.logoUrl && (
                 <img
-                  src={`${API_BASE_URL}${empresa.logoUrl}`}
+                  src={empresa.logoUrl.startsWith("http") ? empresa.logoUrl : empresa.logoUrl.startsWith("/logos/") ? `${API_BASE_URL}/logos/${empresa.logoUrl.replace("/logos/", "")}` : `${API_BASE_URL}/logos/${empresa.logoUrl.split("/").pop()}`}
                   alt="Logotipo"
                   style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }}
                 />
@@ -461,7 +455,7 @@ return (
             <div style={{ flex: 1, textAlign: 'right' }}>
               <h1 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 4px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
               <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '8px', background: '#f1f5f9', padding: '1mm 2mm', borderRadius: '2px' }}>
-                <p style={{ margin: '0 0 1px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {snap.mes} / {snap.ano}</p>
+                <p style={{ margin: '0 0 1px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {isNaN(Number(snap.mes)) ? snap.mes : ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][Number(snap.mes) - 1]} / {snap.ano}</p>
                 <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Data:</span> {snap.dataProcessamento}</p>
               </div>
             </div>
