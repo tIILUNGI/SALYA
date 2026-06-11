@@ -391,3 +391,15 @@ export const showCurrentApiUrl = () => {
 
   return API_BASE_URL;
 };
+
+// Função para resolver a URL do logotipo usando o endpoint /api/logos
+export const getLogoUrl = (url?: string | null): string => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  
+  // Extrai apenas o nome do arquivo para evitar duplicar o prefixo /api
+  // O backend retorna caminhos como /api/logos/filename.ext
+  // Nós queremos converter para ${API_BASE_URL}/logos/filename.ext
+  const filename = url.split('/').pop();
+  return `${API_BASE_URL}/logos/${filename}`;
+};

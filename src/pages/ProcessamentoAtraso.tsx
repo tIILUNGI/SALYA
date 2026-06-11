@@ -3,7 +3,7 @@ import Swal from 'sweetalert2';
 
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
-import { API_BASE_URL, api } from '../services/api';
+import { api, getLogoUrl } from '../services/api';
 import jsPDF from 'jspdf';
 import { countries } from '../data/countries';
 
@@ -440,7 +440,7 @@ return (
             <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '3mm' }}>
               {empresa?.logoUrl && (
                 <img
-                  src={empresa.logoUrl.startsWith("http") ? empresa.logoUrl : empresa.logoUrl.startsWith("/logos/") ? `${API_BASE_URL}/logos/${empresa.logoUrl.replace("/logos/", "")}` : `${API_BASE_URL}/logos/${empresa.logoUrl.split("/").pop()}`}
+                  src={getLogoUrl(empresa.logoUrl)}
                   alt="Logotipo"
                   style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }}
                 />

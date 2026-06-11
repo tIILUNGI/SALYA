@@ -36,6 +36,7 @@ const Dashboard: React.FC = () => {
           const alertasData = await api.get(`/alertas/resumo?empresaId=${empresaId}`);
           setAlertas(alertasData);
         } catch (e) {
+          console.error('Erro ao buscar resumo de alertas:', e);
         }
 
         try {
@@ -43,10 +44,12 @@ const Dashboard: React.FC = () => {
           setChartProcessamento(charts.processamentoMensal || []);
           setChartAbsentismo(charts.absentismoDepartamento || []);
         } catch (e) {
+          console.error('Erro ao buscar dados dos gráficos:', e);
           setChartProcessamento([]);
           setChartAbsentismo([]);
         }
       } catch (error) {
+        console.error('Erro geral no Dashboard:', error);
       } finally {
         setLoading(false);
       }
@@ -178,6 +181,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Gráficos */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="glass-card p-8 min-h-[400px] shadow-soft">
               <div className="flex items-center justify-between mb-8">
                 <div>
@@ -202,6 +206,8 @@ const Dashboard: React.FC = () => {
                   <Area isAnimationActive={false} type="monotone" dataKey="total" stroke="#9333ea" strokeWidth={3} fillOpacity={1} fill="url(#colorTotalDb)" />
                 </AreaChart>
               </ResponsiveContainer>
+            </div>
+
             <div className="glass-card p-8 min-h-[400px] shadow-soft">
               <div className="flex items-center justify-between mb-8">
                 <div>

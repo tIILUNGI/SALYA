@@ -4,10 +4,9 @@ import jsPDF from 'jspdf';
 
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
-import { api } from '../services/api';
+import { api, getLogoUrl } from '../services/api';
 import { taxasIRT } from '../data/mockData';
 import { countries } from '../data/countries';
-import { API_BASE_URL } from '../services/api';
 
 
 
@@ -199,11 +198,7 @@ const Processamento: React.FC = () => {
     setFormDiasTrabalhados(isFixed ? 22 : diasUteisReal);
   }, [isFixed, diasUteisReal]);
 
-  const diasDoMes = useMemo(() => {
-    const month = monthToNum(selectedMonth);
-    const year = parseInt(selectedYear, 10);
-    return new Date(year, month, 0).getDate();
-  }, [selectedMonth, selectedYear]);
+
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -219,7 +214,10 @@ const Processamento: React.FC = () => {
             setHolidays(data);
           } else setHolidays([]);
         } else setHolidays([]);
-      } catch (error) { setHolidays([]); }
+      } catch (error) { 
+        console.error('Erro ao buscar feriados:', error);
+        setHolidays([]); 
+      }
     };
     fetchHolidays();
   }, [empresa?.pais, selectedYear]);
@@ -440,7 +438,8 @@ const Processamento: React.FC = () => {
       }
       await loadHistórico();
       Swal.fire('Sucesso', 'Processamento concluido!', 'success');
-    } catch {
+    } catch (error) {
+      console.error('Erro no processamento em lote:', error);
       Swal.fire('Erro', 'Ocorreu um erro no processamento.', 'error');
     } finally {
       setIsProcessingBulk(false);
@@ -548,7 +547,9 @@ const Processamento: React.FC = () => {
         if (!w) URL.revokeObjectURL(url);
         return;
       }
-    } catch { /* fallback */ }
+    } catch (error) {
+      console.error('Erro ao carregar recibo histórico:', error);
+    }
     setReceiptSnapshot({
       colaborador: { id: item.colaboradorId || 0, nome: item.nomeColaborador, nif: item.nifColaborador || '', cargo: item.cargo || '', salarioBase: item.salarioBaseProporcional || 0, status: 'Ativo', email: '', banco: item.banco, iban: item.iban } as any,
       mes: numToMonth(item.mes),
@@ -579,7 +580,6 @@ const Processamento: React.FC = () => {
     if (!showReceiptModal || !receiptSnapshot) return null;
 
     const valorHora = receiptSnapshot.diasTrabalhados > 0 ? receiptSnapshot.salarioBase / (receiptSnapshot.diasTrabalhados * 8) : 0;
-    const materiaColetavelExibida = receiptSnapshot.materiaColetavel;
     const totalBrutoExibido = receiptSnapshot.totalBruto;
     const totalDescontosExibido = receiptSnapshot.totalDescontos;
     const salarioLiquidoExibido = receiptSnapshot.salarioLiquido;
@@ -614,7 +614,7 @@ const Processamento: React.FC = () => {
 >
 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2mm', borderBottom: '1px solid #000', paddingBottom: '2mm' }}>
                  <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '3mm' }}>
-                   {empresa?.logoUrl && <img src={empresa.logoUrl.startsWith("http") ? empresa.logoUrl : empresa.logoUrl.startsWith("/logos/") ? `${API_BASE_URL}/logos/${empresa.logoUrl.replace("/logos/", "")}` : `${API_BASE_URL}/logos/${empresa.logoUrl.split("/").pop()}`} alt="Logotipo" style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }} />}
+                   {empresa?.logoUrl && <img src={getLogoUrl(empresa.logoUrl)} alt="Logotipo" style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }} />}
                    <div>
                      <h2 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 2px 0' }}>{empresa?.nome}</h2>
                      <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>NIF: {empresa?.nif}</p>

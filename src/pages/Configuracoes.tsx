@@ -3,8 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 import { AppContext } from '../App';
-import { API_BASE_URL } from '../services/api';
-import { api } from '../services/api';
+import { api, getLogoUrl } from '../services/api';
 import { countries } from '../data/countries';
 import { PLAN_LIMITS, PlanType } from '../types';
 
@@ -727,11 +726,7 @@ const Configurações: React.FC = () => {
                           src={
                             logoPreview
                               ? logoPreview
-                              : config.logoUrl?.startsWith('http')
-                                ? config.logoUrl
-                                : config.logoUrl?.startsWith('/logos/')
-                                  ? `${API_BASE_URL}/logos/${config.logoUrl.replace('/logos/', '')}`
-                                  : `${API_BASE_URL}/logos/${config.logoUrl?.split('/').pop()}`
+                              : getLogoUrl(config.logoUrl)
                           }
                           alt="Logotipo"
                           className="w-full h-full object-cover"
