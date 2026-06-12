@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 import { AppContext } from '../App';
-import { api, API_BASE_URL } from '../services/api';
+import { api, getLogoUrl } from '../services/api';
 import { countries } from '../data/countries';
 import { PLAN_LIMITS, PlanType } from '../types';
 
@@ -372,6 +372,10 @@ const Configurações: React.FC = () => {
       setLogoFile(null);
       setLogoPreview(null);
       if (logoInputRef.current) logoInputRef.current.value = '';
+      
+      // Sincroniza os dados globais para garantir que o logo aparece em todo o lado (incluindo recibos)
+      await refreshData();
+      
       setMessage({ title: 'SUCESSO!', text: 'Logotipo actualizado com sucesso! Aparecerá nos próximos recibos.', type: 'success' });
     } catch (error: any) {
       setMessage({ title: 'ERRO!', text: 'Não foi possível actualizar o logotipo. Verifique o tamanho (máx. 2 MB) e tente novamente.', type: 'error' });
@@ -635,26 +639,8 @@ const Configurações: React.FC = () => {
      { id: 'assinatura', label: 'Plano e Assinatura', icon: 'card_membership' },
    ];
 
-  // Função auxiliar para obter a URL correta do logo
-  const getLogoDisplayUrl = (logoUrl: string | undefined): string => {
-    if (!logoUrl) return '';
-    
-    // Se já for uma URL completa (http, https, data)
-    if (logoUrl.startsWith('http') || logoUrl.startsWith('data:') || logoUrl.startsWith('blob:')) {
-      return logoUrl;
-    }
-    
-    // Remove a barra inicial se existir para evitar duplicação ou caminhos errados
-    const cleanLogoUrl = logoUrl.startsWith('/') ? logoUrl.substring(1) : logoUrl;
-    
-    // Ajuste: O API_BASE_URL já termina em /api. Se o cleanLogoUrl começar com "api/", 
-    // removemos o /api da base para não ficar /api/api/
-    const base = (API_BASE_URL.endsWith('/api') && cleanLogoUrl.startsWith('api/')) 
-      ? API_BASE_URL.replace('/api', '') 
-      : API_BASE_URL;
-
-    return `${base}/${cleanLogoUrl}`;
-  };
+  // O getLogoUrl centralizado no api.ts já resolve todos os caminhos
+  // e evita duplicação de /api
 
   return (
     <div className="p-4 md:p-8 w-full max-w-full">
@@ -744,7 +730,7 @@ const Configurações: React.FC = () => {
                     <div className="w-32 h-32 rounded-full border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-800">
                       {(logoPreview || config.logoUrl) ? (
                         <img
-                          src={logoPreview || getLogoDisplayUrl(config.logoUrl)}
+                          src={logoPreview || getLogoUrl(config.logoUrl)}
                           alt="Logotipo"
                           className="w-full h-full object-cover"
                           onError={(e) => {

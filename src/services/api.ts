@@ -398,21 +398,20 @@ export const showCurrentApiUrl = () => {
 // Função para resolver a URL do logotipo usando o endpoint /api/logos
 export const getLogoUrl = (url?: string | null): string => {
   if (!url) return '';
-  if (url.startsWith('http') || url.startsWith('data:')) return url;
+  if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
   
-  // Garantir que não duplicamos o /api se o BASE_URL já terminar em /api
-  const base = API_BASE_URL.endsWith('/api') ? API_BASE_URL.replace('/api', '') : API_BASE_URL;
+  const base = API_BASE_URL.endsWith('/api') 
+    ? API_BASE_URL.substring(0, API_BASE_URL.length - 4) 
+    : API_BASE_URL;
   
-  // Se já começar com /api/logos/
-  if (url.startsWith('/api/logos/')) return `${base}${url}`;
+  let path = url.startsWith('/') ? url.substring(1) : url;
   
-  // Se começar com /api/ mas não logos (formato alternativo)
-  if (url.startsWith('/api/')) return `${base}${url}`;
+  if (path.startsWith('logos/')) {
+    path = `api/${path}`;
+  } else if (!path.startsWith('api/')) {
+    path = `api/logos/${path}`;
+  }
   
-  // Se começar com /logos/ (formato antigo/legado)
-  if (url.startsWith('/logos/')) return `${base}/api${url}`;
-  
-  // Fallback: apenas o nome do arquivo ou outros formatos
-  const fileName = url.split('/').pop();
-  return `${base}/api/logos/${fileName}`;
+  const finalBase = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+  return `${finalBase}/${path}`;
 };
