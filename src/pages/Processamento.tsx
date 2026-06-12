@@ -223,36 +223,62 @@ const Processamento: React.FC = () => {
   }, [empresa?.pais, selectedYear]);
 
   const salarioProporcional = useMemo(() => {
-    // Se for injustificada, desconta sempre (formDiasTrabalhados ja reflete dias efetivos)
-    // Se for justificada, so desconta do base se o user marcar descontarBaseJ
-    if (formFaltas > 0 && faltaJustificada && !descontarBaseJ) {
-      return formSalario;
+    // Regra: Se for justificada, só desconta se o utilizador marcar a opção correspondente.
+    // Se for injustificada, desconta sempre proporcionalmente.
+    if (formFaltas > 0) {
+      if (faltaJustificada) {
+        return descontarBaseJ 
+          ? Math.round(formSalario / baseDays * (baseDays - formFaltas))
+          : formSalario;
+      } else {
+        return Math.round(formSalario / baseDays * formDiasTrabalhados);
+      }
     }
-    return Math.round(formSalario / baseDays * formDiasTrabalhados);
+    return formSalario;
   }, [formSalario, formDiasTrabalhados, baseDays, formFaltas, faltaJustificada, descontarBaseJ]);
 
   const descontoFaltasPorDia = useMemo(() => formSalario / baseDays, [formSalario, baseDays]);
 
   const descontoFaltas = useMemo(() => {
-    if (formFaltas > 0 && faltaJustificada && !descontarBaseJ) return 0;
+    let total = 0;
     const faltasDias = Number.isFinite(formFaltas) ? formFaltas : 0;
-    return Math.round(Math.max(0, faltasDias) * descontoFaltasPorDia);
-  }, [formFaltas, descontoFaltasPorDia, faltaJustificada, descontarBaseJ]);
+    if (faltasDias <= 0) return 0;
+
+    if (!faltaJustificada) {
+      // Injustificada: desconto padrão sobre o base
+      total += faltasDias * (formSalario / baseDays);
+    } else {
+      // Justificada: soma apenas o que foi selecionado
+      if (descontarBaseJ) total += faltasDias * (formSalario / baseDays);
+      if (descontarAlimentacaoJ) total += faltasDias * (formGanhoAlimentacao / baseDays);
+      if (descontarTransporteJ) total += faltasDias * (formGanhoTransporte / baseDays);
+    }
+
+    return Math.round(total);
+  }, [formFaltas, formSalario, formGanhoAlimentacao, formGanhoTransporte, baseDays, faltaJustificada, descontarBaseJ, descontarAlimentacaoJ, descontarTransporteJ]);
 
   const alimentacao = useMemo(() => {
-    if (formFaltas > 0 && faltaJustificada && !descontarAlimentacaoJ) return formGanhoAlimentacao;
-    if (formFaltas > 0 && !faltaJustificada) {
-      // Injustificada: desconta proporcional aos dias trabalhados
-      return Math.round(formGanhoAlimentacao / baseDays * formDiasTrabalhados);
+    if (formFaltas > 0) {
+      if (faltaJustificada) {
+        return descontarAlimentacaoJ
+          ? Math.round(formGanhoAlimentacao / baseDays * (baseDays - formFaltas))
+          : formGanhoAlimentacao;
+      } else {
+        return Math.round(formGanhoAlimentacao / baseDays * formDiasTrabalhados);
+      }
     }
     return formGanhoAlimentacao;
   }, [formGanhoAlimentacao, baseDays, formDiasTrabalhados, formFaltas, faltaJustificada, descontarAlimentacaoJ]);
 
   const transporte = useMemo(() => {
-    if (formFaltas > 0 && faltaJustificada && !descontarTransporteJ) return formGanhoTransporte;
-    if (formFaltas > 0 && !faltaJustificada) {
-      // Injustificada: desconta proporcional aos dias trabalhados
-      return Math.round(formGanhoTransporte / baseDays * formDiasTrabalhados);
+    if (formFaltas > 0) {
+      if (faltaJustificada) {
+        return descontarTransporteJ
+          ? Math.round(formGanhoTransporte / baseDays * (baseDays - formFaltas))
+          : formGanhoTransporte;
+      } else {
+        return Math.round(formGanhoTransporte / baseDays * formDiasTrabalhados);
+      }
     }
     return formGanhoTransporte;
   }, [formGanhoTransporte, baseDays, formDiasTrabalhados, formFaltas, faltaJustificada, descontarTransporteJ]);
@@ -468,6 +494,12 @@ const Processamento: React.FC = () => {
         horasExtraTotal: formHorasExtra,
         bonusTotal: formBonus,
         faltasTotal: descontoFaltas,
+        faltasNaoJustificadas: !faltaJustificada ? formFaltas : 0,
+        faltasJustificadasPorComponente: faltaJustificada ? {
+          "BASE": descontarBaseJ ? formFaltas : 0,
+          "ALIMENTACAO": descontarAlimentacaoJ ? formFaltas : 0,
+          "TRANSPORTE": descontarTransporteJ ? formFaltas : 0
+        } : {},
         outrosGanhos: outrosGanhosPayload,
       };
       const result = await api.post('/processamentos/processar-salario', dto);
@@ -500,10 +532,14 @@ const Processamento: React.FC = () => {
       setShowReceiptModal(true);
       const historicoId = result.historicoId;
       if (historicoId) {
+        // Aumentado para 500ms para garantir que o React renderizou o snapshot no DOM antes de capturar o HTML
         setTimeout(() => {
           const el = document.getElementById('recibo-para-impressao');
-          if (el) api.post(`/processamentos/${historicoId}/recibo`, { html: el.innerHTML }).catch(() => {});
-        }, 100);
+          if (el) {
+            console.log('Capturando HTML para histórico...', historicoId);
+            api.post(`/processamentos/${historicoId}/recibo`, { html: el.innerHTML }).catch((e) => console.error('Erro ao salvar HTML do recibo:', e));
+          }
+        }, 500);
       }
     } catch (error: any) {
       const text = error?.status === 409 ? 'Este colaborador já foi processado para este mês/ano.' : error?.message || 'Erro ao processar.';
@@ -624,10 +660,28 @@ const Processamento: React.FC = () => {
                  </div>
                  <div style={{ flex: 1, textAlign: 'right' }}>
                    <h1 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 4px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
-                   <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '8px', background: '#f1f5f9', padding: '1mm 2mm', borderRadius: '2px' }}>
-                      <p style={{ margin: '0 0 1px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {isNaN(Number(receiptSnapshot.mes)) ? receiptSnapshot.mes : ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][Number(receiptSnapshot.mes) - 1]} / {receiptSnapshot.ano}</p>
-                     <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Data:</span> {receiptSnapshot.dataProcessamento}</p>
-                   </div>
+                    <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '9px', background: '#f1f5f9', padding: '1.5mm 3mm', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                       <p style={{ margin: '0 0 2px 0', borderBottom: '1px solid #cbd5e1', paddingBottom: '1px', display: 'flex', gap: '1mm' }}>
+                         <span style={{ fontWeight: 'bold', color: '#64748b' }}>PERÍODO:</span> 
+                         <strong style={{ color: '#0f172a' }}>
+                           {(() => {
+                             const m = receiptSnapshot.mes;
+                             if (!m) return '---';
+                             // Se for número (1-12)
+                             const n = parseInt(String(m), 10);
+                             if (!isNaN(n) && n >= 1 && n <= 12) {
+                               return ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][n - 1];
+                             }
+                             // Se já for o nome do mês
+                             return String(m);
+                           })()} / {receiptSnapshot.ano}
+                         </strong>
+                       </p>
+                      <p style={{ margin: 0, display: 'flex', gap: '1mm' }}>
+                        <span style={{ fontWeight: 'bold', color: '#64748b' }}>DATA:</span> 
+                        <strong style={{ color: '#0f172a' }}>{receiptSnapshot.dataProcessamento || new Date().toLocaleDateString('pt-AO')}</strong>
+                      </p>
+                    </div>
                  </div>
                </div>
 

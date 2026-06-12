@@ -24,7 +24,10 @@ const getApiBaseUrl = (): string => {
   
   // 2. Verifica se está em desenvolvimento local pela URL da janela
   if (isLocalDevelopment()) {
-    return 'http://localhost:8080/api';
+    const port = '8080';
+    const hostname = window.location.hostname;
+    // Se for localhost ou IP, usa o hostname atual para permitir acesso na rede local
+    return `http://${hostname}:${port}/api`;
   }
   
   // 3. Verifica se é preview/deploy (Vercel, Netlify, etc)
@@ -396,10 +399,12 @@ export const showCurrentApiUrl = () => {
 export const getLogoUrl = (url?: string | null): string => {
   if (!url) return '';
   if (url.startsWith('http')) return url;
+  if (url.startsWith('data:')) return url;
   
-  // Extrai apenas o nome do arquivo para evitar duplicar o prefixo /api
-  // O backend retorna caminhos como /api/logos/filename.ext
-  // Nós queremos converter para ${API_BASE_URL}/logos/filename.ext
-  const filename = url.split('/').pop();
-  return `${API_BASE_URL}/logos/${filename}`;
+  // Se já começar com /api, apenas concatena o host
+  if (url.startsWith('/api')) {
+     return `${API_BASE_URL.replace('/api', '')}${url}`;
+  }
+  
+  return `${API_BASE_URL}/logos/${url.split('/').pop()}`;
 };
