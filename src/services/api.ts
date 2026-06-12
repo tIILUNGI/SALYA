@@ -400,18 +400,11 @@ export const getLogoUrl = (url?: string | null): string => {
   if (!url) return '';
   if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
   
-  const base = API_BASE_URL.endsWith('/api') 
-    ? API_BASE_URL.substring(0, API_BASE_URL.length - 4) 
-    : API_BASE_URL;
-  
-  let path = url.startsWith('/') ? url.substring(1) : url;
-  
-  if (path.startsWith('logos/')) {
-    path = `api/${path}`;
-  } else if (!path.startsWith('api/')) {
-    path = `api/logos/${path}`;
+  try {
+    const origin = new URL(API_BASE_URL).origin;
+    const fileName = url.split('/').pop();
+    return `${origin}/api/logos/${fileName}`;
+  } catch (e) {
+    return url;
   }
-  
-  const finalBase = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
-  return `${finalBase}/${path}`;
 };
