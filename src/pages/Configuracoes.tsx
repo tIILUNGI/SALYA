@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 import { AppContext } from '../App';
-import { api, getLogoUrl } from '../services/api';
+import { api, API_BASE_URL } from '../services/api';
 import { countries } from '../data/countries';
 import { PLAN_LIMITS, PlanType } from '../types';
 
@@ -635,6 +635,25 @@ const Configurações: React.FC = () => {
      { id: 'assinatura', label: 'Plano e Assinatura', icon: 'card_membership' },
    ];
 
+  // Função auxiliar para obter a URL correta do logo
+  const getLogoDisplayUrl = (logoUrl: string | undefined): string => {
+    if (!logoUrl) return '';
+    if (logoUrl.startsWith('http') || logoUrl.startsWith('data:')) return logoUrl;
+    
+    // Garantir que não duplicamos o /api se o BASE_URL já terminar em /api
+    const base = API_BASE_URL.endsWith('/api') ? API_BASE_URL.replace('/api', '') : API_BASE_URL;
+    
+    // Se já começar com /api/logos/
+    if (logoUrl.startsWith('/api/logos/')) return `${base}${logoUrl}`;
+    
+    // Se começar com /logos/ (formato antigo/legado)
+    if (logoUrl.startsWith('/logos/')) return `${base}/api${logoUrl}`;
+    
+    // Fallback: apenas o nome do arquivo ou outros formatos
+    const fileName = logoUrl.split('/').pop();
+    return `${base}/api/logos/${fileName}`;
+  };
+
   return (
     <div className="p-4 md:p-8 w-full max-w-full">
       <div className="flex items-center justify-between mb-8">
@@ -723,13 +742,12 @@ const Configurações: React.FC = () => {
                     <div className="w-32 h-32 rounded-full border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-800">
                       {(logoPreview || config.logoUrl) ? (
                         <img
-                          src={
-                            logoPreview
-                              ? logoPreview
-                              : getLogoUrl(config.logoUrl)
-                          }
+                          src={logoPreview || getLogoDisplayUrl(config.logoUrl)}
                           alt="Logotipo"
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder-logo.png';
+                          }}
                         />
                       ) : (
                         <span className="material-symbols-outlined text-4xl text-slate-300">image</span>

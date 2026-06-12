@@ -398,13 +398,21 @@ export const showCurrentApiUrl = () => {
 // Função para resolver a URL do logotipo usando o endpoint /api/logos
 export const getLogoUrl = (url?: string | null): string => {
   if (!url) return '';
-  if (url.startsWith('http')) return url;
-  if (url.startsWith('data:')) return url;
+  if (url.startsWith('http') || url.startsWith('data:')) return url;
   
-  // Se já começar com /api, apenas concatena o host
-  if (url.startsWith('/api')) {
-     return `${API_BASE_URL.replace('/api', '')}${url}`;
-  }
+  // Garantir que não duplicamos o /api se o BASE_URL já terminar em /api
+  const base = API_BASE_URL.endsWith('/api') ? API_BASE_URL.replace('/api', '') : API_BASE_URL;
   
-  return `${API_BASE_URL}/logos/${url.split('/').pop()}`;
+  // Se já começar com /api/logos/
+  if (url.startsWith('/api/logos/')) return `${base}${url}`;
+  
+  // Se começar com /api/ mas não logos (formato alternativo)
+  if (url.startsWith('/api/')) return `${base}${url}`;
+  
+  // Se começar com /logos/ (formato antigo/legado)
+  if (url.startsWith('/logos/')) return `${base}/api${url}`;
+  
+  // Fallback: apenas o nome do arquivo ou outros formatos
+  const fileName = url.split('/').pop();
+  return `${base}/api/logos/${fileName}`;
 };
