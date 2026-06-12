@@ -638,22 +638,22 @@ const Configurações: React.FC = () => {
   // Função auxiliar para obter a URL correta do logo
   const getLogoDisplayUrl = (logoUrl: string | undefined): string => {
     if (!logoUrl) return '';
-    if (logoUrl.startsWith('http') || logoUrl.startsWith('data:')) return logoUrl;
     
-    // Garante que o caminho começa com /api/logos/ se for apenas o nome do arquivo
-    let cleanPath = logoUrl;
-    if (!logoUrl.startsWith('/')) {
-      cleanPath = `/api/logos/${logoUrl}`;
-    } else if (logoUrl.startsWith('/logos/')) {
-      cleanPath = `/api${logoUrl}`;
+    // Se já for uma URL completa (http, https, data)
+    if (logoUrl.startsWith('http') || logoUrl.startsWith('data:') || logoUrl.startsWith('blob:')) {
+      return logoUrl;
     }
     
-    // Evita duplicação de /api se a API_BASE_URL já terminar em /api
-    if (API_BASE_URL.endsWith('/api') && cleanPath.startsWith('/api')) {
-      return `${API_BASE_URL.replace('/api', '')}${cleanPath}`;
-    }
+    // Remove a barra inicial se existir para evitar duplicação ou caminhos errados
+    const cleanLogoUrl = logoUrl.startsWith('/') ? logoUrl.substring(1) : logoUrl;
     
-    return `${API_BASE_URL}${cleanPath}`;
+    // Ajuste: O API_BASE_URL já termina em /api. Se o cleanLogoUrl começar com "api/", 
+    // removemos o /api da base para não ficar /api/api/
+    const base = (API_BASE_URL.endsWith('/api') && cleanLogoUrl.startsWith('api/')) 
+      ? API_BASE_URL.replace('/api', '') 
+      : API_BASE_URL;
+
+    return `${base}/${cleanLogoUrl}`;
   };
 
   return (
