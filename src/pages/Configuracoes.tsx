@@ -640,18 +640,20 @@ const Configurações: React.FC = () => {
     if (!logoUrl) return '';
     if (logoUrl.startsWith('http') || logoUrl.startsWith('data:')) return logoUrl;
     
-    // Garantir que não duplicamos o /api se o BASE_URL já terminar em /api
-    const base = API_BASE_URL.endsWith('/api') ? API_BASE_URL.replace('/api', '') : API_BASE_URL;
+    // Garante que o caminho começa com /api/logos/ se for apenas o nome do arquivo
+    let cleanPath = logoUrl;
+    if (!logoUrl.startsWith('/')) {
+      cleanPath = `/api/logos/${logoUrl}`;
+    } else if (logoUrl.startsWith('/logos/')) {
+      cleanPath = `/api${logoUrl}`;
+    }
     
-    // Se já começar com /api/logos/
-    if (logoUrl.startsWith('/api/logos/')) return `${base}${logoUrl}`;
+    // Evita duplicação de /api se a API_BASE_URL já terminar em /api
+    if (API_BASE_URL.endsWith('/api') && cleanPath.startsWith('/api')) {
+      return `${API_BASE_URL.replace('/api', '')}${cleanPath}`;
+    }
     
-    // Se começar com /logos/ (formato antigo/legado)
-    if (logoUrl.startsWith('/logos/')) return `${base}/api${logoUrl}`;
-    
-    // Fallback: apenas o nome do arquivo ou outros formatos
-    const fileName = logoUrl.split('/').pop();
-    return `${base}/api/logos/${fileName}`;
+    return `${API_BASE_URL}${cleanPath}`;
   };
 
   return (
@@ -746,7 +748,9 @@ const Configurações: React.FC = () => {
                           alt="Logotipo"
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            e.currentTarget.src = '/placeholder-logo.png';
+                            const target = e.currentTarget;
+                            target.onerror = null; // Impede loop infinito
+                            target.src = '/logo.png'; // Usa o logo padrão que existe no public/
                           }}
                         />
                       ) : (
