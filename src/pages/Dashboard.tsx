@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 
@@ -6,6 +7,7 @@ import { api } from '../services/api';
 import { AppContext } from '../App';
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { empresaId } = useContext(AppContext);
   const [stats, setStats] = useState({
     totalEmpresas: 0,
@@ -150,8 +152,11 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <button className="flex items-center justify-between w-full py-2 px-4 border border-slate-100 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group">
-                  Ver Detalhes
+                <button 
+                  onClick={() => navigate(alertas.contratosExpirando > 0 ? '/alertas' : '/colaboradores')}
+                  className="flex items-center justify-between w-full py-2 px-4 border border-slate-100 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group"
+                >
+                  {alertas.contratosExpirando > 0 ? 'Ver Alertas' : 'Gerir Colaboradores'}
                   <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
                 </button>
               </div>
@@ -172,8 +177,11 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <button className="flex items-center justify-between w-full py-2 px-4 border border-slate-100 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group">
-                  Gerenciar Arquivo
+                <button 
+                  onClick={() => navigate(alertas.documentosExpirando > 0 ? '/alertas' : '/colaboradores')}
+                  className="flex items-center justify-between w-full py-2 px-4 border border-slate-100 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group"
+                >
+                  {alertas.documentosExpirando > 0 ? 'Ver Alertas' : 'Gerir Arquivo'}
                   <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
                 </button>
               </div>
