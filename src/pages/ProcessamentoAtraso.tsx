@@ -40,7 +40,7 @@ interface ReciboSnapshot {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const MONTHS = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 const numToMonth = (n: number) => MONTHS[n - 1] || `Mês ${n}`;
 
 const formatMoney = (value?: number | null) => {
@@ -119,10 +119,10 @@ const ProcessamentoAtraso: React.FC = () => {
       const historico: any[] = await api.get(`/processamentos/historico?empresaId=${empresaId}`);
       const processados = new Set(historico.map((h: any) => `${h.colaboradorId}-${h.ano}-${h.mes}`));
 
-      // 2. Carregar anulamentos para excluir da lista de pendências
+      // 2. Carregar anulamentos para excluir da lista de pendências (apenas desta empresa)
       let anuladosSet = new Set<string>();
       try {
-        const resAnulamentos = await api.get('/salarios/annulments');
+        const resAnulamentos = await api.get(`/salarios/annulments?empresaId=${empresaId}`);
         if (resAnulamentos.success && Array.isArray(resAnulamentos.data)) {
           resAnulamentos.data.forEach((ann: any) => {
             if (ann.colaboradorId && ann.mes && ann.ano && ann.status === 'ANULADO') {
@@ -166,6 +166,7 @@ const ProcessamentoAtraso: React.FC = () => {
       setGrupos(resultado);
     } catch (error) {
       console.error('Erro ao carregar pendências:', error);
+      setGrupos([]);
     } finally {
       setLoading(false);
     }
@@ -282,7 +283,13 @@ const ProcessamentoAtraso: React.FC = () => {
       setReciboIndex(0);
       setShowReciboModal(true);
     } catch (error: any) {
-      alert(error?.message || 'Erro ao processar salários.');
+      console.error('Erro no processamento de atraso:', error);
+      Swal.fire({
+        title: 'Erro no Processamento',
+        text: 'Não foi possível completar o processamento destes meses. Tente novamente ou contacte o suporte.',
+        icon: 'error',
+        confirmButtonColor: '#e11d48'
+      });
     } finally {
       setProcessando(false);
     }
@@ -328,7 +335,7 @@ const ProcessamentoAtraso: React.FC = () => {
       for (const key of selecionadosKeys) {
         const [ano, mes] = key.split('-').map(Number);
         
-        await api.post(`/salarios/annul-arrear?colaboradorId=${colabId}&mes=${mes}&ano=${ano}&justificacao=${encodeURIComponent(justificacao)}`, {});
+        await api.post(`/salarios/annul-arrear?colaboradorId=${colabId}&mes=${mes}&ano=${ano}&empresaId=${empresaId}&justificacao=${encodeURIComponent(justificacao)}`, {});
       }
 
       await Swal.fire({

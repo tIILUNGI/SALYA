@@ -71,7 +71,7 @@ interface ReceiptSnapshot {
    materiaColetavel: number;
  }
 
-const MONTHS = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 const monthToNum = (month: string | number): number => {
   if (typeof month === 'number') return month;
@@ -369,11 +369,15 @@ const Processamento: React.FC = () => {
       setHistórico(Array.isArray(data) ? data : []);
     } catch (error: any) {
       setHistórico([]);
-      setHistóricoError(error?.message || 'Nao foi possivel carregar o historico.');
+      console.error('Erro ao carregar histórico:', error);
     } finally {
       setHistóricoLoading(false);
     }
   }, [empresaId]);
+
+  useEffect(() => {
+    loadHistórico();
+  }, [loadHistórico]);
 
   const handleStartProcessar = useCallback((colab: Colaborador) => {
     if (periodoLocked) return;
@@ -464,9 +468,14 @@ const Processamento: React.FC = () => {
       }
       await loadHistórico();
       Swal.fire('Sucesso', 'Processamento concluido!', 'success');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro no processamento em lote:', error);
-      Swal.fire('Erro', 'Ocorreu um erro no processamento.', 'error');
+      Swal.fire({
+        title: 'Erro no Processamento',
+        text: 'Ocorreu uma falha ao processar os salários em lote. Por favor, tente novamente.',
+        icon: 'error',
+        confirmButtonColor: '#e11d48'
+      });
     } finally {
       setIsProcessingBulk(false);
     }
@@ -542,8 +551,8 @@ const Processamento: React.FC = () => {
         }, 500);
       }
     } catch (error: any) {
-      const text = error?.status === 409 ? 'Este colaborador já foi processado para este mês/ano.' : error?.message || 'Erro ao processar.';
-      setMessage({ title: 'Erro', text, type: 'error' });
+      const text = error?.status === 409 ? 'Este colaborador já foi processado para este mês.' : 'Não foi possível concluir o processamento. Verifique os dados e tente novamente.';
+      setMessage({ title: 'Erro de Processamento', text, type: 'error' });
     }
   };
 

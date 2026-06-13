@@ -334,7 +334,7 @@ const Configurações: React.FC = () => {
     setActiveTab('empresa');
   };
 
-  const MAX_LOGO_SIZE = 1 * 1024 * 1024; // 1 MB
+  const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2 MB
 
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -344,7 +344,7 @@ const Configurações: React.FC = () => {
       return;
     }
     if (file.size > MAX_LOGO_SIZE) {
-      Swal.fire('Ficheiro demasiado grande', 'O logotipo não pode exceder 1 MB. Por favor, comprima ou redimensione a imagem.', 'warning');
+      Swal.fire('Ficheiro demasiado grande', 'O logotipo não pode exceder 2 MB. Por favor, comprima ou redimensione a imagem.', 'warning');
       if (logoInputRef.current) logoInputRef.current.value = '';
       return;
     }
@@ -359,7 +359,7 @@ const Configurações: React.FC = () => {
     setLogoLoading(true);
     try {
       const formData = new FormData();
-      formData.append('logo', logoFile);
+      formData.append('file', logoFile); // Campo alterado de 'logo' para 'file' para coincidir com o esperado pelo backend
       // POST /api/empresas/{id}/logo — multipart upload
       const result: any = await api.postForm(`/empresas/${empresa.id}/logo`, formData, true);
       const updatedLogoUrl: string | undefined = result?.logoUrl || undefined;

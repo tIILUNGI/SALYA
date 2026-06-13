@@ -108,37 +108,40 @@ const humanizeMessage = (error: any): string => {
   const status = error.status;
 
   // Verifica se é erro de conexão
-  if (message.includes('Failed to fetch') || message.includes('NetworkError')) {
-    return `Não foi possível conectar ao servidor em ${API_BASE_URL}. Verifique se o backend está rodando em http://localhost:8080`;
+  if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('JSON.parse')) {
+    return 'Não foi possível estabelecer ligação com o servidor. Por favor, verifique a sua internet.';
   }
 
-  // Dicionário de humanização
+  // Dicionário de humanização (Mensagens para utilizadores não técnicos)
   const mappings: Record<string, string> = {
-    'Failed to fetch': `Não foi possível conectar ao servidor. Verifique se o backend está rodando em ${API_BASE_URL}`,
-    'Network Error': 'Erro de rede. O servidor pode estar fora do ar.',
-    'Unauthorized': 'Sua sessão expirou. Por favor, faça login novamente.',
-    'Forbidden': 'Você não tem permissão para realizar esta ação.',
-    'Internal Server Error': 'Ocorreu um erro interno no servidor. Tente novamente mais tarde.',
-    'Bad Request': 'Os dados informados parecem estar incorretos.',
-    'Not Found': 'O recurso solicitado não foi encontrado.',
-    'User already exists': 'Este usuário já está cadastrado no sistema.',
-    'Invalid credentials': 'Credencial errada.',
-    'Email is already in use': 'Este email já está sendo utilizado por outra conta.',
-    'Email não verificado': 'Por favor, verifique seu email antes de fazer login.',
+    'Failed to fetch': 'Erro de ligação. O sistema parece estar offline.',
+    'Network Error': 'Erro de rede. Verifique a sua ligação à internet.',
+    'Unauthorized': 'A sua sessão expirou por segurança. Por favor, entre novamente.',
+    'Forbidden': 'Desculpe, não tem permissão para aceder a esta informação ou realizar esta acção.',
+    'Internal Server Error': 'Ocorreu um problema técnico no nosso servidor. Estamos a trabalhar para resolver.',
+    'Bad Request': 'Os dados enviados são inválidos. Por favor, verifique o que preencheu.',
+    'Not Found': 'O que procura não foi encontrado ou já não existe.',
+    'Conflict': 'Esta informação já existe no sistema (ex: NIF duplicado).',
+    'User already exists': 'Este utilizador já está registado.',
+    'Invalid credentials': 'O email ou a palavra-passe estão incorrectos.',
+    'Email is already in use': 'Este email já está a ser utilizado por outra conta.',
+    'quota exceeded': 'Atingiu o limite do seu plano actual.',
+    'logo too large': 'A imagem é demasiado grande (máx. 2MB).',
   };
 
   // Busca por correspondência exata ou parcial
   for (const [key, value] of Object.entries(mappings)) {
-    if (message.includes(key)) return value;
+    if (message.toLowerCase().includes(key.toLowerCase())) return value;
   }
 
   // Tratamento por status HTTP
   if (status === 401) return mappings['Unauthorized'];
   if (status === 403) return mappings['Forbidden'];
   if (status === 404) return mappings['Not Found'];
-  if (status >= 500) return mappings['Internal Server Error'];
+  if (status === 409) return mappings['Conflict'] || 'Esta informação já existe no sistema.';
+  if (status >= 500) return 'O sistema encontrou um erro técnico inesperado. Tente novamente em instantes.';
 
-  return message || 'Ocorreu um erro inesperado. Por favor, tente novamente.';
+  return 'Ocorreu um erro. Por favor, tente novamente ou contacte o suporte.';
 };
 
 const buildErrorFromResponse = (response: Response, responseText: string) => {
@@ -200,12 +203,10 @@ const ensureAuthOrRedirect = async (response: Response, endpoint: string) => {
       throw subscriptionError;
     }
 
-    // Generic 403 = real access denied (IDOR) — clear and redirect
-    clearAuthStorage();
-    if (window.location.pathname !== '/login') {
-      window.location.href = '/login';
-    }
-    throw new Error('Acesso negado');
+    // Generic 403 = real access denied (IDOR) 
+    // Em vez de expulsar o utilizador, apenas lançamos o erro.
+    // O utilizador pode ter tentado aceder a algo inválido mas ainda tem uma sessão válida.
+    throw new Error('Forbidden');
   }
 };
 

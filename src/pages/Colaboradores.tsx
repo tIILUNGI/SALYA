@@ -91,19 +91,21 @@ const Colaboradores: React.FC = () => {
 
   const fetchDocumentos = useCallback(async (colabId: number) => {
     try {
-      const data = await api.get(`/documentos/colaborador/${colabId}`);
+      const data = await api.get(`/documentos/colaborador/${colabId}?empresaId=${empresaId}`);
       setDocumentos(Array.isArray(data) ? data : []);
-    } catch {
+    } catch (error: any) {
       setDocumentos([]);
+      console.error('Erro ao buscar documentos:', error);
     }
-  }, []);
+  }, [empresaId]);
 
   const refreshColaboradores = useCallback(async () => {
     if (!empresaId) return;
     try {
       const data = await api.get(`/trabalhadores?empresaId=${empresaId}&size=1000`);
       setColaboradores(normalizeList(data, 'colaboradores'));
-    } catch {
+    } catch (error) {
+      console.error('Erro ao carregar colaboradores:', error);
     }
   }, [empresaId, setColaboradores]);
 
@@ -222,6 +224,8 @@ const Colaboradores: React.FC = () => {
       setDocFile(null);
       setShowDocForm(false);
       setMessage({ title: 'Sucesso', text: 'Documento adicionado.', type: 'success' });
+    } catch (error) {
+      setMessage({ title: 'Erro', text: 'Não foi possível carregar o documento. Verifique a sua ligação.', type: 'error' });
     } finally {
       setDocLoading(false);
     }
@@ -245,7 +249,8 @@ const Colaboradores: React.FC = () => {
       await api.delete(`/documentos/${docId}`);
       setDocumentos((previous) => previous.filter((documento) => documento.id !== docId));
       Swal.fire({ title: 'Eliminado', text: 'Documento removido com sucesso!', icon: 'success', confirmButtonColor: '#22c55e' });
-    } catch {
+    } catch (error) {
+      Swal.fire({ title: 'Erro', text: 'Não foi possível eliminar o documento. Tente novamente.', icon: 'error', confirmButtonColor: '#e11d48' });
     }
   };
 
@@ -288,7 +293,12 @@ const Colaboradores: React.FC = () => {
       refreshColaboradores();
       refreshData();
       handleCloseModal();
-    } catch {
+    } catch (error: any) {
+      setMessage({ 
+        title: 'Erro no Registo', 
+        text: error.message || 'Não foi possível guardar os dados do colaborador. Verifique os campos e tente novamente.', 
+        type: 'error' 
+      });
     }
   };
 
@@ -312,7 +322,8 @@ const Colaboradores: React.FC = () => {
           Swal.fire({ title: 'Removido', text: 'Colaborador removido com sucesso!', icon: 'success', confirmButtonColor: '#22c55e' });
           refreshColaboradores();
           refreshData();
-        } catch {
+        } catch (error) {
+          Swal.fire({ title: 'Erro', text: 'Não foi possível remover o colaborador neste momento.', icon: 'error', confirmButtonColor: '#e11d48' });
         }
       }
     });

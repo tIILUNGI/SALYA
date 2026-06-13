@@ -287,11 +287,18 @@ const Relatórios: React.FC = () => {
         setChartProcessamento(charts.processamentoMensal || []);
         setChartAbsentismo(charts.absentismoDepartamento || []);
       })
-      .catch(() => { setChartProcessamento([]); setChartAbsentismo([]); });
+      .catch(err => { 
+        console.error('Erro ao carregar dados dos gráficos:', err);
+        setChartProcessamento([]); 
+        setChartAbsentismo([]); 
+      });
 
     const fetchProcessamentos = api.get(`/processamentos/historico?empresaId=${empresaId}`)
       .then(data => setProcessamentos(Array.isArray(data) ? data : []))
-      .catch(() => setProcessamentos([]));
+      .catch(err => {
+        console.error('Erro ao carregar histórico para relatórios:', err);
+        setProcessamentos([]);
+      });
 
     Promise.all([fetchCharts, fetchProcessamentos]).finally(() => setLoading(false));
   }, [empresaId]);
