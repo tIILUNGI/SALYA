@@ -450,6 +450,10 @@ return (
                   src={getLogoUrl(empresa.logoUrl)}
                   alt="Logotipo"
                   style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "/logo.png";
+                  }}
                 />
               )}
               <div>

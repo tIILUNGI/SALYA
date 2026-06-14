@@ -359,7 +359,7 @@ const Configurações: React.FC = () => {
     setLogoLoading(true);
     try {
       const formData = new FormData();
-      formData.append('file', logoFile); // Campo alterado de 'logo' para 'file' para coincidir com o esperado pelo backend
+      formData.append('logo', logoFile); // Campo alterado para 'logo' para coincidir com o esperado pelo backend em EmpresaController
       // POST /api/empresas/{id}/logo — multipart upload
       const result: any = await api.postForm(`/empresas/${empresa.id}/logo`, formData, true);
       const updatedLogoUrl: string | undefined = result?.logoUrl || undefined;

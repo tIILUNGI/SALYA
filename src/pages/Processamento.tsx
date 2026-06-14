@@ -659,7 +659,16 @@ const Processamento: React.FC = () => {
 >
 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2mm', borderBottom: '1px solid #000', paddingBottom: '2mm' }}>
                  <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '3mm' }}>
-                   {empresa?.logoUrl && <img src={getLogoUrl(empresa.logoUrl)} alt="Logotipo" style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }} />}
+                   {empresa?.logoUrl && <img 
+                     src={getLogoUrl(empresa.logoUrl)} 
+                     alt="Logotipo" 
+                     style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }} 
+                     onError={(e) => {
+                       const target = e.currentTarget;
+                       target.onerror = null;
+                       target.src = '/logo.png';
+                     }}
+                   />}
                    <div>
                      <h2 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 2px 0' }}>{empresa?.nome}</h2>
                      <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>NIF: {empresa?.nif}</p>

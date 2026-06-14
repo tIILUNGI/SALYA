@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
-import { api, clearAuthStorage } from '../services/api';
+import { api, getLogoUrl, clearAuthStorage } from '../services/api';
 import { PLAN_LIMITS, PlanType } from '../types';
 import Swal from 'sweetalert2';
 
@@ -168,7 +168,24 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
     <aside className={`w-64 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
       {/* Logo header */}
       <div className="p-6 flex items-center gap-3 mb-2">
-        <img src="/logo.png" alt="Salya Logo" className="h-10 w-auto" />
+        {empresa?.logoUrl ? (
+          <img 
+            src={getLogoUrl(empresa.logoUrl)} 
+            alt={empresa.nome} 
+            className="h-10 w-10 object-contain rounded-lg bg-slate-50 p-1"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = "/logo.png";
+            }}
+          />
+        ) : (
+          <img src="/logo.png" alt="Salya Logo" className="h-10 w-auto" />
+        )}
+        {empresa?.nome && (
+          <div className="overflow-hidden">
+            <p className="text-xs font-black text-slate-800 dark:text-white truncate uppercase tracking-tighter">{empresa.nome}</p>
+          </div>
+        )}
       </div>
 
 
