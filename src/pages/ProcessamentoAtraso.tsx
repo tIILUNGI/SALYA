@@ -364,8 +364,18 @@ const ProcessamentoAtraso: React.FC = () => {
     const snap = recibos[reciboIndex];
     if (!snap) return;
 
+    // Clona o elemento para não afetar o que está na tela
+    const cloneElement = element.cloneNode(true) as HTMLElement;
+    
+    // Garante que os estilos de texto sejam preservados
+    cloneElement.style.backgroundColor = 'white';
+    cloneElement.style.color = 'black';
+    cloneElement.style.position = 'relative';
+    cloneElement.style.left = '0';
+    cloneElement.style.top = '0';
+
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-    doc.html(element, {
+    doc.html(cloneElement, {
       callback: (pdf) => {
         const filename = 'Recibo_' + snap.colaborador.nome.replace(/ /g, '_') + '_' + snap.mes + '_' + snap.ano + '.pdf';
         pdf.save(filename);
@@ -373,195 +383,241 @@ const ProcessamentoAtraso: React.FC = () => {
       x: 0,
       y: 0,
       width: 210,
-      windowWidth: element.scrollWidth || 794,
+      windowWidth: cloneElement.scrollWidth || 794,
       autoPaging: 'text',
       margin: [0, 0, 0, 0],
+      html2canvas: {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true
+      }
     });
   };
 
-    // ── Render: Receipt Modal ────────────────────────────────────────────────────
-const renderReciboModal = () => {
+  // ── Save receipt HTML to backend ────────────────────────────────────────────
+  const saveReceiptHtml = useCallback(async (snap: ReciboSnapshot) => {
+    if (!snap.historicoId) return;
+    
+    // Aguarda um pouco para garantir que o DOM foi atualizado
+    setTimeout(() => {
+      const element = document.getElementById('recibo-atraso-impressao');
+      if (element && snap.historicoId) {
+        api.post(`/processamentos/${snap.historicoId}/recibo`, { html: element.innerHTML })
+          .catch(e => console.error('Erro ao salvar HTML do recibo:', e));
+      }
+    }, 500);
+  }, []);
+
+  // ── Render: Receipt Modal ────────────────────────────────────────────────────
+  const renderReciboModal = () => {
     if (!showReciboModal || recibos.length === 0) return null;
     const snap = recibos[reciboIndex];
     if (!snap) return null;
 
     const valorHora = snap.diasTrabalhados > 0 ? snap.salarioBase / (snap.diasTrabalhados * 8) : 0;
 
-const linhas = [
-  { label: `Salário Base`, valorRemun: snap.salarioBase, valorDesc: 0, qtd: `${snap.diasTrabalhados} Dias` },
-  ...(snap.ganhoAlimentacao > 0 ? [{ label: 'Subsídio de Alimentação', valorRemun: snap.ganhoAlimentacao, valorDesc: 0, qtd: '1' }] : []),
-  ...(snap.ganhoTransporte > 0 ? [{ label: 'Subsídio de Transporte', valorRemun: snap.ganhoTransporte, valorDesc: 0, qtd: '1' }] : []),
-  { label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: snap.valorINSS, qtd: snap.valorINSS > 0 ? '3%' : '0%' },
-  { label: snap.colaborador.tipoContrato === 'Prestador' ? 'IRT Grupo B/C (Independente)' : 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: snap.valorIRT, qtd: snap.percentualIRT ? (snap.percentualIRT % 1 === 0 ? `${snap.percentualIRT}%` : `${snap.percentualIRT.toFixed(1)}%`) : '-' },
-];
+    // CORREÇÃO: Pré-calcula o nome do mês para evitar JavaScript inline no PDF
+    const getMonthName = () => {
+      const mesNum = MONTHS.indexOf(snap.mes) + 1;
+      if (mesNum > 0 && mesNum <= 12) {
+        return snap.mes;
+      }
+      // Se já veio como número
+      const n = parseInt(String(snap.mes), 10);
+      if (!isNaN(n) && n >= 1 && n <= 12) {
+        return MONTHS[n - 1];
+      }
+      return snap.mes;
+    };
 
-return (
-  <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[110] p-4 backdrop-blur-sm">
-    <div className="bg-white rounded-[40px] max-w-[220mm] w-full max-h-[95vh] overflow-hidden shadow-2xl relative flex flex-col">
-      {recibos.length > 1 && (
-        <div className="px-6 py-3 bg-primary/5 border-b border-primary/10 flex items-center justify-between gap-4">
-          <button
-            onClick={() => setReciboIndex(i => Math.max(0, i - 1))}
-            disabled={reciboIndex === 0}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-all"
-          >
-            ← Anterior
-          </button>
-          <span className="text-xs font-medium text-slate-600">
-            Recibo {reciboIndex + 1} de {recibos.length} — <strong>{snap.mes} {snap.ano}</strong>
-          </span>
-          <button
-            onClick={() => setReciboIndex(i => Math.min(recibos.length - 1, i + 1))}
-            disabled={reciboIndex === recibos.length - 1}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-all"
-          >
-            Próximo →
-          </button>
-        </div>
-      )}
+    const monthName = getMonthName();
+    const periodText = `${monthName} / ${snap.ano}`;
 
-      <div className="flex-1 overflow-x-auto overflow-y-auto p-4 sm:p-8 bg-slate-100">
-        <div
-          id="recibo-atraso-impressao"
-          style={{
-            width: '190mm',
-            minHeight: '270mm',
-            maxHeight: '270mm',
-            backgroundColor: '#fff',
-            margin: '0 auto',
-            padding: '4mm',
-            boxSizing: 'border-box',
-            display: 'flex',
-            flexDirection: 'column',
-            fontFamily: 'Arial, sans-serif',
-            color: '#000',
-            fontSize: '8px',
-            lineHeight: '1.2',
-            maxWidth: '100%',
-            pageBreakInside: 'avoid',
-            breakInside: 'avoid',
-            overflow: 'hidden'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2mm', borderBottom: '1px solid #000', paddingBottom: '2mm' }}>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '3mm' }}>
-              {empresa?.logoUrl && (
-                <img
-                  src={getLogoUrl(empresa.logoUrl)}
-                  alt="Logotipo"
-                  style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }}
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = "/logo.png";
-                  }}
-                />
-              )}
-              <div>
-                <h2 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 2px 0' }}>{empresa?.nome}</h2>
-                <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
-                <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>{empresa?.endereco}, {empresa?.municipio}</p>
-                <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>{empresa?.email} | {empresa?.telefone}</p>
-              </div>
+    const linhas = [
+      { label: `Salário Base`, valorRemun: snap.salarioBase, valorDesc: 0, qtd: `${snap.diasTrabalhados} Dias` },
+      ...(snap.ganhoAlimentacao > 0 ? [{ label: 'Subsídio de Alimentação', valorRemun: snap.ganhoAlimentacao, valorDesc: 0, qtd: '1' }] : []),
+      ...(snap.ganhoTransporte > 0 ? [{ label: 'Subsídio de Transporte', valorRemun: snap.ganhoTransporte, valorDesc: 0, qtd: '1' }] : []),
+      { label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: snap.valorINSS, qtd: snap.valorINSS > 0 ? '3%' : '0%' },
+      { label: snap.colaborador.tipoContrato === 'Prestador' ? 'IRT Grupo B/C (Independente)' : 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: snap.valorIRT, qtd: snap.percentualIRT ? (snap.percentualIRT % 1 === 0 ? `${snap.percentualIRT}%` : `${snap.percentualIRT.toFixed(1)}%`) : '-' },
+    ];
+
+    // Salvar o HTML do recibo quando o modal é aberto
+    if (snap.historicoId && !showReciboModal) {
+      saveReceiptHtml(snap);
+    }
+
+    return (
+      <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[110] p-4 backdrop-blur-sm">
+        <div className="bg-white rounded-[40px] max-w-[220mm] w-full max-h-[95vh] overflow-hidden shadow-2xl relative flex flex-col">
+          {recibos.length > 1 && (
+            <div className="px-6 py-3 bg-primary/5 border-b border-primary/10 flex items-center justify-between gap-4">
+              <button
+                onClick={() => setReciboIndex(i => Math.max(0, i - 1))}
+                disabled={reciboIndex === 0}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-all"
+              >
+                ← Anterior
+              </button>
+              <span className="text-xs font-medium text-slate-600">
+                Recibo {reciboIndex + 1} de {recibos.length} — <strong>{snap.mes} {snap.ano}</strong>
+              </span>
+              <button
+                onClick={() => setReciboIndex(i => Math.min(recibos.length - 1, i + 1))}
+                disabled={reciboIndex === recibos.length - 1}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-all"
+              >
+                Próximo →
+              </button>
             </div>
-            <div style={{ flex: 1, textAlign: 'right' }}>
-              <h1 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 4px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
-              <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '8px', background: '#f1f5f9', padding: '1mm 2mm', borderRadius: '2px' }}>
-                <p style={{ margin: '0 0 1px 0' }}><span style={{ fontWeight: 'bold' }}>Período:</span> {isNaN(Number(snap.mes)) ? snap.mes : ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][Number(snap.mes) - 1]} / {snap.ano}</p>
-                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold' }}>Data:</span> {snap.dataProcessamento}</p>
+          )}
+
+          <div className="flex-1 overflow-x-auto overflow-y-auto p-4 sm:p-8 bg-slate-100">
+            <div
+              id="recibo-atraso-impressao"
+              style={{
+                width: '190mm',
+                minHeight: '270mm',
+                maxHeight: '270mm',
+                backgroundColor: '#fff',
+                margin: '0 auto',
+                padding: '4mm',
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                fontFamily: 'Arial, sans-serif',
+                color: '#000',
+                fontSize: '8px',
+                lineHeight: '1.2',
+                maxWidth: '100%',
+                pageBreakInside: 'avoid',
+                breakInside: 'avoid',
+                overflow: 'hidden'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2mm', borderBottom: '1px solid #000', paddingBottom: '2mm' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '3mm' }}>
+                  {empresa?.logoUrl && (
+                    <img
+                      src={getLogoUrl(empresa.logoUrl)}
+                      alt="Logotipo"
+                      style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/logo.png";
+                      }}
+                    />
+                  )}
+                  <div>
+                    <h2 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 2px 0' }}>{empresa?.nome}</h2>
+                    <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
+                    <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>{empresa?.endereco}, {empresa?.municipio}</p>
+                    <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>{empresa?.email} | {empresa?.telefone}</p>
+                  </div>
+                </div>
+                <div style={{ flex: 1, textAlign: 'right' }}>
+                  <h1 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 4px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
+                  <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '8px', background: '#f1f5f9', padding: '1mm 2mm', borderRadius: '2px' }}>
+                    <p style={{ margin: '0 0 1px 0' }}>
+                      <span style={{ fontWeight: 'bold' }}>Período:</span> {periodText}
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <span style={{ fontWeight: 'bold' }}>Data:</span> {snap.dataProcessamento}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3mm', marginBottom: '2mm', padding: '1.5mm', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
+                <div style={{ fontSize: '8px', lineHeight: '1.5' }}>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Nome:</span> <span>{snap.colaborador.nome}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Nº Mec.:</span> <span>{(snap.colaborador as any).numeroColaborador || '---'}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Categoria:</span> <span>{snap.colaborador.cargo}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Contribuinte:</span> <span>{snap.colaborador.nif}</span></div>
+                </div>
+                <div style={{ fontSize: '8px', lineHeight: '1.5' }}>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Vencimento:</span> <span>{formatMoney(snap.salarioBase)}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Venc./Hora:</span> <span>{formatMoney(valorHora)}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Dias Úteis:</span> <span>{snap.diasTrabalhados}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Departamento:</span> <span>{(snap.colaborador as any).departamento || '---'}</span></div>
+                </div>
+              </div>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', marginBottom: '2mm' }}>
+                <thead>
+                  <tr style={{ borderTop: '1px solid #000', borderBottom: '1px solid #000', textAlign: 'left', backgroundColor: '#f8fafc' }}>
+                    <th style={{ padding: '1.5mm 1mm' }}>Descrição</th>
+                    <th style={{ padding: '1.5mm 1mm', width: '16mm', textAlign: 'center' }}>Qtd.</th>
+                    <th style={{ padding: '1.5mm 1mm', width: '32mm', textAlign: 'right' }}>Remun.</th>
+                    <th style={{ padding: '1.5mm 1mm', width: '32mm', textAlign: 'right' }}>Desc.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {linhas.map((linha, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '1.5mm 1mm', fontWeight: '500' }}>{linha.label}</td>
+                      <td style={{ padding: '1.5mm 1mm', textAlign: 'center', color: '#64748b' }}>{linha.qtd}</td>
+                      <td style={{ padding: '1.5mm 1mm', textAlign: 'right' }}>{linha.valorRemun > 0 ? formatMoney(linha.valorRemun) : ''}</td>
+                      <td style={{ padding: '1.5mm 1mm', textAlign: 'right', color: linha.valorDesc > 0 ? '#e11d48' : '#000' }}>{linha.valorDesc > 0 ? formatMoney(linha.valorDesc) : ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div style={{ flex: '1 1 auto', minHeight: '3mm' }}></div>
+
+              <div style={{ borderTop: '1px solid #000', paddingTop: '2mm' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6mm', marginBottom: '2mm' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '8px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Remun.</p>
+                    <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0 }}>{formatMoney(snap.totalBruto)}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '8px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Desc.</p>
+                    <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0, color: '#e11d48' }}>{formatMoney(snap.totalDescontos)}</p>
+                  </div>
+                </div>
+                <div style={{ background: '#000', color: '#fff', padding: '2mm 4mm', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '0.05em' }}>VALOR LÍQUIDO (KZ)</span>
+                  <span style={{ fontSize: '16px', fontWeight: '900' }}>{formatMoney(snap.salarioLiquido)}</span>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '2mm', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '4mm' }}>
+                <div style={{ fontSize: '8px', background: '#f8fafc', padding: '1mm', borderRadius: '4px' }}>
+                  <p style={{ margin: 0, fontWeight: 'bold' }}>Banco: {(snap.colaborador as any).banco || '---'} | IBAN: {(snap.colaborador as any).iban || '---'}</p>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ borderBottom: '1px solid #000', height: '8mm', marginBottom: '1mm' }}></div>
+                  <p style={{ fontSize: '8px', fontWeight: 'bold', margin: 0 }}>Assinatura</p>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '2mm', textAlign: 'center', fontSize: '7px', color: '#94a3b8', fontWeight: 'bold' }}>
+                Processado por SALYA
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3mm', marginBottom: '2mm', padding: '1.5mm', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-            <div style={{ fontSize: '8px', lineHeight: '1.5' }}>
-              <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Nome:</span> <span>{snap.colaborador.nome}</span></div>
-              <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Nº Mec.:</span> <span>{(snap.colaborador as any).numeroColaborador || '---'}</span></div>
-              <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Categoria:</span> <span>{snap.colaborador.cargo}</span></div>
-              <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Contribuinte:</span> <span>{snap.colaborador.nif}</span></div>
-            </div>
-            <div style={{ fontSize: '8px', lineHeight: '1.5' }}>
-              <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Vencimento:</span> <span>{formatMoney(snap.salarioBase)}</span></div>
-              <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Venc./Hora:</span> <span>{formatMoney(valorHora)}</span></div>
-              <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Dias Úteis:</span> <span>{snap.diasTrabalhados}</span></div>
-              <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Departamento:</span> <span>{(snap.colaborador as any).departamento || '---'}</span></div>
-            </div>
-          </div>
-
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', marginBottom: '2mm' }}>
-            <thead>
-              <tr style={{ borderTop: '1px solid #000', borderBottom: '1px solid #000', textAlign: 'left', backgroundColor: '#f8fafc' }}>
-                <th style={{ padding: '1.5mm 1mm' }}>Descrição</th>
-                <th style={{ padding: '1.5mm 1mm', width: '16mm', textAlign: 'center' }}>Qtd.</th>
-                <th style={{ padding: '1.5mm 1mm', width: '32mm', textAlign: 'right' }}>Remun.</th>
-                <th style={{ padding: '1.5mm 1mm', width: '32mm', textAlign: 'right' }}>Desc.</th>
-              </tr>
-            </thead>
-            <tbody>
-              {linhas.map((linha, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '1.5mm 1mm', fontWeight: '500' }}>{linha.label}</td>
-                  <td style={{ padding: '1.5mm 1mm', textAlign: 'center', color: '#64748b' }}>{linha.qtd}</td>
-                  <td style={{ padding: '1.5mm 1mm', textAlign: 'right' }}>{linha.valorRemun > 0 ? formatMoney(linha.valorRemun) : ''}</td>
-                  <td style={{ padding: '1.5mm 1mm', textAlign: 'right', color: linha.valorDesc > 0 ? '#e11d48' : '#000' }}>{linha.valorDesc > 0 ? formatMoney(linha.valorDesc) : ''}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div style={{ flex: '1 1 auto', minHeight: '3mm' }}></div>
-
-          <div style={{ borderTop: '1px solid #000', paddingTop: '2mm' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6mm', marginBottom: '2mm' }}>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '8px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Remun.</p>
-                <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0 }}>{formatMoney(snap.totalBruto)}</p>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '8px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Desc.</p>
-                <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0, color: '#e11d48' }}>{formatMoney(snap.totalDescontos)}</p>
-              </div>
-            </div>
-            <div style={{ background: '#000', color: '#fff', padding: '2mm 4mm', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '0.05em' }}>VALOR LÍQUIDO (KZ)</span>
-              <span style={{ fontSize: '16px', fontWeight: '900' }}>{formatMoney(snap.salarioLiquido)}</span>
-            </div>
-          </div>
-
-          <div style={{ marginTop: '2mm', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '4mm' }}>
-            <div style={{ fontSize: '8px', background: '#f8fafc', padding: '1mm', borderRadius: '4px' }}>
-              <p style={{ margin: 0, fontWeight: 'bold' }}>Banco: {(snap.colaborador as any).banco || '---'} | IBAN: {(snap.colaborador as any).iban || '---'}</p>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ borderBottom: '1px solid #000', height: '8mm', marginBottom: '1mm' }}></div>
-              <p style={{ fontSize: '8px', fontWeight: 'bold', margin: 0 }}>Assinatura</p>
-            </div>
-          </div>
-
-          <div style={{ marginTop: '2mm', textAlign: 'center', fontSize: '7px', color: '#94a3b8', fontWeight: 'bold' }}>
-            Processado por SALYA
+          <div className="p-6 border-t flex gap-4 bg-white">
+            <button
+              onClick={handleExportarPDF}
+              className="flex-[2] py-4 bg-primary text-white rounded-2xl font-bold px-8 shadow-lg hover:shadow-primary/20 transition-all flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined">download</span>
+              Exportar Recibo (PDF)
+            </button>
+            <button
+              onClick={() => setShowReciboModal(false)}
+              className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+            >
+              Fechar
+            </button>
           </div>
         </div>
       </div>
-
-      <div className="p-6 border-t flex gap-4 bg-white">
-        <button
-          onClick={handleExportarPDF}
-          className="flex-[2] py-4 bg-primary text-white rounded-2xl font-bold px-8 shadow-lg hover:shadow-primary/20 transition-all flex items-center justify-center gap-2"
-        >
-          <span className="material-symbols-outlined">download</span>
-          Exportar Recibo (PDF)
-        </button>
-        <button
-          onClick={() => setShowReciboModal(false)}
-          className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-200 transition-all"
-        >
-          Fechar
-        </button>
-      </div>
-    </div>
-  </div>
-);
-};
+    );
+  };
 
   // ── Main Render ──────────────────────────────────────────────────────────────
   return (

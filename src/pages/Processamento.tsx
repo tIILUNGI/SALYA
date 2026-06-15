@@ -559,8 +559,19 @@ const Processamento: React.FC = () => {
   const handleGuardarPDF = () => {
     const element = document.getElementById('recibo-para-impressao');
     if (!element || !receiptSnapshot) return;
+    
+    // Clona o elemento para não afetar o que está na tela
+    const cloneElement = element.cloneNode(true) as HTMLElement;
+    
+    // Garante que os estilos de texto sejam preservados
+    cloneElement.style.backgroundColor = 'white';
+    cloneElement.style.color = 'black';
+    cloneElement.style.position = 'relative';
+    cloneElement.style.left = '0';
+    cloneElement.style.top = '0';
+    
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-    doc.html(element, {
+    doc.html(cloneElement, {
       callback: (pdf) => {
         const filename = 'Recibo_' + receiptSnapshot.colaborador.nome.replace(/ /g, '_') + '_' + receiptSnapshot.ano + String(monthToNum(receiptSnapshot.mes)).padStart(2, '0') + '.pdf';
         pdf.save(filename);
@@ -568,9 +579,15 @@ const Processamento: React.FC = () => {
       x: 0,
       y: 0,
       width: 210,
-      windowWidth: element.scrollWidth || 794,
+      windowWidth: cloneElement.scrollWidth || 794,
       autoPaging: 'text',
       margin: [0, 0, 0, 0],
+      html2canvas: {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true
+      }
     });
   };
 
@@ -629,6 +646,20 @@ const Processamento: React.FC = () => {
     const totalDescontosExibido = receiptSnapshot.totalDescontos;
     const salarioLiquidoExibido = receiptSnapshot.salarioLiquido;
 
+    // CORREÇÃO: Pré-calcula o nome do mês para evitar JavaScript inline no PDF
+    const getMonthName = () => {
+      const m = receiptSnapshot.mes;
+      if (!m) return '---';
+      const n = parseInt(String(m), 10);
+      if (!isNaN(n) && n >= 1 && n <= 12) {
+        return MONTHS[n - 1];
+      }
+      return String(m);
+    };
+
+    const monthName = getMonthName();
+    const periodText = `${monthName} / ${receiptSnapshot.ano}`;
+
     const receiptLines = [
       { label: `Salário Base`, valorRemun: receiptSnapshot.salarioBase, valorDesc: 0, qtd: `${receiptSnapshot.diasTrabalhados} Dias` },
       ...(receiptSnapshot.ganhoAlimentacao > 0 ? [{ label: 'Subsídio de Alimentação', valorRemun: receiptSnapshot.ganhoAlimentacao, valorDesc: 0, qtd: '1' }] : []),
@@ -681,23 +712,11 @@ const Processamento: React.FC = () => {
                     <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '9px', background: '#f1f5f9', padding: '1.5mm 3mm', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
                        <p style={{ margin: '0 0 2px 0', borderBottom: '1px solid #cbd5e1', paddingBottom: '1px', display: 'flex', gap: '1mm' }}>
                          <span style={{ fontWeight: 'bold', color: '#64748b' }}>PERÍODO:</span> 
-                         <strong style={{ color: '#0f172a' }}>
-                           {(() => {
-                             const m = receiptSnapshot.mes;
-                             if (!m) return '---';
-                             // Se for número (1-12)
-                             const n = parseInt(String(m), 10);
-                             if (!isNaN(n) && n >= 1 && n <= 12) {
-                               return ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][n - 1];
-                             }
-                             // Se já for o nome do mês
-                             return String(m);
-                           })()} / {receiptSnapshot.ano}
-                         </strong>
+                         <strong style={{ color: '#0f172a' }}>{periodText}</strong>
                        </p>
                       <p style={{ margin: 0, display: 'flex', gap: '1mm' }}>
                         <span style={{ fontWeight: 'bold', color: '#64748b' }}>DATA:</span> 
-                        <strong style={{ color: '#0f172a' }}>{receiptSnapshot.dataProcessamento || new Date().toLocaleDateString('pt-AO')}</strong>
+                        <strong style={{ color: '#0f172a' }}>{receiptSnapshot.dataProcessamento}</strong>
                       </p>
                     </div>
                  </div>
