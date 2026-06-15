@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect, useCallback, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import jsPDF from 'jspdf';
+import html2pdf from 'html2pdf.js';
 
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
@@ -560,35 +561,22 @@ const Processamento: React.FC = () => {
     const element = document.getElementById('recibo-para-impressao');
     if (!element || !receiptSnapshot) return;
     
-    // Clona o elemento para não afetar o que está na tela
-    const cloneElement = element.cloneNode(true) as HTMLElement;
-    
-    // Garante que os estilos de texto sejam preservados
-    cloneElement.style.backgroundColor = 'white';
-    cloneElement.style.color = 'black';
-    cloneElement.style.position = 'relative';
-    cloneElement.style.left = '0';
-    cloneElement.style.top = '0';
-    
-    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-    doc.html(cloneElement, {
-      callback: (pdf) => {
-        const filename = 'Recibo_' + receiptSnapshot.colaborador.nome.replace(/ /g, '_') + '_' + receiptSnapshot.ano + String(monthToNum(receiptSnapshot.mes)).padStart(2, '0') + '.pdf';
-        pdf.save(filename);
-      },
-      x: 0,
-      y: 0,
-      width: 210,
-      windowWidth: cloneElement.scrollWidth || 794,
-      autoPaging: 'text',
-      margin: [0, 0, 0, 0],
-      html2canvas: {
-        scale: 2,
+    // Configurações para o html2pdf
+    const options = {
+      margin: 0,
+      filename: 'Recibo_' + receiptSnapshot.colaborador.nome.replace(/ /g, '_') + '_' + receiptSnapshot.ano + String(monthToNum(receiptSnapshot.mes)).padStart(2, '0') + '.pdf',
+      image: { type: 'jpeg', quality: 1.0 },
+      html2canvas: { 
+        scale: 3.5, 
+        useCORS: true, 
+        letterRendering: true,
         backgroundColor: '#ffffff',
-        logging: false,
-        useCORS: true
-      }
-    });
+        logging: false
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().from(element).set(options).save();
   };
 
     const handleUpdateOtherGain = (id: string, field: 'descricao' | 'valor', value: string) => {
@@ -600,7 +588,7 @@ const Processamento: React.FC = () => {
 
   const handleDownloadHistoricalReceipt = async (item: HistóricoProcessamento) => {
     try {
-      const htmlOrData = await api.get(`/processamentos/${item.id}/recibo`);
+      const htmlOrData = await api.get(`/processamentos/${item.id}/recibo`, true);
       const html = typeof htmlOrData === 'string' ? htmlOrData : (htmlOrData?.html ?? '');
       if (html && html.includes('<html')) {
         const blob = new Blob([html], { type: 'text/html' });
@@ -682,10 +670,11 @@ const Processamento: React.FC = () => {
    className="bg-white mx-auto p-[8mm] shadow-none flex flex-col font-sans text-black leading-relaxed"
    style={{
      width: '190mm',
-     minHeight: '275mm',
-     maxHeight: '280mm',
+     minHeight: '260mm',
+     maxHeight: '277mm',
      boxSizing: 'border-box',
-     fontSize: '11px'
+     fontSize: '11px',
+     overflow: 'hidden'
    }}
 >
 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2mm', borderBottom: '1px solid #000', paddingBottom: '2mm' }}>
@@ -693,66 +682,66 @@ const Processamento: React.FC = () => {
                    {empresa?.logoUrl && <img 
                      src={getLogoUrl(empresa.logoUrl)} 
                      alt="Logotipo" 
-                     style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }} 
+                     style={{ width: '15mm', height: '15mm', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#f8fafc', padding: '2px', border: '1px solid #f1f5f9' }} 
                      onError={(e) => {
                        const target = e.currentTarget;
                        target.onerror = null;
                        target.src = '/logo.png';
                      }}
                    />}
-                   <div>
-                     <h2 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 2px 0' }}>{empresa?.nome}</h2>
-                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
-                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>{empresa?.endereco}, {empresa?.municipio}</p>
-                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>{empresa?.email} | {empresa?.telefone}</p>
+                   <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                     <h2 style={{ fontSize: '14px', fontWeight: '900', margin: '0 0 2px 0', color: '#000', textTransform: 'uppercase' }}>{empresa?.nome}</h2>
+                     <p style={{ fontSize: '9px', margin: '1px 0', color: '#475569', fontWeight: '700' }}>NIF: {empresa?.nif}</p>
+                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#64748b' }}>{empresa?.endereco}, {empresa?.municipio}</p>
+                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#64748b' }}>{empresa?.email} | {empresa?.telefone}</p>
                    </div>
                  </div>
-                 <div style={{ flex: 1, textAlign: 'right' }}>
-                   <h1 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 4px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
-                    <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '9px', background: '#f1f5f9', padding: '1.5mm 3mm', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                       <p style={{ margin: '0 0 2px 0', borderBottom: '1px solid #cbd5e1', paddingBottom: '1px', display: 'flex', gap: '1mm' }}>
-                         <span style={{ fontWeight: 'bold', color: '#64748b' }}>PERÍODO:</span> 
+                 <div style={{ flex: 1, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
+                   <h1 style={{ fontSize: '14px', fontWeight: '900', margin: '0 0 6px 0', letterSpacing: '0.05em', color: '#000' }}>RECIBO DE VENCIMENTO</h1>
+                    <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '10px', background: '#f8fafc', padding: '2mm 4mm', borderRadius: '6px', border: '1.5px solid #e2e8f0 shadow-sm' }}>
+                       <p style={{ margin: '0 0 3px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px', display: 'flex', gap: '2mm', justifyContent: 'space-between' }}>
+                         <span style={{ fontWeight: 'bold', color: '#64748b', fontSize: '9px' }}>PERÍODO:</span> 
                          <strong style={{ color: '#0f172a' }}>{periodText}</strong>
                        </p>
-                      <p style={{ margin: 0, display: 'flex', gap: '1mm' }}>
-                        <span style={{ fontWeight: 'bold', color: '#64748b' }}>DATA:</span> 
+                      <p style={{ margin: 0, display: 'flex', gap: '2mm', justifyContent: 'space-between' }}>
+                        <span style={{ fontWeight: 'bold', color: '#64748b', fontSize: '9px' }}>DATA:</span> 
                         <strong style={{ color: '#0f172a' }}>{receiptSnapshot.dataProcessamento}</strong>
                       </p>
                     </div>
                  </div>
                </div>
 
-<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5mm', marginBottom: '5mm', padding: '5mm', border: '1.5px solid #000', borderRadius: '6px', background: '#fcfcfc' }}>
-                  <div style={{ fontSize: '13px', lineHeight: '1.6' }}>
-                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>NOME:</span> <span style={{ fontWeight: 'bold' }}>{receiptSnapshot.colaborador.nome}</span></div>
-                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>Nº MEC.:</span> <span>{(receiptSnapshot.colaborador as any).numeroColaborador || '---'}</span></div>
-                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>CATEGORIA:</span> <span>{receiptSnapshot.colaborador.cargo}</span></div>
-                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>CONTRIBUINTE:</span> <span>{receiptSnapshot.colaborador.nif}</span></div>
+                <div style={{ display: 'flex', gap: '5mm', marginBottom: '5mm', padding: '5mm', border: '1.5px solid #000', borderRadius: '6px', background: '#fcfcfc' }}>
+                  <div style={{ flex: 1, fontSize: '11px', lineHeight: '1.5' }}>
+                    <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>NOME:</span> <span style={{ fontWeight: 'bold' }}>{receiptSnapshot.colaborador.nome}</span></div>
+                    <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>Nº MEC.:</span> <span>{(receiptSnapshot.colaborador as any).numeroColaborador || '---'}</span></div>
+                    <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>CATEGORIA:</span> <span>{receiptSnapshot.colaborador.cargo}</span></div>
+                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>CONTRIBUINTE:</span> <span>{receiptSnapshot.colaborador.nif}</span></div>
                   </div>
-                  <div style={{ fontSize: '13px', lineHeight: '1.6' }}>
-                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>VENCIMENTO:</span> <span>{formatMoney(receiptSnapshot.salarioBase)}</span></div>
-                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>VENC./HORA:</span> <span>{formatMoney(valorHora)}</span></div>
-                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>DIAS ÚTEIS:</span> <span>{receiptSnapshot.diasTrabalhados}</span></div>
-                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm' }}>IBAN:</span> <span style={{ fontSize: '9px' }}>{(receiptSnapshot.colaborador as any).iban || '---'}</span></div>
+                  <div style={{ flex: 1, fontSize: '11px', lineHeight: '1.5' }}>
+                    <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>VENCIMENTO:</span> <span>{formatMoney(receiptSnapshot.salarioBase)}</span></div>
+                    <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>VENC./HORA:</span> <span>{formatMoney(valorHora)}</span></div>
+                    <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>DIAS ÚTEIS:</span> <span>{receiptSnapshot.diasTrabalhados}</span></div>
+                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>IBAN:</span> <span style={{ fontSize: '7px' }}>{(receiptSnapshot.colaborador as any).iban || '---'}</span></div>
                   </div>
                 </div>
 
 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '6mm' }}>
                   <thead>
-                    <tr style={{ borderTop: '2px solid #000', borderBottom: '2px solid #000', textAlign: 'left', backgroundColor: '#fdfdfd' }}>
-                      <th style={{ padding: '3mm 2mm', fontWeight: 'bold' }}>DESCRIÇÃO</th>
-                      <th style={{ padding: '3mm 2mm', width: '20mm', textAlign: 'center', fontWeight: 'bold' }}>QTD.</th>
-                      <th style={{ padding: '3mm 2mm', width: '35mm', textAlign: 'right', fontWeight: 'bold' }}>REMUN.</th>
-                      <th style={{ padding: '3mm 2mm', width: '35mm', textAlign: 'right', fontWeight: 'bold' }}>DESC.</th>
+                    <tr style={{ borderTop: '2px solid #000', borderBottom: '2px solid #eee', textAlign: 'left' }}>
+                      <th style={{ padding: '3mm 2mm', fontWeight: 'bold', color: '#94a3b8', fontSize: '10px' }}>DESCRIÇÃO</th>
+                      <th style={{ padding: '3mm 2mm', width: '20mm', textAlign: 'center', fontWeight: 'bold', color: '#94a3b8', fontSize: '10px' }}>QTD.</th>
+                      <th style={{ padding: '3mm 2mm', width: '35mm', textAlign: 'right', fontWeight: 'bold', color: '#94a3b8', fontSize: '10px' }}>REMUN.</th>
+                      <th style={{ padding: '3mm 2mm', width: '35mm', textAlign: 'right', fontWeight: 'bold', color: '#94a3b8', fontSize: '10px' }}>DESC.</th>
                     </tr>
                   </thead>
                   <tbody>
                     {receiptLines.map((line, idx) => (
                       <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ padding: '2.5mm 2mm', fontWeight: '600' }}>{line.label.toUpperCase()}</td>
-                        <td style={{ padding: '2.5mm 2mm', textAlign: 'center', color: '#333' }}>{line.qtd}</td>
-                        <td style={{ padding: '2.5mm 2mm', textAlign: 'right' }}>{line.valorRemun > 0 ? formatMoney(line.valorRemun) : ''}</td>
-                        <td style={{ padding: '2.5mm 2mm', textAlign: 'right', fontWeight: line.valorDesc > 0 ? '700' : '400', color: line.valorDesc > 0 ? '#b91c1c' : '#000' }}>{line.valorDesc > 0 ? formatMoney(line.valorDesc) : ''}</td>
+                        <td style={{ padding: '2.5mm 2mm', fontWeight: '800', color: '#475569' }}>{line.label.toUpperCase()}</td>
+                        <td style={{ padding: '2.5mm 2mm', textAlign: 'center', color: '#64748b', fontWeight: '500' }}>{line.qtd}</td>
+                        <td style={{ padding: '2.5mm 2mm', textAlign: 'right', color: '#64748b', fontWeight: '500' }}>{line.valorRemun > 0 ? formatMoney(line.valorRemun) : ''}</td>
+                        <td style={{ padding: '2.5mm 2mm', textAlign: 'right', fontWeight: '700', color: line.valorDesc > 0 ? '#b91c1c' : '#000' }}>{line.valorDesc > 0 ? formatMoney(line.valorDesc) : ''}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -761,14 +750,14 @@ const Processamento: React.FC = () => {
 <div style={{ flex: '1 1 auto', minHeight: '3mm' }}></div>
 
                 <div style={{ borderTop: '1px solid #000', paddingTop: '2mm' }}>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6mm', marginBottom: '2mm' }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8mm', marginBottom: '4mm' }}>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: '8px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Remun.</p>
-                      <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0 }}>{formatMoney(totalBrutoExibido)}</p>
+                      <p style={{ fontSize: '7px', fontWeight: 'bold', color: '#94a3b8', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Total Remun.</p>
+                      <p style={{ fontSize: '12px', fontWeight: 'bold', margin: 0, color: '#000' }}>{formatMoney(totalBrutoExibido)}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: '8px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Desc.</p>
-                      <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0, color: '#e11d48' }}>{formatMoney(totalDescontosExibido)}</p>
+                      <p style={{ fontSize: '7px', fontWeight: 'bold', color: '#94a3b8', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Total Desc.</p>
+                      <p style={{ fontSize: '12px', fontWeight: 'bold', margin: 0, color: '#e11d48' }}>{formatMoney(totalDescontosExibido)}</p>
                     </div>
                   </div>
                   <div style={{ background: '#000', color: '#fff', padding: '2mm 4mm', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -778,13 +767,13 @@ const Processamento: React.FC = () => {
                 </div>
 
                 {/* Footer / Dados Bancários — compacto */}
-                <div style={{ marginTop: '2mm', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '4mm' }}>
-                  <div style={{ fontSize: '8px', background: '#f8fafc', padding: '1mm', borderRadius: '4px' }}>
-                    <p style={{ margin: 0, fontWeight: 'bold' }}>Banco: {(receiptSnapshot.colaborador as any).banco || '---'} | IBAN: {(receiptSnapshot.colaborador as any).iban || '---'}</p>
+                <div style={{ marginTop: '5mm', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <div style={{ fontSize: '14px', background: '#f8fafc', padding: '3mm 6mm', borderRadius: '4px', border: 'none', width: '60%' }}>
+                    <p style={{ margin: 0, fontWeight: 'bold', color: '#000' }}>Banco: {(receiptSnapshot.colaborador as any).banco || '---'} | IBAN: {(receiptSnapshot.colaborador as any).iban || '---'}</p>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ borderBottom: '1px solid #000', height: '8mm', marginBottom: '1mm' }}></div>
-                    <p style={{ fontSize: '8px', fontWeight: 'bold', margin: 0 }}>Assinatura</p>
+                  <div style={{ textAlign: 'center', width: '35%' }}>
+                    <div style={{ borderBottom: '1.5px solid #000', height: '10mm', marginBottom: '2mm' }}></div>
+                    <p style={{ fontSize: '9px', fontWeight: 'bold', margin: 0, color: '#000' }}>Assinatura</p>
                   </div>
                 </div>
 
