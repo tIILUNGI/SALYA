@@ -830,13 +830,44 @@ const Processamento: React.FC = () => {
       </div>
       <div className="glass-card overflow-x-auto">
         <table className="min-w-full text-left">
-          <thead><tr className="bg-slate-50 border-b border-slate-100"><th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Colaborador</th><th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase text-right whitespace-nowrap">Salário Base</th><th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase text-center whitespace-nowrap">Ação</th></tr></thead>
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-100">
+              <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Colaborador</th>
+              <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Cargo</th>
+              <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase text-right whitespace-nowrap">Salário Base</th>
+              <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase text-center whitespace-nowrap">Ação</th>
+            </tr>
+          </thead>
           <tbody className="divide-y divide-slate-100">
             {ativos.map((colaborador) => (
-              <tr key={colaborador.id} className="hover:bg-slate-50 transition-all">
-                <td className="px-4 sm:px-6 py-4"><div className="flex items-center gap-3"><div className="size-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-medium">{colaborador.nome.substring(0, 2).toUpperCase()}</div><div><p className="text-sm font-medium text-slate-700">{colaborador.nome}</p><p className="text-xs text-slate-400">{colaborador.cargo}</p></div></div></td>
-                <td className="px-4 sm:px-6 py-4 text-right text-sm font-medium text-slate-600 whitespace-nowrap">{formatMoney(colaborador.salarioBase || 0)}</td>
-                <td className="px-4 sm:px-6 py-4 text-center"><button onClick={() => handleStartProcessar(colaborador)} disabled={periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id)} className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id) ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary/90'}`}>{colaboradoresProcessadosNoPeriodo.has(colaborador.id) ? 'Processado' : 'Processar'}</button></td>
+              <tr key={colaborador.id} className="hover:bg-slate-50 transition-all align-middle">
+                <td className="px-4 sm:px-6 py-4 align-middle">
+                  <div className="flex items-center gap-3">
+                    <div className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                      {colaborador.nome.substring(0, 2).toUpperCase()}
+                    </div>
+                    <p className="text-sm font-semibold text-slate-700">{colaborador.nome}</p>
+                  </div>
+                </td>
+                <td className="px-4 sm:px-6 py-4 align-middle">
+                  <span className="text-xs text-slate-500">{colaborador.cargo || '—'}</span>
+                </td>
+                <td className="px-4 sm:px-6 py-4 text-right align-middle whitespace-nowrap">
+                  <span className="text-sm font-semibold text-slate-700">{formatMoney(colaborador.salarioBase || 0)}</span>
+                </td>
+                <td className="px-4 sm:px-6 py-4 text-center align-middle">
+                  <button
+                    onClick={() => handleStartProcessar(colaborador)}
+                    disabled={periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id)}
+                    className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                      periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id)
+                        ? 'bg-emerald-50 text-emerald-600 cursor-not-allowed border border-emerald-200'
+                        : 'bg-primary text-white hover:bg-primary/90 shadow-sm'
+                    }`}
+                  >
+                    {colaboradoresProcessadosNoPeriodo.has(colaborador.id) ? '✓ Processado' : 'Processar'}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -858,12 +889,28 @@ const Processamento: React.FC = () => {
           <form onSubmit={handleConfirmForm} className="p-6 space-y-6 bg-white">
             <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex items-center justify-between gap-4"><div><p className="text-xs text-slate-500">Total Outros Ganhos</p><p className="text-base font-medium text-slate-700">{formatMoney(totalOutrosGanhos)}</p></div></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2"><label className="block text-xs font-medium text-slate-500">Salário Base</label><input type="text" value={formatMoneyInput(formSalario)} onChange={(e) => setFormSalario(parseMoneyInput(e.target.value))} className="w-full bg-slate-50 border-none rounded-xl p-4 font-medium text-primary text-lg outline-none focus:ring-2 focus:ring-primary" /></div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between"><label className="block text-xs font-medium text-slate-500">Regime de Cálculo</label><div className="flex p-0.5 bg-slate-100 rounded-lg"><button type="button" onClick={() => setLocalTipoProcessamento('Dias Fixos')} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${isFixed ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>FIXO (22)</button><button type="button" onClick={() => setLocalTipoProcessamento('Dias Variáveis')} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${!isFixed ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>VARIÁVEL</button></div></div>
-                <div className="space-y-2 mt-4"><label className="block text-xs font-medium text-slate-500">Dias Trabalhados</label><div className="relative group"><input type="number" value={formDiasTrabalhados} onChange={(e) => setFormDiasTrabalhados(Number(e.target.value) || 0)} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 font-black text-primary text-lg outline-none focus:ring-2 focus:ring-primary transition-all" /><div className="absolute inset-y-0 right-4 flex items-center"><span className="material-symbols-outlined text-slate-400 text-base">edit</span></div></div></div>
+                <label className="block text-xs font-medium text-slate-500">Salário Base</label>
+                <input type="text" value={formatMoneyInput(formSalario)} onChange={(e) => setFormSalario(parseMoneyInput(e.target.value))} className="w-full bg-slate-50 border-none rounded-xl p-4 font-medium text-primary text-lg outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-medium text-slate-500">Regime de Cálculo</label>
+                  <div className="flex p-0.5 bg-slate-100 rounded-lg">
+                    <button type="button" onClick={() => setLocalTipoProcessamento('Dias Fixos')} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${isFixed ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>FIXO (22)</button>
+                    <button type="button" onClick={() => setLocalTipoProcessamento('Dias Variáveis')} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${!isFixed ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>VARIÁVEL</button>
+                  </div>
+                </div>
+                <div className="space-y-2 mt-4">
+                  <label className="block text-xs font-medium text-slate-500">Dias Trabalhados</label>
+                  <div className="relative group">
+                    <input type="number" value={formDiasTrabalhados} onChange={(e) => setFormDiasTrabalhados(Number(e.target.value) || 0)} className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 font-black text-primary text-lg outline-none focus:ring-2 focus:ring-primary transition-all" />
+                    <div className="absolute inset-y-0 right-4 flex items-center"><span className="material-symbols-outlined text-slate-400 text-base">edit</span></div>
+                  </div>
+                </div>
               </div>
             </div>
+
             <div className="p-5 bg-slate-50 rounded-2xl space-y-4">
               <h4 className="text-sm font-medium text-slate-600">Ganhos</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -891,7 +938,6 @@ const Processamento: React.FC = () => {
                   <input type="number" min="0" max={baseDays} value={formFaltas} onChange={(e) => {
                     const val = Number(e.target.value) || 0;
                     setFormFaltas(val);
-                    // Ao adicionar faltas unjustly, reduzimos os dias trabalhados automaticamente
                     if (!faltaJustificada) {
                       setFormDiasTrabalhados(baseDays - val);
                     }

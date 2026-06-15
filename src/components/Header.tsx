@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { AppContext } from '../App';
 import { api } from '../services/api';
+import GlobalSearch from './GlobalSearch';
 
 interface LocalNotification {
   id: string;
@@ -19,6 +20,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<LocalNotification[]>([]);
   const [showBanner, setShowBanner] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     return localStorage.getItem('theme') === 'dark' || 
       (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -130,6 +132,17 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
 
   const dismissBanner = () => setShowBanner(false);
 
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
   return (
     <>
       {showBanner && (
@@ -198,6 +211,22 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
                 ))}
               </div>
             </div>
+          </div>
+
+          <div className="hidden md:flex items-center flex-1 max-w-md mx-6">
+            <button 
+              onClick={() => setIsSearchOpen(true)}
+              className="w-full flex items-center justify-between px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-400 hover:border-primary/30 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-xl text-slate-400 group-hover:text-primary transition-colors">search</span>
+                <span className="text-sm font-medium">Pesquisar por tudo... (Ctrl+K)</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 shadow-sm uppercase">Ctrl</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 shadow-sm uppercase">K</span>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -294,6 +323,11 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
           </div>
         </div>
       </header>
+
+      <GlobalSearch 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+      />
     </>
   );
 };
