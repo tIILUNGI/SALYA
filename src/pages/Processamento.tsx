@@ -565,7 +565,7 @@ const Processamento: React.FC = () => {
     const options = {
       margin: 0,
       filename: 'Recibo_' + receiptSnapshot.colaborador.nome.replace(/ /g, '_') + '_' + receiptSnapshot.ano + String(monthToNum(receiptSnapshot.mes)).padStart(2, '0') + '.pdf',
-      image: { type: 'jpeg', quality: 1.0 },
+      image: { type: 'jpeg' as const, quality: 1.0 },
       html2canvas: { 
         scale: 3.5, 
         useCORS: true, 
@@ -573,7 +573,7 @@ const Processamento: React.FC = () => {
         backgroundColor: '#ffffff',
         logging: false
       },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
     };
 
     html2pdf().from(element).set(options).save();
