@@ -469,6 +469,7 @@ function MainLayout() {
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { isLoadingData, refreshData, setMessage } = React.useContext(AppContext);
 
   useEffect(() => {
@@ -507,9 +508,11 @@ function MainLayout() {
          onCompanyCreated={handleCompanyCreated}
          sidebarOpen={sidebarOpen}
          setSidebarOpen={setSidebarOpen}
+         isCollapsed={isSidebarCollapsed}
+         setIsCollapsed={setIsSidebarCollapsed}
        />
        
-       <div className="flex-1 flex flex-col min-h-screen md:ml-64 w-full md:w-[calc(100%-16rem)]">
+       <div className={`flex-1 flex flex-col min-h-screen ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'} w-full ${isSidebarCollapsed ? 'md:w-[calc(100%-5rem)]' : 'md:w-[calc(100%-16rem)]'} transition-all duration-300`}>
          {/* Subscription Barrier */}
          <SubscriptionBarrier />
          

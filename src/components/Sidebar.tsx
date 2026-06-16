@@ -11,9 +11,19 @@ interface SidebarProps {
   onCompanyCreated?: () => void;
   sidebarOpen?: boolean;
   setSidebarOpen?: (v: boolean) => void;
+  isCollapsed?: boolean;
+  setIsCollapsed?: (v: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompanyCreated, sidebarOpen = false, setSidebarOpen }) => {
+const Sidebar: React.FC<SidebarProps> = ({ 
+  currentPage, 
+  setCurrentPage, 
+  onCompanyCreated, 
+  sidebarOpen = false, 
+  setSidebarOpen,
+  isCollapsed = false,
+  setIsCollapsed
+}) => {
   const navigate = useNavigate();
   const { user, setUser, setIsAuthenticated, empresa, setEmpresa, setEmpresaId, setEmpresas, empresas, setIsConfigured, setColaboradores, refreshData, setMessage } = useContext(AppContext);
 
@@ -165,13 +175,20 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
   };
 
   return (
-    <aside className={`w-64 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
+    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-all duration-300 ease-in-out`}>
       {/* Logo header */}
-      <div className="p-6 flex items-center gap-3 mb-2">
+      <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} mb-2 relative`}>
         <img src="/logo.png" alt="Salya Logo" className="h-10 w-auto" />
-        <div className="overflow-hidden">
-          <p className="text-sm font-black text-slate-800 dark:text-white truncate uppercase tracking-tighter">SALYA</p>
-        </div>
+        
+        {/* Toggle Button */}
+        <button 
+          onClick={() => setIsCollapsed?.(!isCollapsed)}
+          className="hidden md:flex absolute -right-3 top-8 size-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full items-center justify-center text-slate-500 hover:text-primary transition-colors shadow-sm z-10"
+        >
+          <span className="material-symbols-outlined text-sm">
+            {isCollapsed ? 'chevron_right' : 'chevron_left'}
+          </span>
+        </button>
       </div>
 
 
@@ -179,7 +196,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
       <div className="flex-1 overflow-y-auto px-4">
         {!empresa ? (
           // Estado: empresa não configurada
-          <div className="flex flex-col items-center justify-center p-6 text-center min-h-[60vh]">
+          <div className={`flex flex-col items-center justify-center p-6 text-center min-h-[60vh] ${isCollapsed ? 'opacity-0 pointer-events-none' : ''}`}>
             <div className="w-16 h-16 bg-primary/5 rounded-2xl flex items-center justify-center mb-4">
               <span className="material-symbols-outlined text-3xl text-primary">business</span>
             </div>
@@ -208,7 +225,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
               <button
                 key={item.id}
                 onClick={() => handleNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all relative group ${
+                title={isCollapsed ? item.label : ''}
+                className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-lg text-sm font-medium transition-all relative group ${
                   currentPage === item.id
                     ? 'bg-slate-100 dark:bg-slate-800 text-primary'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
@@ -217,9 +235,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
                 <span className={`material-symbols-outlined transition-colors ${currentPage === item.id ? 'text-primary' : 'text-slate-400 group-hover:text-slate-600'}`}>
                   {item.icon}
                 </span>
-                {item.label}
+                {!isCollapsed && <span>{item.label}</span>}
                 {currentPage === item.id && (
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-l-full" />
+                  <div className={`absolute ${isCollapsed ? 'right-0' : 'right-0'} top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-l-full`} />
                 )}
               </button>
             ))}
@@ -229,16 +247,18 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
 
       {/* User section */}
       <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-        <div className="flex items-center gap-3 p-2">
-          <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold uppercase">
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} p-2`}>
+          <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold uppercase flex-shrink-0">
             {user?.name?.substring(0, 2) || 'US'}
           </div>
-          <div className="overflow-hidden flex-1">
-            <p className="text-sm font-semibold truncate">{user?.name || 'Administrador'}</p>
-            <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@salya.com'}</p>
-          </div>
+          {!isCollapsed && (
+            <div className="overflow-hidden flex-1">
+              <p className="text-sm font-semibold truncate">{user?.name || 'Administrador'}</p>
+              <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@salya.com'}</p>
+            </div>
+          )}
         </div>
-        <div className="mt-2 space-y-1">
+        <div className={`mt-2 space-y-1 ${isCollapsed ? 'hidden' : ''}`}>
           <button
             onClick={() => handleNavigate('profile')}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-500 hover:text-primary transition-colors rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -254,6 +274,15 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onCompan
             Terminar Sessão
           </button>
         </div>
+        {isCollapsed && (
+           <button
+            onClick={handleLogout}
+            title="Sair"
+            className="w-full flex items-center justify-center p-2 text-slate-500 hover:text-rose-500 transition-colors rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 mt-2"
+          >
+            <span className="material-symbols-outlined text-lg">logout</span>
+          </button>
+        )}
       </div>
 
       {/* Modal de criação de empresa */}
