@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
 import { api, getLogoUrl } from '../services/api';
-import jsPDF from 'jspdf';
+import html2pdf from 'html2pdf.js';
 import { countries } from '../data/countries';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -359,40 +359,27 @@ const ProcessamentoAtraso: React.FC = () => {
 
   // ── PDF Export + Armazenamento de Recibo ─────────────────────────────────────
   const handleExportarPDF = async () => {
-    const element = document.getElementById('recibo-atraso-impressao');
+    const element = document.getElementById('recibo-atraso-para-impressao');
     if (!element) return;
     const snap = recibos[reciboIndex];
     if (!snap) return;
 
-    // Clona o elemento para não afetar o que está na tela
-    const cloneElement = element.cloneNode(true) as HTMLElement;
-    
-    // Garante que os estilos de texto sejam preservados
-    cloneElement.style.backgroundColor = 'white';
-    cloneElement.style.color = 'black';
-    cloneElement.style.position = 'relative';
-    cloneElement.style.left = '0';
-    cloneElement.style.top = '0';
-
-    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-    doc.html(cloneElement, {
-      callback: (pdf) => {
-        const filename = 'Recibo_' + snap.colaborador.nome.replace(/ /g, '_') + '_' + snap.mes + '_' + snap.ano + '.pdf';
-        pdf.save(filename);
-      },
-      x: 0,
-      y: 0,
-      width: 210,
-      windowWidth: cloneElement.scrollWidth || 794,
-      autoPaging: 'text',
-      margin: [0, 0, 0, 0],
-      html2canvas: {
-        scale: 2,
+    const options = {
+      margin: 0,
+      filename: 'Recibo_Atraso_' + snap.colaborador.nome.replace(/ /g, '_') + '_' + snap.ano + snap.mes + '.pdf',
+      image: { type: 'jpeg' as const, quality: 1.0 },
+      html2canvas: { 
+        scale: 3.5, 
+        useCORS: true, 
+        letterRendering: true,
         backgroundColor: '#ffffff',
-        logging: false,
-        useCORS: true
-      }
-    });
+        logging: false
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+    };
+
+    // @ts-ignore
+    html2pdf().from(element).set(options).save();
   };
 
   // ── Save receipt HTML to backend ────────────────────────────────────────────
@@ -401,7 +388,7 @@ const ProcessamentoAtraso: React.FC = () => {
     
     // Aguarda um pouco para garantir que o DOM foi atualizado
     setTimeout(() => {
-      const element = document.getElementById('recibo-atraso-impressao');
+      const element = document.getElementById('recibo-atraso-para-impressao');
       if (element && snap.historicoId) {
         api.post(`/processamentos/${snap.historicoId}/recibo`, { html: element.innerHTML })
           .catch(e => console.error('Erro ao salvar HTML do recibo:', e));
@@ -417,21 +404,7 @@ const ProcessamentoAtraso: React.FC = () => {
 
     const valorHora = snap.diasTrabalhados > 0 ? snap.salarioBase / (snap.diasTrabalhados * 8) : 0;
 
-    // CORREÇÃO: Pré-calcula o nome do mês para evitar JavaScript inline no PDF
-    const getMonthName = () => {
-      const mesNum = MONTHS.indexOf(snap.mes) + 1;
-      if (mesNum > 0 && mesNum <= 12) {
-        return snap.mes;
-      }
-      // Se já veio como número
-      const n = parseInt(String(snap.mes), 10);
-      if (!isNaN(n) && n >= 1 && n <= 12) {
-        return MONTHS[n - 1];
-      }
-      return snap.mes;
-    };
-
-    const monthName = getMonthName();
+    const monthName = snap.mes;
     const periodText = `${monthName} / ${snap.ano}`;
 
     const linhas = [
@@ -473,92 +446,82 @@ const ProcessamentoAtraso: React.FC = () => {
           )}
 
           <div className="flex-1 overflow-x-auto overflow-y-auto p-4 sm:p-8 bg-slate-100">
-            <div
-              id="recibo-atraso-impressao"
-              style={{
-                width: '190mm',
-                minHeight: '270mm',
-                maxHeight: '270mm',
-                backgroundColor: '#fff',
-                margin: '0 auto',
-                padding: '4mm',
-                boxSizing: 'border-box',
-                display: 'flex',
-                flexDirection: 'column',
-                fontFamily: 'Arial, sans-serif',
-                color: '#000',
-                fontSize: '8px',
-                lineHeight: '1.2',
-                maxWidth: '100%',
-                pageBreakInside: 'avoid',
-                breakInside: 'avoid',
-                overflow: 'hidden'
-              }}
+            <div id="recibo-atraso-para-impressao"
+               className="bg-white mx-auto p-[8mm] shadow-none flex flex-col font-sans text-black leading-relaxed"
+               style={{
+                 width: '190mm',
+                 minHeight: '260mm',
+                 maxHeight: '277mm',
+                 boxSizing: 'border-box',
+                 fontSize: '11px',
+                 overflow: 'hidden'
+               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2mm', borderBottom: '1px solid #000', paddingBottom: '2mm' }}>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '3mm' }}>
-                  {empresa?.logoUrl && (
-                    <img
-                      src={getLogoUrl(empresa.logoUrl)}
-                      alt="Logotipo"
-                      style={{ width: '12mm', height: '12mm', objectFit: 'contain', borderRadius: '2px', backgroundColor: '#f8fafc', padding: '1px' }}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = "/logo.png";
-                      }}
-                    />
-                  )}
-                  <div>
-                    <h2 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 2px 0' }}>{empresa?.nome}</h2>
-                    <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>NIF: {empresa?.nif}</p>
-                    <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>{empresa?.endereco}, {empresa?.municipio}</p>
-                    <p style={{ fontSize: '8px', margin: '1px 0', color: '#333' }}>{empresa?.email} | {empresa?.telefone}</p>
+                  {empresa?.logoUrl && <img 
+                    src={getLogoUrl(empresa.logoUrl)} 
+                    alt="Logotipo" 
+                    style={{ width: '15mm', height: '15mm', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#f8fafc', padding: '2px', border: '1px solid #f1f5f9' }} 
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.onerror = null;
+                      target.src = '/logo.png';
+                    }}
+                  />}
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <h2 style={{ fontSize: '14px', fontWeight: '900', margin: '0 0 2px 0', color: '#000', textTransform: 'uppercase' }}>{empresa?.nome}</h2>
+                    <p style={{ fontSize: '9px', margin: '1px 0', color: '#475569', fontWeight: '700' }}>NIF: {empresa?.nif}</p>
+                    <p style={{ fontSize: '8px', margin: '1px 0', color: '#64748b' }}>{empresa?.endereco}, {empresa?.municipio}</p>
+                    <p style={{ fontSize: '8px', margin: '1px 0', color: '#64748b' }}>{empresa?.email} | {empresa?.telefone}</p>
                   </div>
                 </div>
-                <div style={{ flex: 1, textAlign: 'right' }}>
-                  <h1 style={{ fontSize: '12px', fontWeight: '900', margin: '0 0 4px 0', letterSpacing: '0.05em' }}>RECIBO DE VENCIMENTO</h1>
-                  <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '8px', background: '#f1f5f9', padding: '1mm 2mm', borderRadius: '2px' }}>
-                    <p style={{ margin: '0 0 1px 0' }}>
-                      <span style={{ fontWeight: 'bold' }}>Período:</span> {periodText}
-                    </p>
-                    <p style={{ margin: 0 }}>
-                      <span style={{ fontWeight: 'bold' }}>Data:</span> {snap.dataProcessamento}
-                    </p>
-                  </div>
+                <div style={{ flex: 1, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
+                  <h1 style={{ fontSize: '14px', fontWeight: '900', margin: '0 0 6px 0', letterSpacing: '0.05em', color: '#000' }}>RECIBO DE VENCIMENTO</h1>
+                   <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '10px', background: '#f8fafc', padding: '2mm 4mm', borderRadius: '6px', border: '1.5px solid #e2e8f0 shadow-sm' }}>
+                      <p style={{ margin: '0 0 3px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px', display: 'flex', gap: '2mm', justifyContent: 'space-between' }}>
+                        <span style={{ fontWeight: 'bold', color: '#64748b', fontSize: '9px' }}>PERÍODO:</span> 
+                        <strong style={{ color: '#0f172a' }}>{periodText}</strong>
+                      </p>
+                     <p style={{ margin: 0, display: 'flex', gap: '2mm', justifyContent: 'space-between' }}>
+                       <span style={{ fontWeight: 'bold', color: '#64748b', fontSize: '9px' }}>DATA:</span> 
+                       <strong style={{ color: '#0f172a' }}>{snap.dataProcessamento}</strong>
+                     </p>
+                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3mm', marginBottom: '2mm', padding: '1.5mm', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-                <div style={{ fontSize: '8px', lineHeight: '1.5' }}>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Nome:</span> <span>{snap.colaborador.nome}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Nº Mec.:</span> <span>{(snap.colaborador as any).numeroColaborador || '---'}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Categoria:</span> <span>{snap.colaborador.cargo}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Contribuinte:</span> <span>{snap.colaborador.nif}</span></div>
+              <div style={{ display: 'flex', gap: '5mm', marginBottom: '5mm', padding: '5mm', border: '1.5px solid #000', borderRadius: '6px', background: '#fcfcfc' }}>
+                <div style={{ flex: 1, fontSize: '11px', lineHeight: '1.5' }}>
+                  <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>NOME:</span> <span style={{ fontWeight: 'bold' }}>{snap.colaborador.nome}</span></div>
+                  <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>Nº MEC.:</span> <span>{(snap.colaborador as any).numeroColaborador || '---'}</span></div>
+                  <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>CATEGORIA:</span> <span>{snap.colaborador.cargo}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>CONTRIBUINTE:</span> <span>{snap.colaborador.nif}</span></div>
                 </div>
-                <div style={{ fontSize: '8px', lineHeight: '1.5' }}>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Vencimento:</span> <span>{formatMoney(snap.salarioBase)}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Venc./Hora:</span> <span>{formatMoney(valorHora)}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Dias Úteis:</span> <span>{snap.diasTrabalhados}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '26mm' }}>Departamento:</span> <span>{(snap.colaborador as any).departamento || '---'}</span></div>
+                <div style={{ flex: 1, fontSize: '11px', lineHeight: '1.5' }}>
+                  <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>VENCIMENTO:</span> <span>{formatMoney(snap.salarioBase)}</span></div>
+                  <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>VENC./HORA:</span> <span>{formatMoney(valorHora)}</span></div>
+                  <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>DIAS ÚTEIS:</span> <span>{snap.diasTrabalhados}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>IBAN:</span> <span style={{ fontSize: '7px' }}>{(snap.colaborador as any).iban || '---'}</span></div>
                 </div>
               </div>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', marginBottom: '2mm' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '6mm' }}>
                 <thead>
-                  <tr style={{ borderTop: '1px solid #000', borderBottom: '1px solid #000', textAlign: 'left', backgroundColor: '#f8fafc' }}>
-                    <th style={{ padding: '1.5mm 1mm' }}>Descrição</th>
-                    <th style={{ padding: '1.5mm 1mm', width: '16mm', textAlign: 'center' }}>Qtd.</th>
-                    <th style={{ padding: '1.5mm 1mm', width: '32mm', textAlign: 'right' }}>Remun.</th>
-                    <th style={{ padding: '1.5mm 1mm', width: '32mm', textAlign: 'right' }}>Desc.</th>
+                  <tr style={{ borderTop: '2px solid #000', borderBottom: '2px solid #eee', textAlign: 'left' }}>
+                    <th style={{ padding: '3mm 2mm', fontWeight: 'bold', color: '#94a3b8', fontSize: '10px' }}>DESCRIÇÃO</th>
+                    <th style={{ padding: '3mm 2mm', width: '20mm', textAlign: 'center', fontWeight: 'bold', color: '#94a3b8', fontSize: '10px' }}>QTD.</th>
+                    <th style={{ padding: '3mm 2mm', width: '35mm', textAlign: 'right', fontWeight: 'bold', color: '#94a3b8', fontSize: '10px' }}>REMUN.</th>
+                    <th style={{ padding: '3mm 2mm', width: '35mm', textAlign: 'right', fontWeight: 'bold', color: '#94a3b8', fontSize: '10px' }}>DESC.</th>
                   </tr>
                 </thead>
                 <tbody>
                   {linhas.map((linha, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '1.5mm 1mm', fontWeight: '500' }}>{linha.label}</td>
-                      <td style={{ padding: '1.5mm 1mm', textAlign: 'center', color: '#64748b' }}>{linha.qtd}</td>
-                      <td style={{ padding: '1.5mm 1mm', textAlign: 'right' }}>{linha.valorRemun > 0 ? formatMoney(linha.valorRemun) : ''}</td>
-                      <td style={{ padding: '1.5mm 1mm', textAlign: 'right', color: linha.valorDesc > 0 ? '#e11d48' : '#000' }}>{linha.valorDesc > 0 ? formatMoney(linha.valorDesc) : ''}</td>
+                    <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{ padding: '2.5mm 2mm', fontWeight: '800', color: '#475569' }}>{linha.label.toUpperCase()}</td>
+                      <td style={{ padding: '2.5mm 2mm', textAlign: 'center', color: '#64748b', fontWeight: '500' }}>{linha.qtd}</td>
+                      <td style={{ padding: '2.5mm 2mm', textAlign: 'right', color: '#64748b', fontWeight: '500' }}>{linha.valorRemun > 0 ? formatMoney(linha.valorRemun) : ''}</td>
+                      <td style={{ padding: '2.5mm 2mm', textAlign: 'right', fontWeight: '700', color: linha.valorDesc > 0 ? '#b91c1c' : '#000' }}>{linha.valorDesc > 0 ? formatMoney(linha.valorDesc) : ''}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -567,14 +530,14 @@ const ProcessamentoAtraso: React.FC = () => {
               <div style={{ flex: '1 1 auto', minHeight: '3mm' }}></div>
 
               <div style={{ borderTop: '1px solid #000', paddingTop: '2mm' }}>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6mm', marginBottom: '2mm' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8mm', marginBottom: '4mm' }}>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '8px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Remun.</p>
-                    <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0 }}>{formatMoney(snap.totalBruto)}</p>
+                    <p style={{ fontSize: '7px', fontWeight: 'bold', color: '#94a3b8', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Total Remun.</p>
+                    <p style={{ fontSize: '12px', fontWeight: 'bold', margin: 0, color: '#000' }}>{formatMoney(snap.totalBruto)}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '8px', fontWeight: 'bold', color: '#64748b', margin: '0 0 1px 0', textTransform: 'uppercase' }}>Total Desc.</p>
-                    <p style={{ fontSize: '11px', fontWeight: 'bold', margin: 0, color: '#e11d48' }}>{formatMoney(snap.totalDescontos)}</p>
+                    <p style={{ fontSize: '7px', fontWeight: 'bold', color: '#94a3b8', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Total Desc.</p>
+                    <p style={{ fontSize: '12px', fontWeight: 'bold', margin: 0, color: '#e11d48' }}>{formatMoney(snap.totalDescontos)}</p>
                   </div>
                 </div>
                 <div style={{ background: '#000', color: '#fff', padding: '2mm 4mm', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -583,13 +546,14 @@ const ProcessamentoAtraso: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ marginTop: '2mm', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '4mm' }}>
-                <div style={{ fontSize: '8px', background: '#f8fafc', padding: '1mm', borderRadius: '4px' }}>
-                  <p style={{ margin: 0, fontWeight: 'bold' }}>Banco: {(snap.colaborador as any).banco || '---'} | IBAN: {(snap.colaborador as any).iban || '---'}</p>
+              {/* Footer / Dados Bancários — compacto */}
+              <div style={{ marginTop: '5mm', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div style={{ fontSize: '14px', background: '#f8fafc', padding: '3mm 6mm', borderRadius: '4px', border: 'none', width: '60%' }}>
+                  <p style={{ margin: 0, fontWeight: 'bold', color: '#000' }}>Banco: {(snap.colaborador as any).banco || '---'} | IBAN: {(snap.colaborador as any).iban || '---'}</p>
                 </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ borderBottom: '1px solid #000', height: '8mm', marginBottom: '1mm' }}></div>
-                  <p style={{ fontSize: '8px', fontWeight: 'bold', margin: 0 }}>Assinatura</p>
+                <div style={{ textAlign: 'center', width: '35%' }}>
+                  <div style={{ borderBottom: '1.5px solid #000', height: '10mm', marginBottom: '2mm' }}></div>
+                  <p style={{ fontSize: '9px', fontWeight: 'bold', margin: 0, color: '#000' }}>Assinatura</p>
                 </div>
               </div>
 
@@ -684,6 +648,45 @@ const ProcessamentoAtraso: React.FC = () => {
                 {isExpanded && (
                   <div className="border-t border-slate-100 bg-slate-50/40 p-5 space-y-4">
 
+                    {/* Action buttons (Now at Top) */}
+                    <div className="flex justify-end pt-2 gap-3 mb-4">
+                      <button
+                        onClick={() => handleAnular(colaborador.id)}
+                        disabled={numSelected === 0 || processando}
+                        title="Anular meses seleccionados que já foram processados fora do sistema"
+                        className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
+                          numSelected === 0 || processando
+                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                            : 'bg-white border border-red-200 text-red-600 hover:bg-red-50'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-base">block</span>
+                        Anular {numSelected > 0 ? `${numSelected} ${numSelected === 1 ? 'mês' : 'meses'}` : ''}
+                      </button>
+
+                      <button
+                        onClick={() => handleProcessar(colaborador.id, pendencias)}
+                        disabled={numSelected === 0 || processando}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
+                          numSelected === 0 || processando
+                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                            : 'bg-slate-900 text-white hover:bg-slate-800'
+                        }`}
+                      >
+                        {processando ? (
+                          <>
+                            <span className="animate-spin material-symbols-outlined text-base">progress_activity</span>
+                            A processar...
+                          </>
+                        ) : (
+                          <>
+                            <span className="material-symbols-outlined text-base">payments</span>
+                            Processar {numSelected > 0 ? `${numSelected} ${numSelected === 1 ? 'mês' : 'meses'}` : 'Selecionados'}
+                          </>
+                        )}
+                      </button>
+                    </div>
+
                     {/* Select all + counter */}
                     <div className="flex items-center justify-between gap-4">
                       <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -725,45 +728,6 @@ const ProcessamentoAtraso: React.FC = () => {
                           </label>
                         );
                       })}
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="flex justify-end pt-2 gap-3">
-                      <button
-                        onClick={() => handleAnular(colaborador.id)}
-                        disabled={numSelected === 0 || processando}
-                        title="Anular meses seleccionados que já foram processados fora do sistema"
-                        className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
-                          numSelected === 0 || processando
-                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                            : 'bg-white border border-red-200 text-red-600 hover:bg-red-50'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-base">block</span>
-                        Anular {numSelected > 0 ? `${numSelected} ${numSelected === 1 ? 'mês' : 'meses'}` : ''}
-                      </button>
-
-                      <button
-                        onClick={() => handleProcessar(colaborador.id, pendencias)}
-                        disabled={numSelected === 0 || processando}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
-                          numSelected === 0 || processando
-                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                            : 'bg-slate-900 text-white hover:bg-slate-800'
-                        }`}
-                      >
-                        {processando ? (
-                          <>
-                            <span className="animate-spin material-symbols-outlined text-base">progress_activity</span>
-                            A processar...
-                          </>
-                        ) : (
-                          <>
-                            <span className="material-symbols-outlined text-base">payments</span>
-                            Processar {numSelected > 0 ? `${numSelected} ${numSelected === 1 ? 'mês' : 'meses'}` : 'Selecionados'}
-                          </>
-                        )}
-                      </button>
                     </div>
                   </div>
                 )}
