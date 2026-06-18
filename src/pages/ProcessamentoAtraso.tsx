@@ -463,7 +463,13 @@ const ProcessamentoAtraso: React.FC = () => {
                   {empresa?.logoUrl && <img 
                     src={getLogoUrl(empresa.logoUrl)} 
                     alt="Logotipo" 
-                    style={{ width: '15mm', height: '15mm', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#f8fafc', padding: '2px', border: '1px solid #f1f5f9' }} 
+                    style={{ 
+                      height: '22mm', 
+                      maxWidth: '45mm', 
+                      objectFit: 'contain', 
+                      objectPosition: 'left center',
+                      marginBottom: '2mm'
+                    }} 
                     onError={(e) => {
                       const target = e.currentTarget;
                       target.onerror = null;
@@ -503,7 +509,7 @@ const ProcessamentoAtraso: React.FC = () => {
                   <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>VENCIMENTO:</span> <span>{formatMoney(snap.salarioBase)}</span></div>
                   <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>VENC./HORA:</span> <span>{formatMoney(valorHora)}</span></div>
                   <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>DIAS ÚTEIS:</span> <span>{snap.diasTrabalhados}</span></div>
-                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>IBAN:</span> <span style={{ fontSize: '7px' }}>{(snap.colaborador as any).iban || '---'}</span></div>
+                  <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>Nº INSS:</span> <span>{(snap.colaborador as any).inss || '---'}</span></div>
                 </div>
               </div>
 
@@ -548,13 +554,10 @@ const ProcessamentoAtraso: React.FC = () => {
               </div>
 
               {/* Footer / Dados Bancários — compacto */}
-              <div style={{ marginTop: '5mm', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <div style={{ fontSize: '14px', background: '#f8fafc', padding: '3mm 6mm', borderRadius: '4px', border: 'none', width: '60%' }}>
-                  <p style={{ margin: 0, fontWeight: 'bold', color: '#000' }}>Banco: {(snap.colaborador as any).banco || '---'} | IBAN: {(snap.colaborador as any).iban || '---'}</p>
-                </div>
-                <div style={{ textAlign: 'center', width: '35%' }}>
+              <div style={{ marginTop: '12mm', display: 'flex', justifyContent: 'center' }}>
+                <div style={{ textAlign: 'center', width: '60%' }}>
                   <div style={{ borderBottom: '1.5px solid #000', height: '10mm', marginBottom: '2mm' }}></div>
-                  <p style={{ fontSize: '9px', fontWeight: 'bold', margin: 0, color: '#000' }}>Assinatura</p>
+                  <p style={{ fontSize: '10px', fontWeight: 'bold', margin: 0, color: '#000', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assinatura do Colaborador</p>
                 </div>
               </div>
 
