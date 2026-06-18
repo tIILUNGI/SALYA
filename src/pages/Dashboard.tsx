@@ -13,7 +13,8 @@ const Dashboard: React.FC = () => {
     totalEmpresas: 0,
     totalColaboradores: 0,
     totalProcessamentos: 0,
-    custoTotalAproximado: 0
+    valorFolhaMensal: 0,
+    acumuladoTotal: 0
   });
   const [alertas, setAlertas] = useState<{
     contratosExpirando: number;
@@ -31,8 +32,60 @@ const Dashboard: React.FC = () => {
       if (!empresaId) return;
       
       try {
-        const response = await api.get(`/dashboard/stats?empresaId=${empresaId}`);
-        setStats(response);
+        setLoading(true);
+        // Fetch raw history for REAL data calculations
+        const historico: any[] = await api.get(`/processamentos/historico?empresaId=${empresaId}`);
+        const colaboradores: any[] = await api.get(`/colaboradores?empresaId=${empresaId}`);
+        const empresas: any[] = await api.get('/empresas');
+
+        // 1. Valor da Folha (Monthly processing potential)
+        const valorFolha = colaboradores
+          .filter(c => c.status === 'Ativo')
+          .reduce((acc, c) => acc + (c.salarioBase || 0) + (c.subsidioAlimentacao || 0) + (c.subsidioTransporte || 0), 0);
+
+        // 2. Acumulado Total (Sum of everything already processed)
+        const acumulado = historico.reduce((acc, h) => acc + (h.totalBruto || 0), 0);
+
+        // 3. Evolução de Custos (Real chart data)
+        const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        const currentYear = new Date().getFullYear();
+        
+        const processamentoPorMes = meses.map((nome, index) => {
+          const mesNum = index + 1;
+          const totalMes = historico
+            .filter(h => h.mes === mesNum && h.ano === currentYear)
+            .reduce((acc, h) => acc + (h.totalBruto || 0), 0);
+          return { name: nome, total: totalMes };
+        });
+
+        // 4. Absentismo (Real absences from processing records)
+        const depts = Array.from(new Set(colaboradores.map(c => c.departamento || 'Geral')));
+        const statsAbsentismo = depts.map(dept => {
+          const colabsNoDept = colaboradores.filter(c => (c.departamento || 'Geral') === dept).map(c => c.id);
+          const faltasNoDept = historico
+            .filter(h => colabsNoDept.includes(h.colaboradorId))
+            .reduce((acc, h) => ({
+              faltas: acc.faltas + (h.faltasTotal || 0),
+              justificadas: acc.justificadas + (h.faltasJustificadas || 0)
+            }), { faltas: 0, justificadas: 0 });
+
+          return {
+            name: dept,
+            faltas: faltasNoDept.faltas,
+            justificadas: faltasNoDept.justificadas
+          };
+        });
+
+        setStats({
+          totalEmpresas: empresas.length,
+          totalColaboradores: colaboradores.filter(c => c.status === 'Ativo').length,
+          totalProcessamentos: historico.length,
+          valorFolhaMensal: valorFolha,
+          acumuladoTotal: acumulado
+        });
+
+        setChartProcessamento(processamentoPorMes);
+        setChartAbsentismo(statsAbsentismo);
 
         try {
           const alertasData = await api.get(`/alertas/resumo?empresaId=${empresaId}`);
@@ -41,15 +94,6 @@ const Dashboard: React.FC = () => {
           console.error('Erro ao buscar resumo de alertas:', e);
         }
 
-        try {
-          const charts = await api.get(`/dashboard/charts?empresaId=${empresaId}`);
-          setChartProcessamento(charts.processamentoMensal || []);
-          setChartAbsentismo(charts.absentismoDepartamento || []);
-        } catch (e) {
-          console.error('Erro ao buscar dados dos gráficos:', e);
-          setChartProcessamento([]);
-          setChartAbsentismo([]);
-        }
       } catch (error) {
         console.error('Erro geral no Dashboard:', error);
       } finally {
@@ -73,7 +117,7 @@ const Dashboard: React.FC = () => {
       ) : (
         <div className="space-y-12">
           {/* Executive Cards Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
             
             <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all">
               <div className="flex justify-between items-start mb-4">
@@ -114,17 +158,32 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all">
+            <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all border-l-4 border-l-purple-500">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <p className="text-sm font-medium text-slate-500 mb-1">Custo Estimado</p>
+                  <p className="text-sm font-medium text-slate-500 mb-1">Valor da Folha</p>
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-white truncate">
-                    {new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(stats.custoTotalAproximado)}
+                    {new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(stats.valorFolhaMensal)}
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1">Valor total de salários</p>
+                  <p className="text-xs text-slate-400 mt-1">Estimativa mensal (Ativos)</p>
                 </div>
                 <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600">
                   <span className="material-symbols-outlined text-2xl">account_balance</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all border-l-4 border-l-emerald-500">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-sm font-medium text-slate-500 mb-1">Acumulado Histórico</p>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white truncate">
+                    {new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(stats.acumuladoTotal)}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">Total bruto processado</p>
+                </div>
+                <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600">
+                  <span className="material-symbols-outlined text-2xl">payments</span>
                 </div>
               </div>
             </div>

@@ -177,8 +177,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className={`${isCollapsed ? 'w-20' : 'w-64'} border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col fixed h-full z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-all duration-300 ease-in-out`}>
       {/* Logo header */}
-      <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} mb-2 relative`}>
-        <img src="/logo.png" alt="Salya Logo" className="h-10 w-auto" />
+      <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center p-4' : 'gap-3'} mb-2 relative transition-all`}>
+        <img 
+          src="/logo.png" 
+          alt="Salya Logo" 
+          className={`${isCollapsed ? 'h-8 w-8 object-contain' : 'h-10 w-auto object-contain'}`} 
+        />
         
         {/* Toggle Button */}
         <button 
@@ -193,7 +197,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
 
       {/* Conteúdo principal */}
-      <div className="flex-1 overflow-y-auto px-4">
+      <div className="flex-1 overflow-y-auto px-4 scrollbar-hide">
         {!empresa ? (
           // Estado: empresa não configurada
           <div className={`flex flex-col items-center justify-center p-6 text-center min-h-[60vh] ${isCollapsed ? 'opacity-0 pointer-events-none' : ''}`}>

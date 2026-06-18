@@ -97,15 +97,19 @@ const createOtherGain = (): OutroGanhoInput => ({ id: `${Date.now()}_${Math.rand
 
 const roundMoney = (value: number): number => Number(value.toFixed(2));
 
-// INSS: 3% sobre o salário base proporcional (não sobre subsídios) - Lei n.º 14/25
-const calcularINSS = (salarioBase: number, isPrestador = false): number => isPrestador ? 0 : roundMoney(salarioBase * 0.03);
+// INSS: Taxa padrão 3% (Trabalhador) e 8% (Patronal) - Pode variar conforme configuração da empresa
+const calcularINSS = (salarioBase: number, isPrestador = false, taxa = 0.03): number => isPrestador ? 0 : roundMoney(salarioBase * taxa);
 
 /**
  * IRT — Lei n.º 14/25 (Angola)
  * Fórmula correta: IRT = parcelaFixa + (MC - excesso) × taxa
  */
-const calcularIRT = (mc: number, isPrestador = false): { valor: number; faixa: string } => {
+const calcularIRT = (mc: number, isPrestador = false, isParticular = false): { valor: number; faixa: string } => {
   if (mc <= 0) return { valor: 0, faixa: '1º Escalão' };
+  
+  if (isParticular && mc <= 100000) {
+    return { valor: 0, faixa: 'Isento (Particular/Doméstico)' };
+  }
   
   if (isPrestador) {
     return { valor: roundMoney(mc * 0.065), faixa: 'Prestador (Taxa Fixa 6,5%)' };
@@ -305,9 +309,10 @@ const Processamento: React.FC = () => {
 
   const irtEstimado = useMemo(() => {
     const isPrestador = selectedColab?.tipoContrato === 'Prestador';
+    const isParticular = empresa?.categoria === 'Particular';
     if (isPrestador) return { valor: roundMoney(totalBruto * 0.065), faixa: 'Prestador (Taxa Fixa 6,5%)' };
-    return calcularIRT(materiaColectavel, false);
-  }, [materiaColectavel, selectedColab, totalBruto]);
+    return calcularIRT(materiaColectavel, false, isParticular);
+  }, [materiaColectavel, selectedColab, totalBruto, empresa?.categoria]);
 
   const retencaoFerias = useMemo(() => {
     if (selectedColab?.tipoContrato === 'Prestador') return 0;
@@ -660,6 +665,7 @@ const Processamento: React.FC = () => {
       { label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: receiptSnapshot.valorINSS > 0 ? '3%' : '0%' },
       { label: receiptSnapshot.colaborador.tipoContrato === 'Prestador' ? 'IRT Grupo B/C (Independente)' : 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: receiptSnapshot.percentualIRT ? (receiptSnapshot.percentualIRT % 1 === 0 ? `${receiptSnapshot.percentualIRT}%` : `${receiptSnapshot.percentualIRT.toFixed(1)}%`) : '-' },
       ...(receiptSnapshot.faltas > 0 ? [{ label: 'Faltas', valorRemun: 0, valorDesc: receiptSnapshot.faltas, qtd: receiptSnapshot.faltasDias ? `${receiptSnapshot.faltasDias} dias` : '-' }] : []),
+      ...(empresa?.categoria === 'Particular' ? [{ label: 'Segurança Social Patronal (8% pago por empregador)', valorRemun: 0, valorDesc: 0, qtd: '8%' }] : []),
     ];
 
     return (

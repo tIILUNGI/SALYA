@@ -192,3 +192,12 @@ p, .text-body {
 .container-responsive {
   @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
 }
+/* Utility to hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}

@@ -413,6 +413,7 @@ const ProcessamentoAtraso: React.FC = () => {
       ...(snap.ganhoTransporte > 0 ? [{ label: 'Subsídio de Transporte', valorRemun: snap.ganhoTransporte, valorDesc: 0, qtd: '1' }] : []),
       { label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: snap.valorINSS, qtd: snap.valorINSS > 0 ? '3%' : '0%' },
       { label: snap.colaborador.tipoContrato === 'Prestador' ? 'IRT Grupo B/C (Independente)' : 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: snap.valorIRT, qtd: snap.percentualIRT ? (snap.percentualIRT % 1 === 0 ? `${snap.percentualIRT}%` : `${snap.percentualIRT.toFixed(1)}%`) : '-' },
+      ...(empresa?.categoria === 'Particular' ? [{ label: 'Segurança Social Patronal (8% pago por empregador)', valorRemun: 0, valorDesc: 0, qtd: '8%' }] : []),
     ];
 
     // Salvar o HTML do recibo quando o modal é aberto
