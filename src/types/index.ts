@@ -41,6 +41,14 @@ export const PLAN_LIMITS: Record<PlanType, { maxEmpresas: number; maxUsuarios: n
   ANUAL: { maxEmpresas: 5, maxUsuarios: 999 },
 };
 
+export const getPlanLimits = (planType?: string) => {
+  if (!planType) return PLAN_LIMITS.DEMO;
+  const normalized = planType.trim().toUpperCase();
+  if (normalized === 'SEMESTRAL') return PLAN_LIMITS.SEMESTRAL;
+  if (normalized === 'ANUAL') return PLAN_LIMITS.ANUAL;
+  return PLAN_LIMITS.DEMO;
+};
+
 export interface Empresa {
   id: number;
   nome: string;

@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api, clearAuthStorage } from '../services/api';
-import { PLAN_LIMITS, PlanType } from '../types';
+import { getPlanLimits } from '../types';
 import Swal from 'sweetalert2';
 
 interface SidebarProps {
@@ -70,7 +70,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     telefone: '',
     endereco: '',
     provincia: '',
-    municipio: ''
+    municipio: '',
+    categoria: 'Empresa'
   });
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
@@ -121,11 +122,10 @@ const Sidebar: React.FC<SidebarProps> = ({
     setIsCreating(true);
     setError('');
 
-    const planType = user?.planType as PlanType | undefined;
-    const limits = planType ? PLAN_LIMITS[planType] : PLAN_LIMITS.DEMO;
+    const limits = getPlanLimits(user?.planType);
     
     if (empresas.length >= limits.maxEmpresas) {
-      setError(`O plano ${user?.planType || 'DEMO'} permite apenas ${limits.maxEmpresas} entidade(s). Atualize seu plano para criar mais entidades.`);
+      setError(`O seu plano atual permite apenas ${limits.maxEmpresas} entidade(s). Atualize seu plano para criar mais entidades.`);
       setIsCreating(false);
       return;
     }
@@ -147,7 +147,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           telefone: '',
           endereco: '',
           provincia: '',
-          municipio: ''
+          municipio: '',
+          categoria: 'Empresa'
         });
 
         // Refresh data
@@ -245,6 +246,23 @@ const Sidebar: React.FC<SidebarProps> = ({
                 )}
               </button>
             ))}
+
+            {/* Botão para criar nova entidade se o limite permitir */}
+            {(() => {
+              const limits = getPlanLimits(user?.planType);
+              if (empresas.length < limits.maxEmpresas) {
+                return (
+                  <button
+                    onClick={() => setShowCompanyModal(true)}
+                    className={`w-full mt-4 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-lg text-sm font-bold transition-all border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400 hover:border-primary hover:text-primary hover:bg-primary/5`}
+                  >
+                    <span className="material-symbols-outlined">add_business</span>
+                    {!isCollapsed && <span>Nova Entidade</span>}
+                  </button>
+                );
+              }
+              return null;
+            })()}
           </nav>
         )}
       </div>
@@ -310,27 +328,46 @@ const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             <form onSubmit={handleCreateCompany} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Nome da Entidade *</label>
-                <input
-                  type="text"
-                  required
-                  value={newCompany.nome}
-                  onChange={(e) => setNewCompany({ ...newCompany, nome: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Ex: Salya Payroll Lda"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Tipo de Entidade</label>
+                  <select
+                    id="tipo-entidade"
+                    title="Selecione o tipo de entidade"
+                    value={newCompany.categoria}
+                    onChange={(e) => setNewCompany({ ...newCompany, categoria: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="Empresa">Empresa</option>
+                    <option value="Particular">Particular</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    {newCompany.categoria === 'Particular' ? 'Nome do Particular *' : 'Nome da Entidade *'}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newCompany.nome}
+                    onChange={(e) => setNewCompany({ ...newCompany, nome: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder={newCompany.categoria === 'Particular' ? "Ex: José da Silva" : "Ex: Salya Payroll Lda"}
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">NIF *</label>
+                <label className="block text-sm font-medium mb-1">
+                  {newCompany.categoria === 'Particular' ? 'Nº BI/Passaporte *' : 'NIF *'}
+                </label>
                 <input
                   type="text"
                   required
                   value={newCompany.nif}
                   onChange={(e) => setNewCompany({ ...newCompany, nif: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="5000000001"
+                  placeholder={newCompany.categoria === 'Particular' ? "000000000LA000" : "5000000001"}
                 />
               </div>
 

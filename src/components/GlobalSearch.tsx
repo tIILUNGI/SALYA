@@ -125,7 +125,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
         results.push({
           id: `emp_${emp.id}`,
           title: emp.nome,
-          description: `NIF: ${emp.nif}`,
+          description: `${emp.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF'}: ${emp.nif}`,
           category: 'Empresas',
           icon: 'apartment',
           action: () => { setEmpresa(emp); setEmpresaId(emp.id); onClose(); }

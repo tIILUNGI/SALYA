@@ -707,7 +707,9 @@ const Processamento: React.FC = () => {
                    />}
                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                      <h2 style={{ fontSize: '14px', fontWeight: '900', margin: '0 0 2px 0', color: '#000', textTransform: 'uppercase' }}>{empresa?.nome}</h2>
-                     <p style={{ fontSize: '9px', margin: '1px 0', color: '#475569', fontWeight: '700' }}>NIF: {empresa?.nif}</p>
+                     <p style={{ fontSize: '9px', margin: '1px 0', color: '#475569', fontWeight: '700' }}>
+                       {empresa?.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF'}: {empresa?.nif}
+                     </p>
                      <p style={{ fontSize: '8px', margin: '1px 0', color: '#64748b' }}>{empresa?.endereco}, {empresa?.municipio}</p>
                      <p style={{ fontSize: '8px', margin: '1px 0', color: '#64748b' }}>{empresa?.email} | {empresa?.telefone}</p>
                    </div>

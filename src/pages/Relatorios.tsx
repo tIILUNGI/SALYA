@@ -115,7 +115,7 @@ const buildRelatoriosPDF = (
     doc.setFont('helvetica', 'normal');
     const eInfos = [
       ['Nome', empresa.nome || '-'],
-      ['NIF', empresa.nif || '-'],
+      [(empresa as any).categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF', empresa.nif || '-'],
       ['Endereço', [empresa.endereco, empresa.municipio].filter(Boolean).join(', ') || '-'],
       ['Email', empresa.email || '-'],
       ['Telefone', empresa.telefone || '-'],

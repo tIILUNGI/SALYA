@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import { AppContext } from '../App';
 import { api, getLogoUrl } from '../services/api';
 import { countries } from '../data/countries';
-import { PLAN_LIMITS, PlanType } from '../types';
+import { PLAN_LIMITS, PlanType, getPlanLimits } from '../types';
 
 
 interface ConfiguraçãoEmpresa {
@@ -660,13 +660,14 @@ const Configurações: React.FC = () => {
         <div className="flex items-center gap-3">
           {(setupStep === 'form' && isConfigured) && (
             <button 
-              onClick={() => {
-                const planType = user?.planType as PlanType | undefined;
-                const limits = planType ? PLAN_LIMITS[planType] : PLAN_LIMITS.DEMO;
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                const limits = getPlanLimits(user?.planType);
                 if (empresas.length >= limits.maxEmpresas) {
                   setMessage({
                     title: 'LIMITE ATINGIDO!',
-                    text: `O plano ${user?.planType || 'DEMO'} permite apenas ${limits.maxEmpresas} entidade(s). Atualize seu plano para criar mais entidades.`,
+                    text: `O seu plano atual permite apenas ${limits.maxEmpresas} entidade(s). Atualize seu plano para criar mais entidades.`,
                     type: 'error'
                   });
                   return;
@@ -789,8 +790,8 @@ const Configurações: React.FC = () => {
                       <input type="text" value={config.nome || ''} placeholder={config.categoria === 'Particular' ? 'Ex: José da Silva' : 'Ex: SALYA Lda'} onChange={(e) => setConfig({...config, nome: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">NIF</label>
-                      <input type="text" value={config.nif} onChange={(e) => setConfig({...config, nif: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder="Ex: 123456789..." />
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{config.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF'}</label>
+                      <input type="text" value={config.nif} onChange={(e) => setConfig({...config, nif: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder={config.categoria === 'Particular' ? 'Ex: 000000000LA000' : 'Ex: 500000001'} />
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Regime Fiscal</label>
