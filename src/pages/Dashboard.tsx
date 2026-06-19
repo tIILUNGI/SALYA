@@ -59,8 +59,7 @@ const Dashboard: React.FC = () => {
           ? ctxColaboradores
           : normalizeList(colaboradoresRaw, 'colaboradores');
 
-        // Entity count from context (App.tsx already loaded in-session)
-        const totalEmpresas = ctxEmpresas.length > 0 ? ctxEmpresas.length : 1;
+        const totalEmpresas = ctxEmpresas.length;
 
         // 1. Valor da Folha (Monthly processing potential)
         const colaboradoresAtivos = colaboradores.filter(c => c.status === 'Ativo');
