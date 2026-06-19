@@ -235,7 +235,9 @@ export const api = {
    
       
       const response = await fetch(url, {
+        method: 'GET',
         headers: getHeaders(),
+        cache: 'no-store',
       });
 
       await ensureAuthOrRedirect(response, endpoint);

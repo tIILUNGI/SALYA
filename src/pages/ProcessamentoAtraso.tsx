@@ -464,11 +464,15 @@ const ProcessamentoAtraso: React.FC = () => {
                     src={getLogoUrl(empresa.logoUrl)} 
                     alt="Logotipo" 
                     style={{ 
-                      height: '22mm', 
-                      maxWidth: '45mm', 
+                      height: '16mm', 
+                      maxWidth: '38mm', 
                       objectFit: 'contain', 
                       objectPosition: 'left center',
-                      marginBottom: '2mm'
+                      marginBottom: '2mm',
+                      borderRadius: '4px',
+                      border: '1px solid #f1f5f9',
+                      padding: '2px',
+                      backgroundColor: '#ffffff'
                     }} 
                     onError={(e) => {
                       const target = e.currentTarget;

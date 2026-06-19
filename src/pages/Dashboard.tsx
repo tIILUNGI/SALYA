@@ -6,9 +6,22 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { api } from '../services/api';
 import { AppContext } from '../App';
 
+// Normaliza respostas do Spring (paginadas ou plain array)
+const normalizeList = (data: any, key?: string): any[] => {
+  if (Array.isArray(data)) return data;
+  if (key && data?._embedded?.[key]) return data._embedded[key];
+  // try any embedded key
+  if (data?._embedded) {
+    const firstKey = Object.keys(data._embedded)[0];
+    if (firstKey) return data._embedded[firstKey];
+  }
+  if (data?.content && Array.isArray(data.content)) return data.content;
+  return [];
+};
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { empresaId } = useContext(AppContext);
+  const { empresaId, colaboradores: ctxColaboradores, empresas: ctxEmpresas } = useContext(AppContext);
   const [stats, setStats] = useState({
     totalEmpresas: 0,
     totalColaboradores: 0,
@@ -33,14 +46,25 @@ const Dashboard: React.FC = () => {
       
       try {
         setLoading(true);
-        // Fetch raw history for REAL data calculations
-        const historico: any[] = await api.get(`/processamentos/historico?empresaId=${empresaId}`);
-        const colaboradores: any[] = await api.get(`/colaboradores?empresaId=${empresaId}`);
-        const empresas: any[] = await api.get('/empresas');
+
+        // Fetch raw history and collaborators; normalize paged Spring responses
+        const [historicoRaw, colaboradoresRaw] = await Promise.all([
+          api.get(`/processamentos/historico?empresaId=${empresaId}`),
+          api.get(`/trabalhadores?empresaId=${empresaId}&size=1000`)
+        ]);
+
+        const historico: any[] = normalizeList(historicoRaw, 'processamentos');
+        // Prefer context collaborators (already loaded+normalized in App.tsx); fallback to fresh fetch
+        const colaboradores: any[] = ctxColaboradores.length > 0
+          ? ctxColaboradores
+          : normalizeList(colaboradoresRaw, 'colaboradores');
+
+        // Entity count from context (App.tsx already loaded in-session)
+        const totalEmpresas = ctxEmpresas.length > 0 ? ctxEmpresas.length : 1;
 
         // 1. Valor da Folha (Monthly processing potential)
-        const valorFolha = colaboradores
-          .filter(c => c.status === 'Ativo')
+        const colaboradoresAtivos = colaboradores.filter(c => c.status === 'Ativo');
+        const valorFolha = colaboradoresAtivos
           .reduce((acc, c) => acc + (c.salarioBase || 0) + (c.subsidioAlimentacao || 0) + (c.subsidioTransporte || 0), 0);
 
         // 2. Acumulado Total (Sum of everything already processed)
@@ -53,7 +77,7 @@ const Dashboard: React.FC = () => {
         const processamentoPorMes = meses.map((nome, index) => {
           const mesNum = index + 1;
           const totalMes = historico
-            .filter(h => h.mes === mesNum && h.ano === currentYear)
+            .filter(h => (h.mes === mesNum || h.mes === String(mesNum)) && (h.ano === currentYear || h.ano === String(currentYear)))
             .reduce((acc, h) => acc + (h.totalBruto || 0), 0);
           return { name: nome, total: totalMes };
         });
@@ -77,19 +101,24 @@ const Dashboard: React.FC = () => {
         });
 
         setStats({
-          totalEmpresas: empresas.length,
-          totalColaboradores: colaboradores.filter(c => c.status === 'Ativo').length,
+          totalEmpresas,
+          totalColaboradores: colaboradoresAtivos.length,
           totalProcessamentos: historico.length,
           valorFolhaMensal: valorFolha,
           acumuladoTotal: acumulado
         });
 
         setChartProcessamento(processamentoPorMes);
-        setChartAbsentismo(statsAbsentismo);
+        setChartAbsentismo(statsAbsentismo.length > 0 ? statsAbsentismo : [{ name: 'Geral', faltas: 0, justificadas: 0 }]);
 
         try {
           const alertasData = await api.get(`/alertas/resumo?empresaId=${empresaId}`);
-          setAlertas(alertasData);
+          if (alertasData && typeof alertasData === 'object') {
+            setAlertas({
+              contratosExpirando: alertasData.contratosExpirando || 0,
+              documentosExpirando: alertasData.documentosExpirando || 0,
+            });
+          }
         } catch (e) {
           console.error('Erro ao buscar resumo de alertas:', e);
         }
@@ -101,7 +130,7 @@ const Dashboard: React.FC = () => {
       }
     };
     fetchStats();
-  }, [empresaId]);
+  }, [empresaId, ctxColaboradores, ctxEmpresas]);
 
   return (
     <div className="p-4 md:p-8 w-full max-w-full">
