@@ -489,13 +489,13 @@ const ProcessamentoAtraso: React.FC = () => {
                 </div>
                 <div style={{ flex: 1, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
                   <h1 style={{ fontSize: '14px', fontWeight: '900', margin: '0 0 6px 0', letterSpacing: '0.05em', color: '#000' }}>RECIBO DE VENCIMENTO</h1>
-                   <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '10px', background: '#f8fafc', padding: '2mm 4mm', borderRadius: '6px', border: '1.5px solid #e2e8f0 shadow-sm' }}>
-                      <p style={{ margin: '0 0 3px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px', display: 'flex', gap: '2mm', justifyContent: 'space-between' }}>
-                        <span style={{ fontWeight: 'bold', color: '#64748b', fontSize: '9px' }}>PERÍODO:</span> 
+                   <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '9px', background: '#f8fafc', padding: '1mm 3mm', borderRadius: '6px', border: '1.5px solid #e2e8f0' }}>
+                      <p style={{ margin: '0 0 2px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: '1px', display: 'flex', gap: '1.5mm', justifyContent: 'space-between' }}>
+                        <span style={{ fontWeight: 'bold', color: '#64748b', fontSize: '8px' }}>PERÍODO:</span> 
                         <strong style={{ color: '#0f172a' }}>{periodText}</strong>
                       </p>
-                     <p style={{ margin: 0, display: 'flex', gap: '2mm', justifyContent: 'space-between' }}>
-                       <span style={{ fontWeight: 'bold', color: '#64748b', fontSize: '9px' }}>DATA:</span> 
+                     <p style={{ margin: 0, display: 'flex', gap: '1.5mm', justifyContent: 'space-between' }}>
+                       <span style={{ fontWeight: 'bold', color: '#64748b', fontSize: '8px' }}>DATA:</span> 
                        <strong style={{ color: '#0f172a' }}>{snap.dataProcessamento}</strong>
                      </p>
                    </div>

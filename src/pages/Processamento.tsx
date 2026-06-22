@@ -710,19 +710,19 @@ const Processamento: React.FC = () => {
                      <p style={{ fontSize: '9px', margin: '1px 0', color: '#475569', fontWeight: '700' }}>
                        {empresa?.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF'}: {empresa?.nif}
                      </p>
-                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#64748b' }}>{empresa?.endereco}, {empresa?.municipio}</p>
-                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#64748b' }}>{empresa?.email} | {empresa?.telefone}</p>
+                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#64758b' }}>{empresa?.endereco}, {empresa?.municipio}</p>
+                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#64758b' }}>{empresa?.email} | {empresa?.telefone}</p>
                    </div>
                  </div>
                  <div style={{ flex: 1, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
                    <h1 style={{ fontSize: '14px', fontWeight: '900', margin: '0 0 6px 0', letterSpacing: '0.05em', color: '#000' }}>RECIBO DE VENCIMENTO</h1>
-                    <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '10px', background: '#f8fafc', padding: '2mm 4mm', borderRadius: '6px', border: '1.5px solid #e2e8f0 shadow-sm' }}>
-                       <p style={{ margin: '0 0 3px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px', display: 'flex', gap: '2mm', justifyContent: 'space-between' }}>
-                         <span style={{ fontWeight: 'bold', color: '#64748b', fontSize: '9px' }}>PERÍODO:</span> 
+                    <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '9px', background: '#f8fafc', padding: '1mm 3mm', borderRadius: '6px', border: '1.5px solid #e2e8f0' }}>
+                       <p style={{ margin: '0 0 2px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: '1px', display: 'flex', gap: '1.5mm', justifyContent: 'space-between' }}>
+                         <span style={{ fontWeight: 'bold', color: '#64758b', fontSize: '8px' }}>PERÍODO:</span> 
                          <strong style={{ color: '#0f172a' }}>{periodText}</strong>
                        </p>
-                      <p style={{ margin: 0, display: 'flex', gap: '2mm', justifyContent: 'space-between' }}>
-                        <span style={{ fontWeight: 'bold', color: '#64748b', fontSize: '9px' }}>DATA:</span> 
+                      <p style={{ margin: 0, display: 'flex', gap: '1.5mm', justifyContent: 'space-between' }}>
+                        <span style={{ fontWeight: 'bold', color: '#64758b', fontSize: '8px' }}>DATA:</span> 
                         <strong style={{ color: '#0f172a' }}>{receiptSnapshot.dataProcessamento}</strong>
                       </p>
                     </div>
@@ -781,14 +781,6 @@ const Processamento: React.FC = () => {
                   <div style={{ background: '#000', color: '#fff', padding: '2mm 4mm', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '0.05em' }}>VALOR LÍQUIDO (KZ)</span>
                     <span style={{ fontSize: '16px', fontWeight: '900' }}>{formatMoney(salarioLiquidoExibido)}</span>
-                  </div>
-                </div>
-
-                {/* Footer / Dados Bancários — compacto */}
-                <div style={{ marginTop: '12mm', display: 'flex', justifyContent: 'center' }}>
-                  <div style={{ textAlign: 'center', width: '60%' }}>
-                    <div style={{ borderBottom: '1.5px solid #000', height: '10mm', marginBottom: '2mm' }}></div>
-                    <p style={{ fontSize: '10px', fontWeight: 'bold', margin: 0, color: '#000', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assinatura do Colaborador</p>
                   </div>
                 </div>
 
