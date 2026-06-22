@@ -24,6 +24,7 @@ interface User {
   email: string;
   name: string;
   id?: number;
+  role?: string;
   subscriptionStatus?: 'ATIVA' | 'PENDENTE_APROVACAO' | 'EXPIRADA' | 'CANCELADA';
   subscriptionExpiry?: string;
   planType?: string;

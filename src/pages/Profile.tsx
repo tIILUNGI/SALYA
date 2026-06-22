@@ -102,7 +102,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 ID: {user?.id || '---'}
               </span>
               <span className="px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-bold text-primary uppercase tracking-widest">
-                {user?.isAdmin ? 'Administrador' : 'Gestor'}
+                {user?.role === 'ADMIN' ? 'Administrador' : 'Gestor'}
               </span>
             </div>
           </div>
