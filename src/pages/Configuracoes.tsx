@@ -706,23 +706,23 @@ const Configurações: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="flex gap-8">
-          <aside className="w-64 shrink-0">
-             <nav className="space-y-1">
+        <div className="flex flex-col lg:flex-row gap-8">
+          <aside className="w-full lg:w-64 shrink-0 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
+             <nav className="flex lg:flex-col gap-1 min-w-max lg:min-w-0">
                {tabs
                  .filter(tab => {
                    if (isCreatingNew) return tab.id === 'empresa';
                    return true;
                  })
                  .map(tab => (
-                 <button key={tab.id} onClick={() => navigate(`/configuracoes/${tab.id}`)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-primary/10 text-primary font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                 <button key={tab.id} onClick={() => navigate(`/configuracoes/${tab.id}`)} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors whitespace-nowrap lg:whitespace-normal ${activeTab === tab.id ? 'bg-primary/10 text-primary font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                    <span className="material-symbols-outlined">{tab.icon}</span>
-                   {tab.label}
+                   <span className="text-sm">{tab.label}</span>
                  </button>
                ))}
              </nav>
           </aside>
-          <div className="flex-1">
+          <div className="flex-1 w-full overflow-hidden">
             {activeTab === 'empresa' && (
               <div className="space-y-6">
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">

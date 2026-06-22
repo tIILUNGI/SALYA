@@ -180,13 +180,13 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
 
           <div className="relative group ml-4">
             {empresa && (
-              <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary/30 transition-all min-h-[44px]">
-                <span className="material-symbols-outlined text-primary text-xl">business_center</span>
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 lg:max-w-[200px] truncate">{empresa.nome}</span>
-                <span className="material-symbols-outlined text-slate-400 text-lg">expand_more</span>
+              <button className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary/30 transition-all min-h-[44px] max-w-[200px] sm:max-w-none">
+                <span className="material-symbols-outlined text-primary text-xl shrink-0">business_center</span>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 max-w-[100px] sm:max-w-[150px] lg:max-w-[250px] truncate">{empresa.nome}</span>
+                <span className="material-symbols-outlined text-slate-400 text-lg shrink-0">expand_more</span>
               </button>
             )}
-            <div className="absolute left-0 top-full mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all z-50">
+            <div className="absolute left-0 top-full mt-2 w-screen max-w-[280px] sm:w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all z-50">
               <div className="p-4 border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
                 <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alternar Entidade</h3>
               </div>
