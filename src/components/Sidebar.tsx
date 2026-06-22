@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   setIsCollapsed
 }) => {
   const navigate = useNavigate();
-  const { user, setUser, setIsAuthenticated, empresa, setEmpresa, setEmpresaId, setEmpresas, empresas, setIsConfigured, setColaboradores, refreshData, setMessage } = useContext(AppContext);
+  const { user, setUser, setIsAuthenticated, empresa, setEmpresa, setEmpresaId, setEmpresas, empresas, setIsConfigured, setColaboradores, refreshData, setMessage, effectivePlan } = useContext(AppContext);
 
   // Scroll lock quando sidebar aberta no mobile
   useEffect(() => {
@@ -122,10 +122,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     setIsCreating(true);
     setError('');
 
-    const limits = getPlanLimits(user?.planType);
+    const activePlan = effectivePlan;
+    const maxEmpresas = activePlan?.maxEmpresas ?? getPlanLimits(user?.planType).maxEmpresas;
     
-    if (empresas.length >= limits.maxEmpresas) {
-      setError(`O seu plano atual permite apenas ${limits.maxEmpresas} entidade(s). Atualize seu plano para criar mais entidades.`);
+    if (empresas.length >= maxEmpresas) {
+      setError(`O seu plano atual permite apenas ${maxEmpresas} entidade(s). Atualize seu plano para criar mais entidades.`);
       setIsCreating(false);
       return;
     }
@@ -247,22 +248,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               </button>
             ))}
 
-            {/* Botão para criar nova entidade se o limite permitir */}
-            {(() => {
-              const limits = getPlanLimits(user?.planType);
-              if (empresas.length < limits.maxEmpresas) {
-                return (
-                  <button
-                    onClick={() => setShowCompanyModal(true)}
-                    className={`w-full mt-4 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-lg text-sm font-bold transition-all border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400 hover:border-primary hover:text-primary hover:bg-primary/5`}
-                  >
-                    <span className="material-symbols-outlined">add_business</span>
-                    {!isCollapsed && <span>Nova Entidade</span>}
-                  </button>
-                );
-              }
-              return null;
-            })()}
+
           </nav>
         )}
       </div>

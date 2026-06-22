@@ -104,7 +104,7 @@ const mapEmpresaToConfig = (emp: any): ConfiguraçãoEmpresa => ({
 const CONFIG_TAB_IDS = ['empresa', 'impostos', 'processamento', 'gestao', 'acesso', 'assinatura'] as const;
 
 const Configurações: React.FC = () => {
-  const { user, empresa, setEmpresa, isConfigured, setIsConfigured, empresas, empresaId, setEmpresaId, refreshData, setMessage } = useContext(AppContext);
+  const { user, empresa, setEmpresa, isConfigured, setIsConfigured, empresas, empresaId, setEmpresaId, refreshData, setMessage, effectivePlan } = useContext(AppContext);
 
   const navigate = useNavigate();
   const { tab: tabParam } = useParams<{ tab?: string }>();
@@ -402,13 +402,13 @@ const Configurações: React.FC = () => {
     }
 
     if (isCreatingNew) {
-      const planType = user?.planType as PlanType | undefined;
-      const limits = planType ? PLAN_LIMITS[planType] : PLAN_LIMITS.DEMO;
+      const activePlan = effectivePlan;
+      const maxEmpresas = activePlan?.maxEmpresas ?? getPlanLimits(user?.planType).maxEmpresas;
       
-      if (empresas.length >= limits.maxEmpresas) {
+      if (empresas.length >= maxEmpresas) {
         setMessage({
           title: 'LIMITE ATINGIDO!',
-          text: `O plano ${user?.planType || 'DEMO'} permite apenas ${limits.maxEmpresas} entidade(s). Atualize seu plano para criar mais entidades.`,
+          text: `O seu plano atual permite apenas ${maxEmpresas} entidade(s). Atualize seu plano para criar mais entidades.`,
           type: 'error'
         });
         return;
@@ -558,16 +558,16 @@ const Configurações: React.FC = () => {
   const handleSendInvite = async (empId: number) => {
     if (!inviteEmail) return;
     
-    const planType = user?.planType as PlanType | undefined;
-    const limits = planType ? PLAN_LIMITS[planType] : PLAN_LIMITS.DEMO;
+    const activePlan = effectivePlan;
+    const maxUsuarios = activePlan?.maxUsuarios ?? getPlanLimits(user?.planType).maxUsuarios;
     
     const targetEmpresa = empresas.find(e => e.id === empId);
     const currentUsers = targetEmpresa?.sharedUsers?.length || 0;
     
-    if (currentUsers >= limits.maxUsuarios) {
+    if (currentUsers >= maxUsuarios) {
       setMessage({
         title: 'LIMITE ATINGIDO!',
-        text: `O plano ${user?.planType || 'DEMO'} permite apenas ${limits.maxUsuarios} usuário(s) por entidade. Atualize seu plano para adicionar mais usuários.`,
+        text: `O seu plano atual permite apenas ${maxUsuarios} usuário(s) por entidade. Atualize seu plano para adicionar mais usuários.`,
         type: 'error'
       });
       return;
@@ -603,10 +603,10 @@ const Configurações: React.FC = () => {
         text: 'Convite aceito com sucesso!',
         type: 'success'
       });
-    } catch (error) {
+    } catch (error: any) {
       setMessage({
         title: 'ERRO!',
-        text: 'Erro ao aceitar convite.',
+        text: error.response?.data?.error || 'Erro ao aceitar convite.',
         type: 'error'
       });
     }
@@ -621,10 +621,10 @@ const Configurações: React.FC = () => {
         text: 'Convite rejeitado.',
         type: 'success'
       });
-    } catch (error) {
+    } catch (error: any) {
       setMessage({
         title: 'ERRO!',
-        text: 'Erro ao rejeitar convite.',
+        text: error.response?.data?.error || 'Erro ao rejeitar convite.',
         type: 'error'
       });
     }
@@ -663,11 +663,12 @@ const Configurações: React.FC = () => {
               type="button"
               onClick={(e) => {
                 e.preventDefault();
-                const limits = getPlanLimits(user?.planType);
-                if (empresas.length >= limits.maxEmpresas) {
+                const activePlan = effectivePlan;
+                const maxEmpresas = activePlan?.maxEmpresas ?? getPlanLimits(user?.planType).maxEmpresas;
+                if (empresas.length >= maxEmpresas) {
                   setMessage({
                     title: 'LIMITE ATINGIDO!',
-                    text: `O seu plano atual permite apenas ${limits.maxEmpresas} entidade(s). Atualize seu plano para criar mais entidades.`,
+                    text: `O seu plano atual permite apenas ${maxEmpresas} entidade(s). Atualize seu plano para criar mais entidades.`,
                     type: 'error'
                   });
                   return;
@@ -711,7 +712,6 @@ const Configurações: React.FC = () => {
                {tabs
                  .filter(tab => {
                    if (isCreatingNew) return tab.id === 'empresa';
-                   if (tab.id === 'features' && user?.planType !== 'ADMIN') return false;
                    return true;
                  })
                  .map(tab => (
@@ -1079,15 +1079,15 @@ const Configurações: React.FC = () => {
                  <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                    <div className="flex items-center justify-between mb-6">
                      <h3 className="font-black text-lg uppercase tracking-wider text-slate-800 dark:text-white">Minhas Entidades</h3>
-                     {user?.planType && (() => {
-                       const planType = user.planType as PlanType;
-                       const limits = planType ? PLAN_LIMITS[planType] : PLAN_LIMITS.DEMO;
-                       return (
-                         <span className="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
-                           {empresas.length} / {limits.maxEmpresas === 999 ? '∞' : limits.maxEmpresas} entidades
-                         </span>
-                       );
-                     })()}
+                      {(() => {
+                        const activePlan = effectivePlan;
+                        const maxEmpresas = activePlan?.maxEmpresas ?? getPlanLimits(user?.planType).maxEmpresas;
+                        return (
+                          <span className="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                            {empresas.length} / {maxEmpresas >= 999 ? '∞' : maxEmpresas} entidades
+                          </span>
+                        );
+                      })()}
                    </div>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                     {empresas.map((bus, idx) => (
@@ -1178,12 +1178,12 @@ const Configurações: React.FC = () => {
                       <span className="material-symbols-outlined">person_add</span>
                       Conceder Acesso
                     </h3>
-                    {user?.planType && (() => {
-                      const planType = user.planType as PlanType;
-                      const limits = planType ? PLAN_LIMITS[planType] : PLAN_LIMITS.DEMO;
+                    {(() => {
+                      const activePlan = effectivePlan;
+                      const maxUsuarios = activePlan?.maxUsuarios ?? getPlanLimits(user?.planType).maxUsuarios;
                       return (
                         <span className="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
-                          Limite: {limits.maxUsuarios} usuário(s) por entidade
+                          Limite: {maxUsuarios >= 999 ? 'Ilimitado' : `${maxUsuarios} usuário(s) por entidade`}
                         </span>
                       );
                     })()}
@@ -1394,9 +1394,7 @@ const Configurações: React.FC = () => {
                           {p.type !== 'DEMO' && (
                             <li className="flex items-center gap-3 text-xs font-bold text-primary bg-primary/5 px-3 py-2 rounded-lg border border-primary/20">
                               <span className="material-symbols-outlined text-primary text-lg">business</span>
-                              {p.type === 'SEMESTRAL' ? '2 Entidades & 2 Usuários' :
-                               p.type === 'ANUAL' ? '5 Entidades & Utilizadores Ilimitados' :
-                               ''}
+                              {p.maxEmpresas || 0} {p.maxEmpresas === 1 ? 'Entidade' : 'Entidades'} & {(p.maxUsuarios && p.maxUsuarios >= 999) ? 'Utilizadores Ilimitados' : `${p.maxUsuarios || 0} Usuários`}
                             </li>
                           )}
                        </ul>
@@ -1443,6 +1441,7 @@ const Configurações: React.FC = () => {
                 </div>
               </div>
             )}
+
           </div>
         </div>
       )}

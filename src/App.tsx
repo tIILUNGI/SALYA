@@ -53,7 +53,7 @@ interface AppContextType {
   showConfirm: (config: { title: string; text: string; onConfirm: () => void }) => void;
   refreshData: () => Promise<void>;
   refreshSubscriptionStatus: () => Promise<void>;
-  effectivePlan: { tipo: string; status: string } | null;
+  effectivePlan: any | null;
 }
 
 
@@ -94,7 +94,7 @@ function App() {
   const [empresaId, setEmpresaId] = useState<number | null>(null);
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [totalColaboradores, setTotalColaboradores] = useState(0);
-  const [effectivePlan, setEffectivePlan] = useState<{ tipo: string; status: string } | null>(null);
+  const [effectivePlan, setEffectivePlan] = useState<any | null>(null);
   
   // Track if subscription is currently blocked to prevent loop of failed requests
   const subscriptionBlockedRef = useRef(false);
