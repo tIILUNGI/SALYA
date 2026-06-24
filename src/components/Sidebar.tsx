@@ -83,6 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'processamento', label: 'Processamento', icon: 'account_balance_wallet' },
     { id: 'processamento-atraso', label: 'Salários em Atraso', icon: 'history' },
     { id: 'relatorios', label: 'Relatórios', icon: 'assessment' },
+    { id: 'declaracoes', label: 'Declarações', icon: 'description' },
     { id: 'configuracoes', label: 'Configurações', icon: 'settings' },
   ];
 

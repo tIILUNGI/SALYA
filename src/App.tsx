@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Alertas from './pages/Alertas';
 import Relatorios from './pages/Relatorios';
+import Declaracoes from './pages/Declaracoes';
 import Colaboradores from './pages/Colaboradores';
 import Processamento from './pages/Processamento';
 import ProcessamentoAtraso from './pages/ProcessamentoAtraso';
@@ -422,6 +423,7 @@ function App() {
             <Route path="/processamento" element={<ProcessamentoRoute />} />
             <Route path="/processamento-atraso" element={<ProcessamentoAtrasoRoute />} />
             <Route path="/relatorios" element={<RelatoriosRoute />} />
+            <Route path="/declaracoes" element={<DeclaracoesRoute />} />
             <Route path="/configuracoes" element={<ConfiguracoesIndexRedirect />} />
             <Route path="/configuracoes/:tab" element={<Configuracoes />} />
             <Route path="/profile" element={<Profile />} />
@@ -458,6 +460,9 @@ function ProcessamentoAtrasoRoute() {
 }
 function RelatoriosRoute() {
   return useRequiresEmpresa() ? <Relatorios /> : <Navigate to="/configuracoes/empresa" replace />;
+}
+function DeclaracoesRoute() {
+  return useRequiresEmpresa() ? <Declaracoes /> : <Navigate to="/configuracoes/empresa" replace />;
 }
 
 function ConfiguracoesIndexRedirect() {
