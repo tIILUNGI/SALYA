@@ -265,7 +265,7 @@ const Declaracoes: React.FC = () => {
                   }}
                 >
                   {/* Cabeçalho da empresa */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '10mm', borderBottom: '2px solid #000', paddingBottom: '6mm' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '10mm' }}>
                     {empresa?.logoUrl && (
                       <img
                         src={getLogoUrl(empresa.logoUrl)}
