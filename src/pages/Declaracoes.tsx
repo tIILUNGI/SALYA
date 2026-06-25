@@ -81,6 +81,7 @@ const Declaracoes: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedColab, setSelectedColab] = useState<Colaborador | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [responsavelNome, setResponsavelNome] = useState('A Direcção');
 
   const filtered = useMemo(() =>
     ativos.filter(c =>
@@ -247,6 +248,20 @@ const Declaracoes: React.FC = () => {
                 </div>
               </div>
 
+              {/* Barra de configuração rápida */}
+              <div className="px-4 py-3 bg-white border-b border-slate-100 flex items-center gap-4">
+                <div className="flex items-center gap-3 flex-grow max-w-sm">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap">Responsável:</span>
+                  <input 
+                    type="text"
+                    value={responsavelNome}
+                    onChange={e => setResponsavelNome(e.target.value)}
+                    className="flex-grow text-xs px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:border-primary outline-none transition-all"
+                    placeholder="Nome que aparecerá na assinatura..."
+                  />
+                </div>
+              </div>
+
               {/* Pré-visualização da declaração */}
               <div className="p-4 bg-slate-100 overflow-y-auto max-h-[75vh]">
                 <div
@@ -262,78 +277,85 @@ const Declaracoes: React.FC = () => {
                     fontSize: '12pt',
                     color: '#000',
                     lineHeight: '1.6',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
                   }}
                 >
-                  {/* Cabeçalho da empresa */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '10mm' }}>
-                    {empresa?.logoUrl && (
-                      <img
-                        src={getLogoUrl(empresa.logoUrl)}
-                        alt="Logótipo"
-                        style={{ height: '18mm', maxWidth: '35mm', objectFit: 'contain', objectPosition: 'left top' }}
-                        onError={e => { e.currentTarget.style.display = 'none'; }}
-                      />
-                    )}
-                    <div>
-                      <p style={{ fontWeight: 'bold', fontSize: '13pt', margin: '0 0 2px 0', textTransform: 'uppercase' }}>{empresa?.nome || '[NOME DA EMPRESA]'}</p>
-                      <p style={{ margin: '1px 0', fontSize: '10pt' }}>{docIdentLabel}: <strong>{empresa?.nif || '___________'}</strong></p>
-                      {empresa?.endereco && <p style={{ margin: '1px 0', fontSize: '10pt' }}>{empresa.endereco}{empresa.municipio ? `, ${empresa.municipio}` : ''}</p>}
-                      {(empresa?.email || empresa?.telefone) && (
-                        <p style={{ margin: '1px 0', fontSize: '10pt' }}>
-                          {[empresa.email, empresa.telefone].filter(Boolean).join(' | ')}
-                        </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                    {/* Cabeçalho da empresa */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '25mm' }}>
+                      {empresa?.logoUrl && (
+                        <img
+                          src={getLogoUrl(empresa.logoUrl)}
+                          alt="Logótipo"
+                          style={{ height: '28mm', maxWidth: '60mm', objectFit: 'contain', marginBottom: '6mm' }}
+                          onError={e => { e.currentTarget.style.display = 'none'; }}
+                        />
                       )}
+                      <div style={{ lineHeight: '1.4' }}>
+                        <p style={{ fontWeight: 'bold', fontSize: '15pt', margin: '0 0 4px 0', textTransform: 'uppercase', color: '#1a1a1a' }}>{empresa?.nome || '[NOME DA EMPRESA]'}</p>
+                        <div style={{ fontSize: '9pt', color: '#444' }}>
+                          <p style={{ margin: '2px 0' }}>{docIdentLabel}: <strong>{empresa?.nif || '___________'}</strong></p>
+                          {empresa?.endereco && <p style={{ margin: '2px 0' }}>{empresa.endereco}{empresa.municipio ? `, ${empresa.municipio}` : ''}</p>}
+                          {(empresa?.email || empresa?.telefone) && (
+                            <p style={{ margin: '2px 0' }}>
+                              {[empresa.email, empresa.telefone].filter(Boolean).join(' • ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Título */}
+                    <div style={{ textAlign: 'center', margin: '10mm 0 12mm' }}>
+                      <p style={{ fontWeight: 'bold', fontSize: '14pt', letterSpacing: '0.05em', textTransform: 'uppercase', margin: 0 }}>
+                        Declaração de Trabalho
+                      </p>
+                    </div>
+
+                    {/* Corpo */}
+                    <div style={{ textAlign: 'justify', marginBottom: '8mm' }}>
+                      <p style={{ margin: '0 0 6mm 0' }}>
+                        Declaramos para os devidos efeitos que o(a) Sr.(a) <strong>{selectedColab.nome}</strong>,
+                        portador(a) do Documento de Identidade n.º <strong>{colabDocIdent}</strong>,
+                        exerce funções nesta empresa desde <strong>{formatDateAdmissao(selectedColab.dataAdmissao)}</strong>,
+                        ocupando actualmente o cargo de <strong>{selectedColab.cargo || '___________'}</strong>,
+                        aufere uma remuneração mensal de <strong>{formatMoney(salario)} Kz ({salarioPorExtenso})</strong>.
+                      </p>
+
+                      <p style={{ margin: '0 0 6mm 0' }}>
+                        No exercício das suas funções, o(a) referido(a) trabalhador(a) tem desempenhado
+                        as actividades inerentes ao cargo com zelo, responsabilidade e profissionalismo,
+                        contribuindo para o alcance dos objectivos da organização.
+                      </p>
+
+                      <p style={{ margin: 0 }}>
+                        A presente declaração é emitida a pedido do(a) interessado(a) para os fins que julgar convenientes.
+                      </p>
+                    </div>
+
+                    {/* Local e data */}
+                    <div style={{ textAlign: 'center', marginTop: '18mm', marginBottom: '16mm' }}>
+                      <p style={{ margin: 0, fontSize: '11pt' }}>
+                        <strong>{empresa?.provincia || empresa?.municipio || 'Luanda'}, {TodayDate()}</strong>
+                      </p>
+                    </div>
+
+                    {/* Assinatura */}
+                    <div style={{ borderTop: '1px solid #000', paddingTop: '6mm', textAlign: 'center', marginTop: '12mm', width: '80mm', margin: '20mm auto 0' }}>
+                      <p style={{ fontWeight: 'bold', fontSize: '12pt', margin: '0 0 2px 0' }}>
+                        {responsavelNome}
+                      </p>
+                      <p style={{ fontSize: '10pt', margin: 0, color: '#333' }}>
+                        Responsável
+                      </p>
                     </div>
                   </div>
 
-                  {/* Título */}
-                  <div style={{ textAlign: 'center', margin: '10mm 0 12mm' }}>
-                    <p style={{ fontWeight: 'bold', fontSize: '14pt', letterSpacing: '0.05em', textTransform: 'uppercase', margin: 0 }}>
-                      Declaração de Trabalho
-                    </p>
-                  </div>
-
-                  {/* Corpo */}
-                  <div style={{ textAlign: 'justify', marginBottom: '8mm' }}>
-                    <p style={{ margin: '0 0 6mm 0' }}>
-                      Declaramos para os devidos efeitos que o(a) Sr.(a) <strong>{selectedColab.nome}</strong>,
-                      portador(a) do Documento de Identidade n.º <strong>{colabDocIdent}</strong>,
-                      exerce funções nesta empresa desde <strong>{formatDateAdmissao(selectedColab.dataAdmissao)}</strong>,
-                      ocupando actualmente o cargo de <strong>{selectedColab.cargo || '___________'}</strong>,
-                      aufere uma remuneração mensal de <strong>{formatMoney(salario)} Kz ({salarioPorExtenso})</strong>.
-                    </p>
-
-                    <p style={{ margin: '0 0 6mm 0' }}>
-                      No exercício das suas funções, o(a) referido(a) trabalhador(a) tem desempenhado
-                      as actividades inerentes ao cargo com zelo, responsabilidade e profissionalismo,
-                      contribuindo para o alcance dos objectivos da organização.
-                    </p>
-
-                    <p style={{ margin: 0 }}>
-                      A presente declaração é emitida a pedido do(a) interessado(a) para os fins que julgar convenientes.
-                    </p>
-                  </div>
-
-                  {/* Local e data */}
-                  <div style={{ textAlign: 'center', marginTop: '18mm', marginBottom: '16mm' }}>
-                    <p style={{ margin: 0, fontSize: '11pt' }}>
-                      <strong>{empresa?.municipio || empresa?.provincia || 'Luanda'}, {TodayDate()}</strong>
-                    </p>
-                  </div>
-
-                  {/* Assinatura */}
-                  <div style={{ borderTop: '1px solid #000', paddingTop: '6mm', textAlign: 'center', marginTop: '12mm' }}>
-                    <p style={{ fontWeight: 'bold', fontSize: '12pt', margin: '0 0 2px 0' }}>
-                      {empresa?.nome || '[NOME DA ENTIDADE]'}
-                    </p>
-                    <p style={{ fontSize: '10pt', margin: 0, color: '#333' }}>
-                      O(A) Responsável
-                    </p>
-                  </div>
-
                   {/* Rodapé discreto */}
-                  <div style={{ marginTop: '16mm', textAlign: 'center', fontSize: '8pt', color: '#888' }}>
-                    Documento gerado por SALYA Payroll
+                  <div style={{ textAlign: 'center', fontSize: '8pt', color: '#94a3b8', borderTop: '0.5px solid #f1f5f9', paddingTop: '4mm' }}>
+                    Processado por Salya
                   </div>
                 </div>
               </div>

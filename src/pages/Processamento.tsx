@@ -135,6 +135,7 @@ const Processamento: React.FC = () => {
   const [showFormModal, setShowFormModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showHistóricoModal, setShowHistóricoModal] = useState(false);
+  const [showSimulationModal, setShowSimulationModal] = useState(false);
   const [selectedColab, setSelectedColab] = useState<Colaborador | null>(null);
   const [receiptSnapshot, setReceiptSnapshot] = useState<ReceiptSnapshot | null>(null);
   const [historico, setHistórico] = useState<HistóricoProcessamento[]>([]);
@@ -168,6 +169,7 @@ const Processamento: React.FC = () => {
 
   const periodoLocked = isPeriodoFuturo;
   const periodoLockedMessage = 'Mês futuro bloqueado para processamento.';
+  const [historicoLoadedOnce, setHistoricoLoadedOnce] = useState(false);
   const isMonthOptionDisabled = (month: string, year: string) => {
     const monthNum = monthToNum(month);
     const yearNum = parseInt(year, 10);
@@ -378,6 +380,7 @@ const Processamento: React.FC = () => {
       console.error('Erro ao carregar histórico:', error);
     } finally {
       setHistóricoLoading(false);
+      setHistoricoLoadedOnce(true);
     }
   }, [empresaId]);
 
@@ -557,7 +560,15 @@ const Processamento: React.FC = () => {
         }, 500);
       }
     } catch (error: any) {
-      const text = error?.status === 409 ? 'Este colaborador já foi processado para este mês.' : 'Não foi possível concluir o processamento. Verifique os dados e tente novamente.';
+      const errorMsg = error?.message?.toLowerCase() || '';
+      const bodyMsg = error?.body?.message?.toLowerCase() || '';
+      const isAtraso = errorMsg.includes('atraso') || bodyMsg.includes('atraso') || errorMsg.includes('pague os meses anteriores') || bodyMsg.includes('pague os meses anteriores');
+      
+      const text = error?.status === 409 
+        ? 'Este colaborador já foi processado para este mês.' 
+        : isAtraso 
+        ? 'Existem meses em atraso para este colaborador. Regule os pagamentos pendentes ou anule-os no menu de "Atrasos" antes de processar o mês atual.'
+        : 'Não foi possível concluir o processamento. Verifique os dados e tente novamente.';
       setMessage({ title: 'Erro de Processamento', text, type: 'error' });
     }
   };
@@ -852,17 +863,21 @@ const Processamento: React.FC = () => {
                   <span className="text-sm font-semibold text-slate-700">{formatMoney(colaborador.salarioBase || 0)}</span>
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-center align-middle">
-                  <button
-                    onClick={() => handleStartProcessar(colaborador)}
-                    disabled={periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id)}
-                    className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                      periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id)
-                        ? 'bg-emerald-50 text-emerald-600 cursor-not-allowed border border-emerald-200'
-                        : 'bg-primary text-white hover:bg-primary/90 shadow-sm'
-                    }`}
-                  >
-                    {colaboradoresProcessadosNoPeriodo.has(colaborador.id) ? '✓ Processado' : 'Processar'}
-                  </button>
+                  {!historicoLoadedOnce ? (
+                    <div className="h-8 w-24 bg-slate-100 animate-pulse rounded-lg mx-auto"></div>
+                  ) : (
+                    <button
+                      onClick={() => handleStartProcessar(colaborador)}
+                      disabled={periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id)}
+                      className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                        periodoLocked || colaboradoresProcessadosNoPeriodo.has(colaborador.id)
+                          ? 'bg-emerald-50 text-emerald-600 cursor-not-allowed border border-emerald-200'
+                          : 'bg-primary text-white hover:bg-primary/90 shadow-sm'
+                      }`}
+                    >
+                      {colaboradoresProcessadosNoPeriodo.has(colaborador.id) ? '✓ Processado' : 'Processar'}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -986,6 +1001,24 @@ const Processamento: React.FC = () => {
     );
   };
 
+  const renderSimulationModal = () => {
+    return (
+      <SimulationModal 
+        show={showSimulationModal} 
+        onClose={() => setShowSimulationModal(false)}
+        isFixedCompany={(empresa?.tipoProcessamento === 'Dias Fixos' || empresa?.tipoProcessamento === 'DIAS_FIXOS')}
+        baseDays={baseDays}
+        formatMoney={formatMoney}
+        formatMoneyInput={formatMoneyInput}
+        parseMoneyInput={parseMoneyInput}
+        calcularINSS={calcularINSS}
+        calcularIRT={calcularIRT}
+        roundMoney={roundMoney}
+        empresaProp={empresa}
+      />
+    );
+  };
+
   return (
     <div className="p-4 md:p-6 w-full max-w-full font-app">
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
@@ -995,15 +1028,198 @@ const Processamento: React.FC = () => {
           <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="bg-slate-50 border-none rounded-lg py-2 px-3 text-sm font-medium outline-none">{['2025', '2026', '2027'].map((year) => (<option key={year} value={year} disabled={parseInt(year, 10) > CURRENT_YEAR}>{year}</option>))}</select>
           <span className="px-3 py-1.5 rounded-lg bg-primary/5 text-xs text-primary">{historicoDoPeriodo.length} processamento(s)</span>
         </div>
-        <div className="flex flex-wrap gap-3"><button onClick={() => setShowHistóricoModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-all">Histórico</button><button onClick={handleBulkProcess} disabled={isProcessingBulk || periodoLocked} className={`px-6 py-2.5 rounded-xl text-sm font-medium transition-all ${periodoLocked ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary/80'}`}>{isProcessingBulk ? 'A Processar...' : 'Liquidação Mensal'}</button></div>
+        <div className="flex flex-wrap gap-3">
+          <button onClick={() => setShowSimulationModal(true)} className="px-5 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-sm font-bold hover:bg-emerald-100 transition-all flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">calculate</span>
+            Simular Processamento
+          </button>
+          <button onClick={() => setShowHistóricoModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-all">Histórico</button>
+          <button onClick={handleBulkProcess} disabled={isProcessingBulk || periodoLocked} className={`px-6 py-2.5 rounded-xl text-sm font-medium transition-all ${periodoLocked ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary/80'}`}>{isProcessingBulk ? 'A Processar...' : 'Liquidação Mensal'}</button>
+        </div>
       </div>
       {periodoLocked && (<div className="px-5 py-3.5 bg-white border border-slate-200 rounded-2xl flex items-center gap-3"><span className="material-symbols-outlined text-slate-900 text-sm">lock</span><span className="text-xs font-bold text-slate-600 uppercase tracking-wider">{periodoLockedMessage}</span></div>)}
       {renderMainContent()}
       {renderFormModal()}
       {renderReceiptModal()}
       {renderHistóricoModal()}
+      {renderSimulationModal()}
     </div>
   );
 };
+
+const SimulationModal: React.FC<{ show: boolean; onClose: () => void; isFixedCompany: boolean; baseDays: number; formatMoney: any; formatMoneyInput: any; parseMoneyInput: any; calcularINSS: any; calcularIRT: any; roundMoney: any; empresaProp: any }> = ({ show, onClose, isFixedCompany, baseDays, formatMoney, formatMoneyInput, parseMoneyInput, calcularINSS, calcularIRT, roundMoney, empresaProp }) => {
+  const [salario, setSalario] = useState(0);
+  const [alimentacao, setAlimentacao] = useState(0);
+  const [transporte, setTransporte] = useState(0);
+  const [horasExtra, setHorasExtra] = useState(0);
+  const [bonus, setBonus] = useState(0);
+  const [feriasPercent, setFeriasPercent] = useState(0);
+  const [natalPercent, setNatalPercent] = useState(0);
+  const [incluirFerias, setIncluirFerias] = useState(false);
+  const [incluirNatal, setIncluirNatal] = useState(false);
+  const [tipoContrato, setTipoContrato] = useState('Contrato por Tempo Indeterminado');
+  
+  const isPrestador = tipoContrato === 'Prestador';
+  const isEstagiario = tipoContrato === 'Estagiário';
+  
+  const vFerias = incluirFerias ? roundMoney((feriasPercent / 100) * salario) : 0;
+  const vNatal = incluirNatal ? roundMoney((natalPercent / 100) * salario) : 0;
+  const bruto = roundMoney(salario + alimentacao + transporte + horasExtra + bonus + vFerias + vNatal);
+  
+  const inss = (isPrestador || isEstagiario) ? 0 : calcularINSS(salario);
+  const alimentacaoTrib = Math.max(0, alimentacao - 30000);
+  const transporteTrib = Math.max(0, transporte - 30000);
+  const mc = roundMoney(Math.max(0, salario + alimentacaoTrib + transporteTrib + horasExtra + bonus - inss));
+  const irt = calcularIRT(mc, isPrestador, empresaProp?.categoria === 'Particular');
+  
+  const retFerias = (incluirFerias && !isPrestador) ? roundMoney(vFerias * 0.15) : 0;
+  const retNatal = (incluirNatal && !isPrestador) ? roundMoney(vNatal * 0.15) : 0;
+  
+  const totalDescontos = roundMoney(inss + irt.valor + retFerias + retNatal);
+  const liquido = roundMoney(bruto - totalDescontos);
+
+  if (!show) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4">
+      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+        <div className="p-5 border-b bg-emerald-50 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-emerald-800">Simulador de Processamento</h3>
+            <p className="text-xs text-emerald-600">Simule salários, abonos e descontos sem afetar o sistema</p>
+          </div>
+          <button onClick={onClose} className="size-8 rounded-full bg-white text-emerald-600 flex items-center justify-center hover:bg-emerald-100 transition-all shadow-sm">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Configuração</h4>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tipo de Contrato</label>
+                    <select 
+                      value={tipoContrato} 
+                      onChange={e => setTipoContrato(e.target.value)} 
+                      className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="Contrato por Tempo Indeterminado">Tempo Indeterminado</option>
+                      <option value="Contrato a Termo Certo">Termo Certo</option>
+                      <option value="Contrato a Termo Incerto">Termo Incerto</option>
+                      <option value="Estagiário">Estagiário</option>
+                      <option value="Prestador">Prestador (Independente)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Salário Base</label>
+                    <input type="text" value={formatMoneyInput(salario)} onChange={e => setSalario(parseMoneyInput(e.target.value))} className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 text-sm font-bold text-primary outline-none focus:ring-2 focus:ring-primary" placeholder="0" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Alimentação</label>
+                    <input type="text" value={formatMoneyInput(alimentacao)} onChange={e => setAlimentacao(parseMoneyInput(e.target.value))} className="w-full bg-slate-50 border border-slate-100 rounded-lg p-2.5 font-medium outline-none focus:ring-2 focus:ring-primary" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Transporte</label>
+                    <input type="text" value={formatMoneyInput(transporte)} onChange={e => setTransporte(parseMoneyInput(e.target.value))} className="w-full bg-slate-50 border border-slate-100 rounded-lg p-2.5 font-medium outline-none focus:ring-2 focus:ring-primary" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Horas Extra</label>
+                    <input type="text" value={formatMoneyInput(horasExtra)} onChange={e => setHorasExtra(parseMoneyInput(e.target.value))} className="w-full bg-slate-50 border border-slate-100 rounded-lg p-2.5 font-medium outline-none focus:ring-2 focus:ring-primary" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bónus</label>
+                    <input type="text" value={formatMoneyInput(bonus)} onChange={e => setBonus(parseMoneyInput(e.target.value))} className="w-full bg-slate-50 border border-slate-100 rounded-lg p-2.5 font-medium outline-none focus:ring-2 focus:ring-primary" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="p-3 rounded-xl border border-slate-100 space-y-2">
+                      <label className="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer">
+                        <input type="checkbox" checked={incluirFerias} onChange={e => setIncluirFerias(e.target.checked)} className="rounded text-emerald-500" />
+                        Subs. Férias
+                      </label>
+                      <div className="relative">
+                        <input type="number" value={feriasPercent} onChange={e => setFeriasPercent(Number(e.target.value))} disabled={!incluirFerias} className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs font-bold" />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">%</span>
+                      </div>
+                   </div>
+                   <div className="p-3 rounded-xl border border-slate-100 space-y-2">
+                      <label className="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer">
+                        <input type="checkbox" checked={incluirNatal} onChange={e => setIncluirNatal(e.target.checked)} className="rounded text-emerald-500" />
+                        Subs. Natal
+                      </label>
+                      <div className="relative">
+                        <input type="number" value={natalPercent} onChange={e => setNatalPercent(Number(e.target.value))} disabled={!incluirNatal} className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs font-bold" />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">%</span>
+                      </div>
+                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-6">
+            <div className="bg-slate-900 rounded-3xl p-6 text-white space-y-6 relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-4 opacity-10"><span className="material-symbols-outlined text-6xl">receipt_long</span></div>
+               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest relative z-10">Resumo da Simulação</h4>
+               
+               <div className="space-y-3 relative z-10">
+                 <div className="flex justify-between items-center text-sm">
+                   <span className="text-slate-400">Total Bruto</span>
+                   <span className="font-bold">{formatMoney(bruto)}</span>
+                 </div>
+                 {inss > 0 && (
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-slate-400">Desconto INSS (3%)</span>
+                     <span className="text-rose-400">-{formatMoney(inss)}</span>
+                   </div>
+                 )}
+                 <div className="flex justify-between items-center text-sm">
+                   <div>
+                     <span className="text-slate-400">{isPrestador ? 'IRT Grupo B/C' : 'IRT'}</span>
+                     <span className="ml-2 text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">{irt.faixa}</span>
+                   </div>
+                   <span className="text-rose-400">-{formatMoney(irt.valor)}</span>
+                 </div>
+                 {(retFerias > 0 || retNatal > 0) && (
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-slate-400">Retenções (15%)</span>
+                     <span className="text-rose-400">-{formatMoney(retFerias + retNatal)}</span>
+                   </div>
+                 )}
+                 <div className="pt-4 border-t border-slate-800 flex justify-between items-end">
+                   <div>
+                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Salário Líquido</p>
+                     <p className="text-3xl font-black">{formatMoney(liquido)}</p>
+                   </div>
+                   <div className="text-right">
+                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Descontos</p>
+                     <p className="text-sm font-bold text-rose-500">{formatMoney(totalDescontos)}</p>
+                   </div>
+                 </div>
+               </div>
+            </div>
+            
+            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3 italic">
+              <span className="material-symbols-outlined text-amber-500">info</span>
+              <p className="text-[11px] text-amber-700 leading-relaxed font-medium">Os cálculos simulam taxas e regras padrão (Angola IRT/INSS). Esta simulação não gera registros financeiros nem altera o histórico dos colaboradores.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-4 border-t bg-slate-50 flex justify-end">
+          <button onClick={onClose} className="px-8 py-3 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition-all">Fechar Simulador</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 export default Processamento;
