@@ -116,9 +116,11 @@ const Declaracoes: React.FC = () => {
       <html><head>
         <title>Declaração de Trabalho</title>
         <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@400;600;700&display=swap');
           @page { margin: 20mm; }
-          body { font-family: 'Times New Roman', serif; font-size: 12pt; color: #000; }
+          body { font-family: 'Inter', sans-serif; font-size: 11pt; color: #1a1a1a; -webkit-print-color-adjust: exact; }
           * { box-sizing: border-box; }
+          strong { font-weight: 600; color: #000; }
         </style>
       </head><body onload="window.print();window.onafterprint=()=>window.close();">
         ${el.outerHTML}
@@ -271,32 +273,56 @@ const Declaracoes: React.FC = () => {
                     minHeight: '277mm',
                     margin: '0 auto',
                     backgroundColor: '#fff',
-                    padding: '20mm',
+                    padding: '25mm 20mm',
                     boxSizing: 'border-box',
-                    fontFamily: '"Times New Roman", serif',
-                    fontSize: '12pt',
-                    color: '#000',
-                    lineHeight: '1.6',
+                    fontFamily: '"Inter", sans-serif',
+                    fontSize: '11pt',
+                    color: '#1a1a1a',
+                    lineHeight: '1.7',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
                   }}
                 >
+                  <style>{`
+                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
+                  `}</style>
                   <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                    {/* Cabeçalho da empresa */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '25mm' }}>
-                      {empresa?.logoUrl && (
-                        <img
-                          src={getLogoUrl(empresa.logoUrl)}
-                          alt="Logótipo"
-                          style={{ height: '28mm', maxWidth: '60mm', objectFit: 'contain', marginBottom: '6mm' }}
-                          onError={e => { e.currentTarget.style.display = 'none'; }}
-                        />
-                      )}
-                      <div style={{ lineHeight: '1.4' }}>
-                        <p style={{ fontWeight: 'bold', fontSize: '15pt', margin: '0 0 4px 0', textTransform: 'uppercase', color: '#1a1a1a' }}>{empresa?.nome || '[NOME DA EMPRESA]'}</p>
-                        <div style={{ fontSize: '9pt', color: '#444' }}>
-                          <p style={{ margin: '2px 0' }}>{docIdentLabel}: <strong>{empresa?.nif || '___________'}</strong></p>
+                    {/* Cabeçalho da empresa - Descentralizado */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '30mm', borderBottom: '1px solid #f1f5f9', paddingBottom: '8mm' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                        {empresa?.logoUrl && (
+                          <img
+                            src={getLogoUrl(empresa.logoUrl)}
+                            alt="Logótipo"
+                            style={{ 
+                              height: '24mm', 
+                              maxWidth: '50mm', 
+                              objectFit: 'contain', 
+                              marginBottom: '0',
+                              borderRadius: '16px', // Bordas arredondadas como solicitado
+                              backgroundColor: '#f8fafc',
+                              padding: empresa?.logoUrl ? '4px' : '0'
+                            }}
+                            onError={e => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        )}
+                      </div>
+                      
+                      <div style={{ textAlign: 'right', maxWidth: '100mm' }}>
+                        <p style={{ 
+                          fontFamily: 'Outfit, sans-serif',
+                          fontWeight: '700', 
+                          fontSize: '16pt', 
+                          margin: '0 0 8px 0', 
+                          textTransform: 'uppercase', 
+                          color: '#0f172a',
+                          letterSpacing: '-0.02em'
+                        }}>
+                          {empresa?.nome || '[NOME DA EMPRESA]'}
+                        </p>
+                        <div style={{ fontSize: '8.5pt', color: '#64748b', lineHeight: '1.4' }}>
+                          <p style={{ margin: '2px 0' }}>{docIdentLabel}: <strong style={{ color: '#334155' }}>{empresa?.nif || '___________'}</strong></p>
                           {empresa?.endereco && <p style={{ margin: '2px 0' }}>{empresa.endereco}{empresa.municipio ? `, ${empresa.municipio}` : ''}</p>}
                           {(empresa?.email || empresa?.telefone) && (
                             <p style={{ margin: '2px 0' }}>
@@ -308,10 +334,19 @@ const Declaracoes: React.FC = () => {
                     </div>
 
                     {/* Título */}
-                    <div style={{ textAlign: 'center', margin: '10mm 0 12mm' }}>
-                      <p style={{ fontWeight: 'bold', fontSize: '14pt', letterSpacing: '0.05em', textTransform: 'uppercase', margin: 0 }}>
+                    <div style={{ textAlign: 'center', margin: '15mm 0 15mm' }}>
+                      <p style={{ 
+                        fontFamily: 'Outfit, sans-serif',
+                        fontWeight: '700', 
+                        fontSize: '18pt', 
+                        letterSpacing: '0.1em', 
+                        textTransform: 'uppercase', 
+                        margin: 0,
+                        color: '#0f172a'
+                      }}>
                         Declaração de Trabalho
                       </p>
+                      <div style={{ width: '40mm', height: '3px', backgroundColor: '#3b82f6', margin: '4mm auto 0', borderRadius: '2px' }}></div>
                     </div>
 
                     {/* Corpo */}
@@ -343,8 +378,21 @@ const Declaracoes: React.FC = () => {
                     </div>
 
                     {/* Assinatura */}
-                    <div style={{ borderTop: '1px solid #000', paddingTop: '6mm', textAlign: 'center', marginTop: '12mm', width: '80mm', margin: '20mm auto 0' }}>
-                      <p style={{ fontWeight: 'bold', fontSize: '12pt', margin: '0 0 2px 0' }}>
+                    <div style={{ 
+                      borderTop: '1.5px solid #0f172a', 
+                      paddingTop: '6mm', 
+                      textAlign: 'center', 
+                      marginTop: '20mm', 
+                      width: '90mm', 
+                      margin: '25mm auto 0' 
+                    }}>
+                      <p style={{ 
+                        fontFamily: 'Outfit, sans-serif',
+                        fontWeight: '700', 
+                        fontSize: '12pt', 
+                        margin: '0 0 2px 0',
+                        color: '#0f172a' 
+                      }}>
                         {responsavelNome}
                       </p>
                       <p style={{ fontSize: '10pt', margin: 0, color: '#333' }}>
