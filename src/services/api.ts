@@ -234,11 +234,16 @@ export const api = {
       const url = `${API_BASE_URL}${endpoint}`;
    
       
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
       const response = await fetch(url, {
         method: 'GET',
         headers: getHeaders(),
         cache: 'no-store',
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       await ensureAuthOrRedirect(response, endpoint);
 
@@ -261,11 +266,16 @@ export const api = {
       const url = `${API_BASE_URL}${endpoint}`;
       console.log(`📡 POST: ${url}`);
       
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
       const response = await fetch(url, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(data),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       await ensureAuthOrRedirect(response, endpoint);
 
@@ -288,11 +298,16 @@ export const api = {
     try {
       const url = `${API_BASE_URL}${endpoint}`;
       
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for forms/files
+
       const response = await fetch(url, {
         method: 'POST',
         headers: getFormHeaders(),
         body: formData,
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       await ensureAuthOrRedirect(response, endpoint);
 
@@ -314,11 +329,16 @@ export const api = {
     try {
       const url = `${API_BASE_URL}${endpoint}`;
       
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
       const response = await fetch(url, {
         method: 'PUT',
         headers: getHeaders(),
         body: JSON.stringify(data),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       await ensureAuthOrRedirect(response, endpoint);
 

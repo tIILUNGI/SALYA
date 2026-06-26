@@ -334,7 +334,7 @@ const Configurações: React.FC = () => {
     setActiveTab('empresa');
   };
 
-  const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2 MB
+  const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5 MB (Aumentado para evitar bloqueios)
 
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -344,7 +344,7 @@ const Configurações: React.FC = () => {
       return;
     }
     if (file.size > MAX_LOGO_SIZE) {
-      Swal.fire('Ficheiro demasiado grande', 'O logotipo não pode exceder 2 MB. Por favor, comprima ou redimensione a imagem.', 'warning');
+      Swal.fire('Ficheiro demasiado grande', 'O logotipo não pode exceder 5 MB. Por favor, comprima ou redimensione a imagem para garantir um carregamento rápido.', 'warning');
       if (logoInputRef.current) logoInputRef.current.value = '';
       return;
     }
@@ -378,7 +378,11 @@ const Configurações: React.FC = () => {
       
       setMessage({ title: 'SUCESSO!', text: 'Logotipo actualizado com sucesso! Aparecerá nos próximos recibos.', type: 'success' });
     } catch (error: any) {
-      setMessage({ title: 'ERRO!', text: 'Não foi possível actualizar o logotipo. Verifique o tamanho (máx. 2 MB) e tente novamente.', type: 'error' });
+      setMessage({ 
+        title: 'ERRO!', 
+        text: 'Não foi possível actualizar o logotipo. Verifique a sua ligação à internet ou se o ficheiro é válido (PNG/JPG até 5 MB).', 
+        type: 'error' 
+      });
     } finally {
       setLogoLoading(false);
     }
