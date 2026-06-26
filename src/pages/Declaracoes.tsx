@@ -98,12 +98,13 @@ const Declaracoes: React.FC = () => {
   const handleExportPDF = () => {
     const el = document.getElementById('declaracao-trabalho');
     if (!el || !selectedColab) return;
-    html2pdf().from(el).set({
+    (html2pdf() as any).from(el).set({
       margin: 0,
       filename: `Declaracao_Trabalho_${selectedColab.nome.replace(/ /g, '_')}.pdf`,
       image: { type: 'jpeg', quality: 1.0 },
       html2canvas: { scale: 3.5, useCORS: true, backgroundColor: '#ffffff', logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: 'avoid-all' }
     }).save();
   };
 
@@ -269,19 +270,20 @@ const Declaracoes: React.FC = () => {
                 <div
                   id="declaracao-trabalho"
                   style={{
-                    width: '190mm',
-                    minHeight: '277mm',
+                    width: '210mm', // Largura real A4
+                    height: '297mm', // Altura real A4 para garantir 1 folha
                     margin: '0 auto',
                     backgroundColor: '#fff',
-                    padding: '25mm 20mm',
+                    padding: '15mm 20mm',
                     boxSizing: 'border-box',
                     fontFamily: '"Inter", sans-serif',
                     fontSize: '11pt',
                     color: '#1a1a1a',
-                    lineHeight: '1.7',
+                    lineHeight: '1.6',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
+                    position: 'relative'
                   }}
                 >
                   <style>{`
@@ -289,18 +291,18 @@ const Declaracoes: React.FC = () => {
                   `}</style>
                   <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                     {/* Cabeçalho da empresa - Descentralizado */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '30mm', borderBottom: '1px solid #f1f5f9', paddingBottom: '8mm' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15mm', borderBottom: '1px solid #f1f5f9', paddingBottom: '6mm' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                         {empresa?.logoUrl && (
                           <img
                             src={getLogoUrl(empresa.logoUrl)}
                             alt="Logótipo"
                             style={{ 
-                              height: '24mm', 
-                              maxWidth: '50mm', 
+                              height: '22mm', 
+                              maxWidth: '45mm', 
                               objectFit: 'contain', 
                               marginBottom: '0',
-                              borderRadius: '16px', // Bordas arredondadas como solicitado
+                              borderRadius: '12px',
                               backgroundColor: '#f8fafc',
                               padding: empresa?.logoUrl ? '4px' : '0'
                             }}
@@ -334,11 +336,11 @@ const Declaracoes: React.FC = () => {
                     </div>
 
                     {/* Título */}
-                    <div style={{ textAlign: 'center', margin: '15mm 0 15mm' }}>
+                    <div style={{ textAlign: 'center', margin: '8mm 0 10mm' }}>
                       <p style={{ 
                         fontFamily: 'Outfit, sans-serif',
                         fontWeight: '700', 
-                        fontSize: '18pt', 
+                        fontSize: '16pt', 
                         letterSpacing: '0.1em', 
                         textTransform: 'uppercase', 
                         margin: 0,
@@ -346,7 +348,7 @@ const Declaracoes: React.FC = () => {
                       }}>
                         Declaração de Trabalho
                       </p>
-                      <div style={{ width: '40mm', height: '3px', backgroundColor: '#3b82f6', margin: '4mm auto 0', borderRadius: '2px' }}></div>
+                      <div style={{ width: '35mm', height: '2.5px', backgroundColor: '#3b82f6', margin: '3mm auto 0', borderRadius: '2px' }}></div>
                     </div>
 
                     {/* Corpo */}
@@ -371,7 +373,7 @@ const Declaracoes: React.FC = () => {
                     </div>
 
                     {/* Local e data */}
-                    <div style={{ textAlign: 'center', marginTop: '18mm', marginBottom: '16mm' }}>
+                    <div style={{ textAlign: 'center', marginTop: '10mm', marginBottom: '10mm' }}>
                       <p style={{ margin: 0, fontSize: '11pt' }}>
                         <strong>{empresa?.provincia || empresa?.municipio || 'Luanda'}, {TodayDate()}</strong>
                       </p>
@@ -382,9 +384,9 @@ const Declaracoes: React.FC = () => {
                       borderTop: '1.5px solid #0f172a', 
                       paddingTop: '6mm', 
                       textAlign: 'center', 
-                      marginTop: '20mm', 
+                      marginTop: '10mm', 
                       width: '90mm', 
-                      margin: '25mm auto 0' 
+                      margin: '15mm auto 0' 
                     }}>
                       <p style={{ 
                         fontFamily: 'Outfit, sans-serif',
