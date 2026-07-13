@@ -67,8 +67,6 @@ const Login: React.FC = () => {
   };
 
   useEffect(() => {
-    if (mode !== 'select-plan') return;
-
     setIsLoading(true);
     api.get('/auth/plans', true)
       .then((data: any) => {
@@ -80,7 +78,7 @@ const Login: React.FC = () => {
         showError('Não foi possível carregar os planos no momento.');
       })
       .finally(() => setIsLoading(false));
-  }, [mode]);
+  }, []);
 
   const startCleanSession = (token: string, user: any) => {
     clearAuthStorage();
