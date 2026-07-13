@@ -54,7 +54,9 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [shake, setShake] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const [selectedPlan, setSelectedPlan] = useState<string>(
+    () => sessionStorage.getItem('salya_selected_plan') || ''
+  );
   const [remainingAttempts, setRemainingAttempts] = useState<number>(0);
   const [canResend, setCanResend] = useState<boolean>(true);
 
@@ -145,14 +147,25 @@ const Login: React.FC = () => {
     
     setIsLoading(true);
     try {
+      const planIdNum = Number(selectedPlan);
+      if (!planIdNum || isNaN(planIdNum)) {
+        showError('Plano não selecionado. Por favor, escolha um plano.');
+        setIsLoading(false);
+        navigate('/registar/planos');
+        return;
+      }
+      // Encontrar o planType para enviar como fallback
+      const selectedPlanObj = plans.find(p => String(p.id) === selectedPlan);
       const response = await api.post('/auth/register', { 
         name, 
         email, 
         password, 
-        planId: Number(selectedPlan) 
+        planId: planIdNum,
+        planType: selectedPlanObj?.type || null
       }, true);
 
       if (response.requiresVerification) {
+        sessionStorage.removeItem('salya_selected_plan');
         setMessage({
           title: 'Código Enviado!',
           text: response.message || 'Verifique seu email para ativar a conta.',
@@ -165,6 +178,7 @@ const Login: React.FC = () => {
       const { token, user } = response;
 
       if (token) {
+        sessionStorage.removeItem('salya_selected_plan');
         startCleanSession(token, user);
         navigate('/configuracoes/empresa');
       }
@@ -239,6 +253,11 @@ const Login: React.FC = () => {
   };
 
   const switchMode = useCallback((newMode: ViewMode) => {
+    // Limpar plano selecionado se voltar ao login ou cancelar
+    if (newMode === 'login') {
+      sessionStorage.removeItem('salya_selected_plan');
+      setSelectedPlan('');
+    }
     navigate(MODE_PATHS[newMode]);
     setErrorString('');
   }, [navigate]);
@@ -401,7 +420,7 @@ const Login: React.FC = () => {
                 {plans.map(p => (
                   <div 
                     key={p.id} 
-                    onClick={() => setSelectedPlan(String(p.id))} 
+                    onClick={() => { const id = String(p.id); setSelectedPlan(id); sessionStorage.setItem('salya_selected_plan', id); }} 
                     className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${selectedPlan === String(p.id) ? 'border-primary bg-primary/5 shadow-soft' : 'border-slate-50 hover:border-slate-100 dark:border-slate-800'}`}
                   >
                     <div className="flex justify-between items-center mb-1">
