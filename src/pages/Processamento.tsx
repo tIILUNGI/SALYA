@@ -398,9 +398,35 @@ const Processamento: React.FC = () => {
     setFormSalario(colab.salarioBase || 0);
     setFormGanhoAlimentacao(colab.subsidioAlimentacao || 0);
     setFormGanhoTransporte(colab.subsidioTransporte || 0);
-    setFormFeriasPercent(0);
+
+    // ── Ligação Férias → Subsídio de Férias ──────────────────────────────────
+    // Se o colaborador tiver férias Aprovadas ou Gozadas no mês/ano selecionado,
+    // ativa automaticamente o subsídio de férias com a % configurada na sua ficha.
+    const mesNum = monthToNum(selectedMonth);
+    const anoNum = parseInt(selectedYear, 10);
+    const feriasList: any[] = JSON.parse(localStorage.getItem(`salya_ferias_${empresaId}`) || '[]');
+    const temFerias = feriasList.some((f: any) => {
+      if (f.colaboradorId !== colab.id) return false;
+      if (f.status !== 'Aprovado' && f.status !== 'Gozado') return false;
+      const inicioDate = new Date(f.inicio);
+      const fimDate = new Date(f.fim);
+      // Verifica se o período de férias intersecta o mês selecionado
+      const inicioMes = new Date(anoNum, mesNum - 1, 1);
+      const fimMes = new Date(anoNum, mesNum, 0);
+      return inicioDate <= fimMes && fimDate >= inicioMes;
+    });
+
+    const pctFerias = colab.subsidioFerias || 0;
+    if (temFerias && pctFerias > 0) {
+      setFormFeriasPercent(pctFerias);
+      setIncluirFerias(true);
+    } else {
+      setFormFeriasPercent(0);
+      setIncluirFerias(false);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     setFormNatalPercent(0);
-    setIncluirFerias(false);
     setIncluirNatal(false);
     setFormHorasExtra(0);
     setFormBonus(0);
@@ -409,7 +435,7 @@ const Processamento: React.FC = () => {
     const regimeEmpresa = (empresa?.tipoProcessamento === 'Dias Fixos' || empresa?.tipoProcessamento === 'DIAS_FIXOS') ? 'Dias Fixos' : 'Dias Variáveis';
     setLocalTipoProcessamento(regimeEmpresa);
     setShowFormModal(true);
-  }, [periodoLocked, colaboradoresProcessadosNoPeriodo, empresa, setMessage]);
+  }, [periodoLocked, colaboradoresProcessadosNoPeriodo, empresa, empresaId, selectedMonth, selectedYear, setMessage]);
 
   const resetProcessingForm = () => {
     setFormSalario(0);
@@ -1021,19 +1047,22 @@ const Processamento: React.FC = () => {
 
   return (
     <div className="p-4 md:p-6 w-full max-w-full font-app">
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3"><h2 className="text-xl font-medium text-slate-700">Processamento Salarial</h2></div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Processamento Salarial</h1>
+          <p className="text-sm text-slate-500 font-medium">Cálculo de rendimentos, descontos e emissão de recibos de vencimento</p>
+        </div>
         <div className="flex flex-wrap items-center gap-3">
-          <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-slate-50 border-none rounded-lg py-2 px-3 text-sm font-medium outline-none">{MONTHS.map((month) => (<option key={month} value={month} disabled={isMonthOptionDisabled(month, selectedYear)}>{month}</option>))}</select>
-          <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="bg-slate-50 border-none rounded-lg py-2 px-3 text-sm font-medium outline-none">{['2025', '2026', '2027'].map((year) => (<option key={year} value={year} disabled={parseInt(year, 10) > CURRENT_YEAR}>{year}</option>))}</select>
-          <span className="px-3 py-1.5 rounded-lg bg-primary/5 text-xs text-primary">{historicoDoPeriodo.length} processamento(s)</span>
+          <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2 px-3 text-sm font-medium outline-none text-slate-700 dark:text-slate-300">{MONTHS.map((month) => (<option key={month} value={month} disabled={isMonthOptionDisabled(month, selectedYear)}>{month}</option>))}</select>
+          <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2 px-3 text-sm font-medium outline-none text-slate-700 dark:text-slate-300">{['2025', '2026', '2027'].map((year) => (<option key={year} value={year} disabled={parseInt(year, 10) > CURRENT_YEAR}>{year}</option>))}</select>
+          <span className="px-3 py-1.5 rounded-lg bg-primary/5 text-xs text-primary font-semibold">{historicoDoPeriodo.length} processamento(s)</span>
         </div>
         <div className="flex flex-wrap gap-3">
           <button onClick={() => setShowSimulationModal(true)} className="px-5 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-sm font-bold hover:bg-emerald-100 transition-all flex items-center gap-2">
             <span className="material-symbols-outlined text-sm">calculate</span>
             Simular Processamento
           </button>
-          <button onClick={() => setShowHistóricoModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-all">Histórico</button>
+          <button onClick={() => setShowHistóricoModal(true)} className="px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Histórico</button>
           <button onClick={handleBulkProcess} disabled={isProcessingBulk || periodoLocked} className={`px-6 py-2.5 rounded-xl text-sm font-medium transition-all ${periodoLocked ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary/80'}`}>{isProcessingBulk ? 'A Processar...' : 'Liquidação Mensal'}</button>
         </div>
       </div>

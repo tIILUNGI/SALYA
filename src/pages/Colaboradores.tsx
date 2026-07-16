@@ -1,9 +1,10 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
+import html2pdf from 'html2pdf.js';
 
 import { Colaborador } from '../types';
 import { AppContext } from '../App';
-import { api } from '../services/api';
+import { api, getLogoUrl } from '../services/api';
 
 interface Documento {
   id: number;
@@ -20,10 +21,50 @@ const TABS = [
   { id: 'SubsidiosFerias', label: 'Ganhos e Férias', description: 'Valores fixos de salário, ganhos mensais e ganhos sazonais.' },
   { id: 'RegimeProtecao', label: 'Regime de Proteção', description: 'Segurança social, conta bancária e centro de custo.' },
   { id: 'InformaçãoProfissional', label: 'Informação Profissional', description: 'Função, departamento e posicionamento interno.' },
-  { id: 'Contrato', label: 'Contrato', description: 'Condições contratuais, datas relevantes e estado atual.' }
+  { id: 'Contrato', label: 'Contrato', description: 'Condições contratuais, datas relevantes e estado atual.' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
+
+// ── Declaração de Trabalho helpers ────────────────────────────────────────────
+const DECL_MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+const formatMoneyDecl = (value?: number | null) => {
+  const amount = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  return amount.toLocaleString('pt-AO', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+};
+
+function numberToWords(n: number): string {
+  if (!Number.isFinite(n) || n < 0) return '';
+  const units = ['', 'Um', 'Dois', 'Três', 'Quatro', 'Cinco', 'Seis', 'Sete', 'Oito', 'Nove',
+    'Dez', 'Onze', 'Doze', 'Treze', 'Catorze', 'Quinze', 'Dezasseis', 'Dezassete', 'Dezoito', 'Dezanove'];
+  const tens = ['', '', 'Vinte', 'Trinta', 'Quarenta', 'Cinquenta', 'Sessenta', 'Setenta', 'Oitenta', 'Noventa'];
+  const hundreds = ['', 'Cem', 'Duzentos', 'Trezentos', 'Quatrocentos', 'Quinhentos', 'Seiscentos', 'Setecentos', 'Oitocentos', 'Novecentos'];
+  if (n === 0) return 'Zero';
+  if (n === 100) return 'Cem';
+  const convert = (num: number): string => {
+    if (num === 0) return '';
+    if (num < 20) return units[num];
+    if (num < 100) { const t = Math.floor(num / 10); const u = num % 10; return u === 0 ? tens[t] : `${tens[t]} e ${units[u]}`; }
+    if (num < 1000) { const h = Math.floor(num / 100); const rest = num % 100; const hWord = h === 1 && rest > 0 ? 'Cento' : hundreds[h]; return rest === 0 ? hWord : `${hWord} e ${convert(rest)}`; }
+    if (num < 1000000) { const th = Math.floor(num / 1000); const rest = num % 1000; const thWord = th === 1 ? 'Mil' : `${convert(th)} Mil`; return rest === 0 ? thWord : `${thWord} e ${convert(rest)}`; }
+    const mil = Math.floor(num / 1000000); const rest = num % 1000000; const milWord = mil === 1 ? 'Um Milhão' : `${convert(mil)} Milhões`; return rest === 0 ? milWord : `${milWord} e ${convert(rest)}`;
+  };
+  return `${convert(Math.floor(n))} Kwanzas`;
+}
+
+const formatDateAdmissaoDecl = (dateStr?: string) => {
+  if (!dateStr) return '___________';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return `${d.getDate()} de ${DECL_MONTHS[d.getMonth()]} de ${d.getFullYear()}`;
+};
+
+const getTodayDateDecl = () => {
+  const now = new Date();
+  return `${now.getDate()} de ${DECL_MONTHS[now.getMonth()]} de ${now.getFullYear()}`;
+};
+// ─────────────────────────────────────────────────────────────────────────────
 type FilterStatus = 'All' | 'Ativo' | 'Afastado' | 'Desligado';
 
 const emptyDocForm = { titulo: '', tipoDocumento: 'Contrato', dataValidade: '' };
@@ -70,7 +111,7 @@ const formatDateDisplay = (value?: string | null) => {
 };
 
 const Colaboradores: React.FC = () => {
-  const { colaboradores, setColaboradores, totalColaboradores, empresaId, setMessage, refreshData } = useContext(AppContext);
+  const { colaboradores, setColaboradores, totalColaboradores, empresaId, setMessage, refreshData, empresa } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<FilterStatus>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -83,6 +124,9 @@ const Colaboradores: React.FC = () => {
   const [docLoading, setDocLoading] = useState(false);
   const [showDocForm, setShowDocForm] = useState(false);
   const [formData, setFormData] = useState<Partial<Colaborador>>(createEmptyForm(empresaId || undefined));
+  // Declaração de Trabalho state
+  const [declaracaoColab, setDeclaracaoColab] = useState<Colaborador | null>(null);
+  const [declaracaoResponsavel, setDeclaracaoResponsavel] = useState('A Direcção');
 
   const normalizeList = (data: any, key?: string) => {
     if (Array.isArray(data)) return data;
@@ -486,7 +530,11 @@ const Colaboradores: React.FC = () => {
             </div>
           </div>
         );
-      case 'SubsidiosFerias':
+      case 'SubsidiosFerias': {
+        const salarioBase = formData.salarioBase || 0;
+        const pctFerias = salarioBase > 0 ? Math.round(((formData.subsidioFerias || 0) / salarioBase) * 100) : 0;
+        const pctNatal = salarioBase > 0 ? Math.round(((formData.subsidioNatal || 0) / salarioBase) * 100) : 0;
+
         return (
           <div className="space-y-5">
             <div className={sectionClass}>
@@ -494,29 +542,77 @@ const Colaboradores: React.FC = () => {
               <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Estrutura de Ganhos</h4>
               <div className="p-5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 mt-5">
                 <label className={labelClass}>Salário Base Mensal (KZ)</label>
-                <input type="text" value={formatMoneyInput(formData.salarioBase)} onChange={(e) => setFormData({ ...formData, salarioBase: parseMoneyInput(e.target.value) })} className="w-full bg-transparent border-none outline-none font-semibold text-primary text-3xl tracking-tight" placeholder="0" />
+                <input
+                  type="text"
+                  value={formatMoneyInput(formData.salarioBase)}
+                  onChange={(e) => {
+                    const newBase = parseMoneyInput(e.target.value);
+                    // Atualiza a base, e também recalcula os subsídios mantendo a percentagem anterior
+                    setFormData({
+                      ...formData,
+                      salarioBase: newBase,
+                      subsidioAlimentacao: formData.subsidioAlimentacao || 0,
+                      subsidioTransporte: formData.subsidioTransporte || 0,
+                      subsidioFerias: Math.round((pctFerias / 100) * newBase),
+                      subsidioNatal: Math.round((pctNatal / 100) * newBase)
+                    });
+                  }}
+                  className="w-full bg-transparent border-none outline-none font-semibold text-primary text-3xl tracking-tight"
+                  placeholder="0"
+                />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
                 <div className="space-y-2">
-                  <label className={labelClass}>Ganho Alimentação</label>
+                  <label className={labelClass}>Ganho Alimentação (KZ)</label>
                   <input type="text" value={formatMoneyInput(formData.subsidioAlimentacao)} onChange={(e) => setFormData({ ...formData, subsidioAlimentacao: parseMoneyInput(e.target.value) })} className={inputClass} />
                 </div>
                 <div className="space-y-2">
-                  <label className={labelClass}>Ganho Transporte</label>
+                  <label className={labelClass}>Ganho Transporte (KZ)</label>
                   <input type="text" value={formatMoneyInput(formData.subsidioTransporte)} onChange={(e) => setFormData({ ...formData, subsidioTransporte: parseMoneyInput(e.target.value) })} className={inputClass} />
                 </div>
                 <div className="space-y-2">
-                  <label className={labelClass}>Ganho de Férias</label>
-                  <input type="text" value={formatMoneyInput(formData.subsidioFerias)} onChange={(e) => setFormData({ ...formData, subsidioFerias: parseMoneyInput(e.target.value) })} className={inputClass} />
+                  <label className={labelClass}>Ganho de Férias (%)</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={pctFerias || ''}
+                      onChange={(e) => {
+                        const pct = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+                        setFormData({ ...formData, subsidioFerias: Math.round((pct / 100) * salarioBase) });
+                      }}
+                      className={inputClass + " pr-10"}
+                      placeholder="0"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs">%</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-medium">Equivale a {formatMoneyDecl(formData.subsidioFerias || 0)} Kz</p>
                 </div>
                 <div className="space-y-2">
-                  <label className={labelClass}>Ganho de Natal</label>
-                  <input type="text" value={formatMoneyInput(formData.subsidioNatal)} onChange={(e) => setFormData({ ...formData, subsidioNatal: parseMoneyInput(e.target.value) })} className={inputClass} />
+                  <label className={labelClass}>Ganho de Natal (%)</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={pctNatal || ''}
+                      onChange={(e) => {
+                        const pct = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+                        setFormData({ ...formData, subsidioNatal: Math.round((pct / 100) * salarioBase) });
+                      }}
+                      className={inputClass + " pr-10"}
+                      placeholder="0"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs">%</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-medium">Equivale a {formatMoneyDecl(formData.subsidioNatal || 0)} Kz</p>
                 </div>
               </div>
             </div>
           </div>
         );
+      }
       case 'RegimeProtecao':
         return (
           <div className="space-y-5">
@@ -828,6 +924,14 @@ const Colaboradores: React.FC = () => {
                        <button onClick={() => handleOpenModal(colaborador)} className="size-9 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-500 rounded-lg hover:text-primary hover:border-primary/30 transition-all flex items-center justify-center" title="Editar">
                          <span className="material-symbols-outlined text-lg">edit</span>
                        </button>
+                       <button
+                         onClick={() => { setDeclaracaoColab(colaborador); setDeclaracaoResponsavel('A Direcção'); }}
+                         className="flex items-center gap-1.5 px-3 h-9 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-500 rounded-lg hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all text-xs font-semibold whitespace-nowrap"
+                         title="Emitir Declaração de Trabalho"
+                       >
+                         <span className="material-symbols-outlined text-base">description</span>
+                         Declaração
+                       </button>
                        <button onClick={() => handleDelete(colaborador.id)} className="size-9 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-500 rounded-lg hover:text-rose-500 hover:border-rose-100 transition-all flex items-center justify-center" title="Eliminar">
                          <span className="material-symbols-outlined text-lg">delete</span>
                        </button>
@@ -897,6 +1001,198 @@ const Colaboradores: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* ── Modal rápido de Declaração de Trabalho ────────────────────────── */}
+      {declaracaoColab && (() => {
+        const dc = declaracaoColab;
+        const docIdentLabel = empresa?.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF';
+        const colabDocIdent = dc.bi || dc.nif || '___________';
+        const salario = dc.salarioBase || 0;
+        const salarioPorExtenso = numberToWords(salario);
+
+        const handleExportPDFModal = () => {
+          const el = document.getElementById('declaracao-modal-quick');
+          if (!el) return;
+          (html2pdf() as any).from(el).set({
+            margin: 0,
+            filename: `Declaracao_Trabalho_${dc.nome.replace(/ /g, '_')}.pdf`,
+            image: { type: 'jpeg', quality: 1.0 },
+            html2canvas: { scale: 3.5, useCORS: true, backgroundColor: '#ffffff', logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: 'avoid-all' }
+          }).save();
+        };
+
+        const handlePrintModal = () => {
+          const el = document.getElementById('declaracao-modal-quick');
+          if (!el) return;
+          const w = window.open('', '_blank');
+          if (!w) return;
+          w.document.write(`
+            <html><head>
+              <title>Declaração de Trabalho — ${dc.nome}</title>
+              <style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@400;600;700&display=swap');
+                @page { margin: 20mm; }
+                body { font-family: 'Inter', sans-serif; font-size: 11pt; color: #1a1a1a; -webkit-print-color-adjust: exact; }
+                * { box-sizing: border-box; }
+                strong { font-weight: 600; color: #000; }
+              </style>
+            </head><body onload="window.print();window.onafterprint=()=>window.close();">
+              ${el.outerHTML}
+            </body></html>
+          `);
+          w.document.close();
+        };
+
+        return (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
+            <div className="w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden rounded-2xl bg-white dark:bg-slate-950 shadow-2xl border border-slate-200 dark:border-slate-800">
+
+              {/* Cabeçalho do modal */}
+              <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <div className="flex items-center gap-3">
+                  <div className="size-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-indigo-500 text-xl">description</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-500">Documento Oficial</p>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">Declaração de Trabalho</h3>
+                    <p className="text-xs text-slate-400">{dc.nome} &mdash; {dc.cargo || 'Cargo não definido'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handlePrintModal}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                  >
+                    <span className="material-symbols-outlined text-sm">print</span>
+                    Imprimir
+                  </button>
+                  <button
+                    onClick={handleExportPDFModal}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition-all shadow-sm"
+                  >
+                    <span className="material-symbols-outlined text-sm">download</span>
+                    Exportar PDF
+                  </button>
+                  <button
+                    onClick={() => setDeclaracaoColab(null)}
+                    className="size-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center"
+                  >
+                    <span className="material-symbols-outlined text-lg">close</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Campo responsável */}
+              <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex items-center gap-3">
+                <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap tracking-wider">Responsável:</span>
+                <input
+                  type="text"
+                  value={declaracaoResponsavel}
+                  onChange={e => setDeclaracaoResponsavel(e.target.value)}
+                  className="flex-grow max-w-xs text-xs px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg focus:border-indigo-400 outline-none transition-all"
+                  placeholder="Nome que aparecerá na assinatura..."
+                />
+              </div>
+
+              {/* Pré-visualização da declaração */}
+              <div className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900 p-4 custom-scrollbar">
+                <div
+                  id="declaracao-modal-quick"
+                  style={{
+                    width: '210mm',
+                    height: '297mm',
+                    margin: '0 auto',
+                    backgroundColor: '#fff',
+                    padding: '15mm 20mm',
+                    boxSizing: 'border-box',
+                    fontFamily: '"Inter", sans-serif',
+                    fontSize: '11pt',
+                    color: '#1a1a1a',
+                    lineHeight: '1.6',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    position: 'relative'
+                  }}
+                >
+                  <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');`}</style>
+                  <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                    {/* Cabeçalho empresa */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15mm', borderBottom: '1px solid #f1f5f9', paddingBottom: '6mm' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                        {empresa?.logoUrl && (
+                          <img
+                            src={getLogoUrl(empresa.logoUrl)}
+                            alt="Logótipo"
+                            style={{ height: '22mm', maxWidth: '45mm', objectFit: 'contain', borderRadius: '12px', backgroundColor: '#f8fafc', padding: '4px' }}
+                            onError={e => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        )}
+                      </div>
+                      <div style={{ textAlign: 'right', maxWidth: '100mm' }}>
+                        <p style={{ fontFamily: 'Outfit, sans-serif', fontWeight: '700', fontSize: '16pt', margin: '0 0 8px 0', textTransform: 'uppercase', color: '#0f172a', letterSpacing: '-0.02em' }}>
+                          {empresa?.nome || '[NOME DA EMPRESA]'}
+                        </p>
+                        <div style={{ fontSize: '8.5pt', color: '#64748b', lineHeight: '1.4' }}>
+                          <p style={{ margin: '2px 0' }}>{docIdentLabel}: <strong style={{ color: '#334155' }}>{empresa?.nif || '___________'}</strong></p>
+                          {empresa?.endereco && <p style={{ margin: '2px 0' }}>{empresa.endereco}{empresa.municipio ? `, ${empresa.municipio}` : ''}</p>}
+                          {(empresa?.email || empresa?.telefone) && (
+                            <p style={{ margin: '2px 0' }}>{[empresa.email, empresa.telefone].filter(Boolean).join(' • ')}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Título */}
+                    <div style={{ textAlign: 'center', margin: '8mm 0 10mm' }}>
+                      <p style={{ fontFamily: 'Outfit, sans-serif', fontWeight: '700', fontSize: '16pt', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0, color: '#0f172a' }}>Declaração de Trabalho</p>
+                      <div style={{ width: '35mm', height: '2.5px', backgroundColor: '#3b82f6', margin: '3mm auto 0', borderRadius: '2px' }}></div>
+                    </div>
+
+                    {/* Corpo */}
+                    <div style={{ textAlign: 'justify', marginBottom: '8mm' }}>
+                      <p style={{ margin: '0 0 6mm 0' }}>
+                        Declaramos para os devidos efeitos que o(a) Sr.(a) <strong>{dc.nome}</strong>,
+                        portador(a) do Documento de Identidade n.º <strong>{colabDocIdent}</strong>,
+                        exerce funções nesta empresa desde <strong>{formatDateAdmissaoDecl(dc.dataAdmissao)}</strong>,
+                        ocupando actualmente o cargo de <strong>{dc.cargo || '___________'}</strong>,
+                        aufere uma remuneração mensal de <strong>{formatMoneyDecl(salario)} Kz ({salarioPorExtenso})</strong>.
+                      </p>
+                      <p style={{ margin: '0 0 6mm 0' }}>
+                        No exercício das suas funções, o(a) referido(a) trabalhador(a) tem desempenhado
+                        as actividades inerentes ao cargo com zelo, responsabilidade e profissionalismo,
+                        contribuindo para o alcance dos objectivos da organização.
+                      </p>
+                      <p style={{ margin: 0 }}>
+                        A presente declaração é emitida a pedido do(a) interessado(a) para os fins que julgar convenientes.
+                      </p>
+                    </div>
+
+                    {/* Local e data */}
+                    <div style={{ textAlign: 'center', marginTop: '10mm', marginBottom: '10mm' }}>
+                      <p style={{ margin: 0, fontSize: '11pt' }}>
+                        <strong>{empresa?.provincia || empresa?.municipio || 'Luanda'}, {getTodayDateDecl()}</strong>
+                      </p>
+                    </div>
+
+                    {/* Assinatura */}
+                    <div style={{ borderTop: '1.5px solid #0f172a', paddingTop: '6mm', textAlign: 'center', width: '90mm', margin: '15mm auto 0' }}>
+                      <p style={{ fontFamily: 'Outfit, sans-serif', fontWeight: '700', fontSize: '12pt', margin: '0 0 2px 0', color: '#0f172a' }}>{declaracaoResponsavel}</p>
+                      <p style={{ fontSize: '10pt', margin: 0, color: '#333' }}>Responsável</p>
+                    </div>
+                  </div>
+
+                  {/* Rodapé */}
+                  <div style={{ textAlign: 'center', fontSize: '8pt', color: '#94a3b8', borderTop: '0.5px solid #f1f5f9', paddingTop: '4mm' }}>Processado por Salya</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {detailsColab && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
