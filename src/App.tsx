@@ -17,7 +17,7 @@ import ResetPassword from './pages/ResetPassword';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import { Colaborador, Empresa } from './types';
-import { api } from './services/api';
+import { api, getRefreshToken, setAuthToken, clearAuthStorage, API_BASE_URL } from './services/api';
 import { notify } from './utils/notifications';
 
 
@@ -224,8 +224,8 @@ function App() {
   }, [refreshData]);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
+    const checkAuth = async () => {
+      let token = localStorage.getItem('salya_token') || localStorage.getItem('token');
       const userData = localStorage.getItem('salya_user');
       const savedEmpresaId = localStorage.getItem('salya_empresaId');
       const savedEmpresa = localStorage.getItem('salya_empresa');
@@ -242,16 +242,48 @@ function App() {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         if (payload.exp && payload.exp * 1000 < Date.now()) {
-          if (process.env.NODE_ENV !== 'production') {
-            console.warn("Sessão expirada detectada no carregamento inicial.");
+          // Access token expirado — tenta renovar com o refresh token antes de deslogar
+          const refreshToken = getRefreshToken();
+          if (refreshToken) {
+            try {
+              const refreshResp = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken }),
+              });
+              if (refreshResp.ok) {
+                const refreshData = await refreshResp.json();
+                if (refreshData?.token) {
+                  setAuthToken(refreshData.token, refreshData.refreshToken ?? refreshToken);
+                  token = refreshData.token;
+                } else {
+                  throw new Error('Sem novo token');
+                }
+              } else {
+                throw new Error('Refresh falhou');
+              }
+            } catch {
+              if (process.env.NODE_ENV !== 'production') {
+                console.warn("Refresh falhou no carregamento inicial.");
+              }
+              setIsAuthenticated(false);
+              setUser(null);
+              clearCompanyState();
+              setIsAuthChecking(false);
+              clearAuthStorage();
+              return;
+            }
+          } else {
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn("Sessão expirada detectada no carregamento inicial.");
+            }
+            setIsAuthenticated(false);
+            setUser(null);
+            clearCompanyState();
+            setIsAuthChecking(false);
+            clearAuthStorage();
+            return;
           }
-          setIsAuthenticated(false);
-          setUser(null);
-          clearCompanyState();
-          setIsAuthChecking(false);
-          localStorage.removeItem('salya_token');
-          localStorage.removeItem('token');
-          return;
         }
       } catch (e) {
         // Se o token estiver malformado, tratamos como não autenticado
@@ -604,7 +636,7 @@ function SubscriptionBarrier() {
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
         <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800">
           <div className="p-10 text-center">
-            <div className="size-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg bg-amber-100 text-amber-700">
+            <div className="size-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg bg-primary/10 text-primary">
               <span className="material-symbols-outlined text-4xl">hourglass_empty</span>
             </div>
             <h2 className="text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tight mb-4">Solicitação Enviada!</h2>
@@ -942,7 +974,7 @@ function SubscriptionBarrier() {
   const getStatusInfo = () => {
     switch (status) {
       case 'PENDENTE_APROVACAO':
-        return { title: 'Assinatura Pendente', message: 'A sua subscrição está a aguardar aprovação pelo administrador.', icon: 'hourglass_empty', color: 'amber', showCheck: true };
+        return { title: 'Assinatura Pendente', message: 'A sua subscrição está a aguardar aprovação pelo administrador.', icon: 'hourglass_empty', color: 'primary', showCheck: true };
       case 'EXPIRADA':
         return { title: 'Assinatura Expirada', message: 'O período de subscrição terminou. Escolha um novo plano para continuar.', icon: 'event_busy', color: 'rose', showCheck: false };
       case 'CANCELADA':
@@ -955,8 +987,8 @@ function SubscriptionBarrier() {
   const info = getStatusInfo();
   if (!info) return null;
 
-  const bgColor = info.color === 'amber' ? 'rgb(254 243 199)' : info.color === 'rose' ? 'rgb(255 228 230)' : 'rgb(241 245 249)';
-  const fgColor = info.color === 'amber' ? 'rgb(180 83 9)' : info.color === 'rose' ? 'rgb(225 29 72)' : 'rgb(71 85 105)';
+  const bgColor = info.color === 'primary' ? 'rgb(239 246 255)' : info.color === 'rose' ? 'rgb(255 228 230)' : 'rgb(241 245 249)';
+  const fgColor = info.color === 'primary' ? 'rgb(37 99 235)' : info.color === 'rose' ? 'rgb(225 29 72)' : 'rgb(71 85 105)';
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
@@ -982,7 +1014,7 @@ function SubscriptionBarrier() {
               </button>
             )}
             {checkMsg && (
-              <p className={`text-xs font-medium ${checkMsg.includes('Aguarde') || checkMsg.includes('Muitas') ? 'text-amber-600' : 'text-slate-400'}`}>
+              <p className={`text-xs font-medium ${checkMsg.includes('Aguarde') || checkMsg.includes('Muitas') ? 'text-primary' : 'text-slate-400'}`}>
                 {checkMsg}
               </p>
             )}

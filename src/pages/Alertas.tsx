@@ -18,7 +18,7 @@ interface AlertaItem {
 
 const severidadeBadge: Record<string, string> = {
   'Crítica': 'bg-red-100 text-red-600',
-  'Alta': 'bg-amber-100 text-amber-600',
+  'Alta': 'bg-primary/10 text-primary',
   'Média': 'bg-primary/10 text-primary',
 };
 
@@ -190,9 +190,8 @@ const Alertas: React.FC = () => {
       <div className="flex justify-between items-start mb-8">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Centro de Alertas</h1>
-          <p className="text-sm text-slate-500 mt-1">Compliance automático: contratos, documentos e salários.</p>
         </div>
-        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 px-5 py-3 rounded-xl">
+        <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-5 py-3 rounded-xl">
           <span className="material-symbols-outlined text-sm">notifications_active</span>
           <span className="text-xs font-black uppercase tracking-widest">{alertas.filter(a => a.status === 'Pendente').length} pendentes</span>
         </div>
@@ -202,7 +201,7 @@ const Alertas: React.FC = () => {
       <div className="glass-card mb-6 p-2 flex gap-2 w-max">
         <button
           onClick={() => setActiveTab('Pendente')}
-          className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Pendente' ? 'bg-amber-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+          className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Pendente' ? 'bg-primary text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
         >
           Pendentes ({alertas.filter(a => a.status === 'Pendente').length})
         </button>
@@ -232,7 +231,7 @@ const Alertas: React.FC = () => {
                   <div className="flex items-start gap-4">
                     <div className={`size-10 rounded-full flex items-center justify-center ${
                       alerta.severidade === 'Crítica' ? 'bg-red-100 text-red-600' :
-                      alerta.severidade === 'Alta' ? 'bg-amber-100 text-amber-600' :
+                      alerta.severidade === 'Alta' ? 'bg-primary/10 text-primary' :
                       'bg-primary/10 text-primary'
                     }`}>
                       <span className="material-symbols-outlined">

@@ -80,14 +80,14 @@ const Login: React.FC = () => {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const startCleanSession = (token: string, user: any) => {
+  const startCleanSession = (token: string, user: any, refreshToken?: string | null) => {
     clearAuthStorage();
     setEmpresas([]);
     setEmpresa(null);
     setEmpresaId(null);
     setColaboradores([]);
     setIsConfigured(false);
-    setAuthToken(token);
+    setAuthToken(token, refreshToken);
     localStorage.setItem('salya_user', JSON.stringify(user));
     setUser(user);
     setIsAuthenticated(true);
@@ -100,10 +100,10 @@ const Login: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await api.post('/auth/login', { email, password }, true);
-      const { token, user } = response;
+      const { token, user, refreshToken } = response;
 
       if (token) {
-        startCleanSession(token, user);
+        startCleanSession(token, user, refreshToken);
         navigate('/dashboard');
       }
     } catch (error: any) {
@@ -173,11 +173,11 @@ const Login: React.FC = () => {
         return;
       }
 
-      const { token, user } = response;
+      const { token, user, refreshToken } = response;
 
       if (token) {
         sessionStorage.removeItem('salya_selected_plan');
-        startCleanSession(token, user);
+        startCleanSession(token, user, refreshToken);
         navigate('/configuracoes/empresa');
       }
     } catch (error: any) {
@@ -201,8 +201,8 @@ const Login: React.FC = () => {
 
       // Verifica se retornou token (usuário já existia ou foi criado agora)
       if (response.token) {
-        const { token, user } = response;
-        startCleanSession(token, user);
+        const { token, user, refreshToken } = response;
+        startCleanSession(token, user, refreshToken);
         setMessage({
           title: 'Sucesso!',
           text: response.message || 'Email verificado e conta ativada!',
@@ -585,7 +585,7 @@ const Login: React.FC = () => {
                 {/* Aviso de tentativas restantes */}
                 {remainingAttempts > 0 && (
                   <div className="text-center">
-                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                    <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">
                       
                        Código inválido. Você tem mais {remainingAttempts} tentativa(s).
                     </p>

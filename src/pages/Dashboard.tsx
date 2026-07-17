@@ -195,7 +195,6 @@ const Dashboard: React.FC = () => {
     <div className="p-4 md:p-8 w-full max-w-full">
       <div className="mb-10">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Painel Executivo</h1>
-        <p className="text-sm text-slate-500 mt-1">Visão geral da folha de pagamento e compliance corporativo</p>
       </div>
 
       {loading ? (
@@ -240,7 +239,7 @@ const Dashboard: React.FC = () => {
                   <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalProcessamentos}</h3>
                   <p className="text-xs text-slate-400 mt-1">Folhas de pagamento geradas</p>
                 </div>
-                <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-600">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
                   <span className="material-symbols-outlined text-2xl">receipt_long</span>
                 </div>
               </div>
@@ -291,54 +290,6 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-          </div>
-
-          {/* Widget de Conformidade (Compliance status dynamically matched) */}
-          <div className="w-full">
-            {alertas.contratosExpirando === 0 && alertas.documentosExpirando === 0 ? (
-              <div className="p-6 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-900/50 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                    <span className="material-symbols-outlined text-2xl">health_and_safety</span>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      100% Em Conformidade Legal & Físcal
-                      <span className="text-[9px] bg-emerald-500 text-white font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Verificado AGT</span>
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium leading-relaxed">
-                      Nenhum contrato vencido ou pendência de conformidade arquivística encontrada. As suas declarações LGT estão seguras de sanções.
-                    </p>
-                  </div>
-                </div>
-                <div className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg">
-                  Sem Pendências
-                </div>
-              </div>
-            ) : (
-              <div className="p-6 bg-rose-50 dark:bg-rose-950/25 border border-rose-200/50 dark:border-rose-900/50 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-rose-500/10 text-rose-600 dark:text-rose-450 rounded-xl">
-                    <span className="material-symbols-outlined text-2xl">shield_alert</span>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      Ação de Conformidade Pendente ({alertas.contratosExpirando + alertas.documentosExpirando})
-                      <span className="text-[9px] bg-rose-600 text-white font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Atenção</span>
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium leading-relaxed">
-                      Detetamos {alertas.contratosExpirando} contrato(s) e {alertas.documentosExpirando} documento(s) com conformidade comprometida ou vencimento breve. Regularize para manter conformidade.
-                    </p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => navigate('/alertas')} 
-                  className="text-xs uppercase font-extrabold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-4 py-2 rounded-xl transition-all"
-                >
-                  Resolver Avisos
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Alertas de Compliance Section */}
@@ -395,17 +346,17 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Alerta Documentos */}
-              <div className={`glass-card p-6 flex flex-col justify-between shadow-soft dark:bg-slate-900/90 dark:border-slate-800 ${alertas.documentosExpirando === 0 ? 'border border-emerald-100 dark:border-emerald-900/30' : 'border border-amber-100 dark:border-amber-900/30'}`}>
+              <div className={`glass-card p-6 flex flex-col justify-between shadow-soft dark:bg-slate-900/90 dark:border-slate-800 ${alertas.documentosExpirando === 0 ? 'border border-emerald-100 dark:border-emerald-900/30' : 'border border-rose-100 dark:border-rose-900/30'}`}>
                 <div>
-                  <div className="size-10 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center mb-4">
-                    <span className="material-symbols-outlined text-amber-500">description</span>
+                  <div className="size-10 rounded-lg bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center mb-4">
+                    <span className="material-symbols-outlined text-rose-500">description</span>
                   </div>
                   <h4 className="font-bold text-slate-900 dark:text-white mb-1">Documentos</h4>
                   <p className="text-xs text-slate-500 mb-4 leading-relaxed">Monitoramento de validades e compliance documental.</p>
                   
                   <div className="flex items-center gap-4 mb-6">
                     <div>
-                      <span className={`block text-2xl font-black ${alertas.documentosExpirando === 0 ? 'text-emerald-600' : 'text-amber-600'}`}>{alertas.documentosExpirando}</span>
+                      <span className={`block text-2xl font-black ${alertas.documentosExpirando === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{alertas.documentosExpirando}</span>
                       <span className="text-[10px] text-slate-400 font-medium uppercase">{alertas.documentosExpirando === 0 ? 'Todos válidos' : 'A vencer'}</span>
                     </div>
                   </div>

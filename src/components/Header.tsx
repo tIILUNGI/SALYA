@@ -146,7 +146,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
   return (
     <>
       {showBanner && (
-        <div className="bg-amber-500 px-4 py-2 flex items-center justify-between gap-4 z-20 relative">
+        <div className="bg-primary px-4 py-2 flex items-center justify-between gap-4 z-20 relative">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-white text-sm">payments</span>
             <p className="text-sm font-medium text-white">Hoje é dia de processar os salários!</p>
@@ -248,7 +248,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all relative"
               >
-                <span className={`material-symbols-outlined text-xl ${unreadCount > 0 ? 'text-amber-500' : ''}`}>
+                <span className={`material-symbols-outlined text-xl ${unreadCount > 0 ? 'text-primary' : ''}`}>
                   {unreadCount > 0 ? 'notifications_active' : 'notifications'}
                 </span>
                 {unreadCount > 0 && (

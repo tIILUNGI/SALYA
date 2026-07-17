@@ -659,7 +659,6 @@ const Configurações: React.FC = () => {
             <div className="w-1 h-8 bg-primary rounded-full"></div>
             <h1 className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">{setupStep === 'choice' ? 'Adicionar Nova Entidade' : (isConfigured ? 'Configurações do Sistema' : 'Novo Cadastro')}</h1>
           </div>
-          <p className="text-slate-500 mt-1 ml-4">{setupStep === 'choice' ? 'Escolha o tipo de entidade que deseja registrar.' : 'Preencha os dados abaixo e clique em Guardar.'}</p>
         </div>
         <div className="flex items-center gap-3">
           {(setupStep === 'form' && isConfigured) && (
@@ -1305,7 +1304,7 @@ const Configurações: React.FC = () => {
                         <div className="flex items-center gap-4">
                           <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
                             user?.subscriptionStatus === 'ATIVA' ? 'bg-emerald-100 text-emerald-700' : 
-                            user?.subscriptionStatus === 'PENDENTE_APROVACAO' ? 'bg-amber-100 text-amber-700' : 
+                            user?.subscriptionStatus === 'PENDENTE_APROVACAO' ? 'bg-slate-100 text-slate-700' : 
                             'bg-rose-100 text-rose-700'
                           }`}>
                             {user?.subscriptionStatus}
@@ -1333,12 +1332,12 @@ const Configurações: React.FC = () => {
                         </div>
                       )}
                       {user?.subscriptionStatus === 'PENDENTE_APROVACAO' && (
-                        <div className="p-6 rounded-3xl bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 max-w-sm">
-                           <div className="flex items-center gap-2 mb-2 text-amber-600">
+                        <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 max-w-sm">
+                           <div className="flex items-center gap-2 mb-2 text-slate-600 dark:text-slate-300">
                             <span className="material-symbols-outlined text-lg">hourglass_top</span>
                             <p className="text-sm font-black uppercase tracking-tight">Pendente de Aprovação</p>
                           </div>
-                          <p className="text-xs text-amber-800 dark:text-amber-400 font-medium leading-relaxed">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
                             Já solicitou uma nova assinatura. Por favor, aguarde que o administrador valide o pagamento para libertar o seu acesso.
                           </p>
                         </div>

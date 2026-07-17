@@ -6,7 +6,7 @@ import { AppContext } from '../App';
 import { Ferias } from '../types';
 
 const statusBadge: Record<string, string> = {
-  'Pendente': 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
+  'Pendente': 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
   'Aprovado': 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
   'Rejeitado': 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400',
   'Gozado': 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
@@ -476,7 +476,6 @@ const FeriasPage: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
         <div className="space-y-1">
           <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Gestão de Férias</h1>
-          <p className="text-sm text-slate-500">Agende, acompanhe e controle os períodos de licença e descanso da sua equipa.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
@@ -509,8 +508,8 @@ const FeriasPage: React.FC = () => {
         </div>
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-amber-500 uppercase tracking-wider font-semibold">Pendentes de Aprovação</p>
-            <span className="material-symbols-outlined text-amber-500 text-xl">pending_actions</span>
+            <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Pendentes de Aprovação</p>
+            <span className="material-symbols-outlined text-slate-400 text-xl">pending_actions</span>
           </div>
           <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{totalPendentes}</p>
           <p className="text-[10px] text-slate-400 mt-1">Marcações a aguardar retorno da direção.</p>

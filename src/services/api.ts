@@ -54,7 +54,8 @@ export const API_BASE_URL = getApiBaseUrl();
 
 
 const TOKEN_STORAGE_KEYS = ['salya_token', 'token'] as const;
-const AUTH_STORAGE_KEYS = ['salya_token', 'token', 'salya_user', 'salya_empresaId', 'salya_empresa'] as const;
+const REFRESH_TOKEN_KEY = 'salya_refresh_token';
+const AUTH_STORAGE_KEYS = ['salya_token', 'token', 'salya_user', 'salya_empresaId', 'salya_empresa', REFRESH_TOKEN_KEY] as const;
 
 export const getAuthToken = () => {
   for (const key of TOKEN_STORAGE_KEYS) {
@@ -64,8 +65,16 @@ export const getAuthToken = () => {
   return null;
 };
 
-export const setAuthToken = (token: string) => {
+export const setAuthToken = (token: string, refreshToken?: string | null) => {
   TOKEN_STORAGE_KEYS.forEach((key) => localStorage.setItem(key, token));
+  if (refreshToken !== undefined) {
+    if (refreshToken) localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    else localStorage.removeItem(REFRESH_TOKEN_KEY);
+  }
+};
+
+export const getRefreshToken = () => {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
 };
 
 export const clearAuthStorage = () => {
@@ -164,15 +173,87 @@ const buildErrorFromResponse = (response: Response, responseText: string) => {
 
 const SUBSCRIPTION_CODES = ['SUBSCRIPTION_EXPIRED', 'SUBSCRIPTION_PENDING', 'SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_INACTIVE'];
 
-const ensureAuthOrRedirect = async (response: Response, endpoint: string) => {
-  if (response.status === 401) {
-    const isAuthEndpoint = endpoint.startsWith('/auth');
-    if (isAuthEndpoint) return;
+let isRefreshing = false;
+let refreshSubscribers: Array<(token: string | null) => void> = [];
+
+const onRefreshed = (token: string | null) => {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+};
+
+const subscribeTokenRefresh = (cb: (token: string | null) => void) => {
+  refreshSubscribers.push(cb);
+};
+
+// Tenta renovar o access token usando o refresh token.
+// Retorna o novo access token ou null se o refresh falhar.
+const attemptTokenRefresh = async (): Promise<string | null> => {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) return null;
+
+    const data = parseJsonSafe(await response.text());
+    if (!data || !data.token) return null;
+
+    setAuthToken(data.token, data.refreshToken ?? refreshToken);
+    return data.token as string;
+  } catch {
+    return null;
+  }
+};
+
+// Em caso de 401, tenta renovar o token uma única vez (com fila para
+// evitar múltiplas renovações concorrentes) e, se bem-sucedido,
+// reexecuta a chamada original. Apenas faz logout se o refresh falhar.
+const handleUnauthorized = async (endpoint: string, retry: () => Promise<any>): Promise<any> => {
+  const isAuthEndpoint = endpoint.startsWith('/auth');
+  if (isAuthEndpoint) {
     clearAuthStorage();
-    if (window.location.pathname !== '/login') {
-      window.location.href = '/login';
-    }
+    if (window.location.pathname !== '/login') window.location.href = '/login';
     throw new Error('Sessão expirada');
+  }
+
+  if (isRefreshing) {
+    const newToken = await new Promise<string | null>((resolve) => subscribeTokenRefresh(resolve));
+    if (!newToken) {
+      clearAuthStorage();
+      if (window.location.pathname !== '/login') window.location.href = '/login';
+      throw new Error('Sessão expirada');
+    }
+    return retry();
+  }
+
+  isRefreshing = true;
+  try {
+    const newToken = await attemptTokenRefresh();
+    if (!newToken) {
+      onRefreshed(null);
+      clearAuthStorage();
+      if (window.location.pathname !== '/login') window.location.href = '/login';
+      throw new Error('Sessão expirada');
+    }
+    onRefreshed(newToken);
+    return retry();
+  } finally {
+    isRefreshing = false;
+  }
+};
+
+const ensureAuthOrRedirect = async (response: Response, endpoint: string, retry: () => Promise<any>) => {
+  if (response.status === 401) {
+    return handleUnauthorized(endpoint, retry);
   }
 
   if (response.status === 403) {
@@ -228,188 +309,120 @@ export const getApiErrorMessage = (error: any) => {
   return humanizeMessage(error);
 };
 
-export const api = {
-  async get(endpoint: string, silentError = false) {
-    try {
-      const url = `${API_BASE_URL}${endpoint}`;
-   
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: getHeaders(),
-        cache: 'no-store',
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      await ensureAuthOrRedirect(response, endpoint);
-
-      const { responseText, responseData } = await readResponse(response);
-      if (!response.ok) {
-        throw buildErrorFromResponse(response, responseText);
-      }
-
-      return responseData;
-    } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
-        notify.error('Ops!', humanizeMessage(error));
-      }
-      throw error;
+// Executa uma chamada fetch e trata renovação automática de token (401).
+// O `retry` permite reexecutar a mesma chamada após renovar o token.
+const doRequest = async (
+  endpoint: string,
+  init: RequestInit,
+  retry: () => Promise<any>,
+  silentError: boolean
+): Promise<any> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, init);
+    const redirectResult = await ensureAuthOrRedirect(response, endpoint, retry);
+    if (redirectResult !== undefined) {
+      return redirectResult;
     }
-  },
 
-  async post(endpoint: string, data: any, silentError = false) {
-    try {
-      const url = `${API_BASE_URL}${endpoint}`;
-      console.log(`📡 POST: ${url}`);
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(data),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      await ensureAuthOrRedirect(response, endpoint);
-
-      const { responseText, responseData } = await readResponse(response);
-      if (!response.ok) {
-        throw buildErrorFromResponse(response, responseText);
-      }
-
-      return responseData;
-    } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
-
-        notify.error('Ops!', humanizeMessage(error));
-      }
-      throw error;
+    const { responseText, responseData } = await readResponse(response);
+    if (!response.ok) {
+      throw buildErrorFromResponse(response, responseText);
     }
-  },
-
-  async postForm(endpoint: string, formData: FormData, silentError = false) {
-    try {
-      const url = `${API_BASE_URL}${endpoint}`;
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for forms/files
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getFormHeaders(),
-        body: formData,
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      await ensureAuthOrRedirect(response, endpoint);
-
-      const { responseText, responseData } = await readResponse(response);
-      if (!response.ok) {
-        throw buildErrorFromResponse(response, responseText);
-      }
-
-      return responseData;
-    } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
-        notify.error('Ops!', humanizeMessage(error));
-      }
-      throw error;
+    return responseData;
+  } catch (error: any) {
+    if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
+      notify.error('Ops!', humanizeMessage(error));
     }
-  },
-
-  async put(endpoint: string, data: any, silentError = false) {
-    try {
-      const url = `${API_BASE_URL}${endpoint}`;
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
-
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: getHeaders(),
-        body: JSON.stringify(data),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      await ensureAuthOrRedirect(response, endpoint);
-
-      const { responseText, responseData } = await readResponse(response);
-      if (!response.ok) {
-        throw buildErrorFromResponse(response, responseText);
-      }
-
-      return responseData;
-    } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
-
-        notify.error('Ops!', humanizeMessage(error));
-      }
-      throw error;
-    }
-  },
-
-  async patch(endpoint: string, data: any, silentError = false) {
-    try {
-      const url = `${API_BASE_URL}${endpoint}`;
-      
-      const response = await fetch(url, {
-        method: 'PATCH',
-        headers: getHeaders(),
-        body: JSON.stringify(data),
-      });
-
-      await ensureAuthOrRedirect(response, endpoint);
-
-      const { responseText, responseData } = await readResponse(response);
-      if (!response.ok) {
-        throw buildErrorFromResponse(response, responseText);
-      }
-
-      return responseData;
-    } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
-     
-        notify.error('Ops!', humanizeMessage(error));
-      }
-      throw error;
-    }
-  },
-
-  async delete(endpoint: string, silentError = false) {
-    try {
-      const url = `${API_BASE_URL}${endpoint}`;
-      console.log(`📡 DELETE: ${url}`);
-      
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: getHeaders(),
-      });
-
-      await ensureAuthOrRedirect(response, endpoint);
-
-      if (!response.ok) {
-        const responseText = await response.text();
-        throw buildErrorFromResponse(response, responseText);
-      }
-
-      return true;
-    } catch (error: any) {
-      if (!silentError && error.message !== 'Sessão expirada' && error.message !== 'Acesso negado' && !error.isSubscriptionBlock) {
-      
-        notify.error('Ops!', humanizeMessage(error));
-      }
-      throw error;
-    }
+    throw error;
   }
+};
+
+const requestWithTimeout = (init: RequestInit, timeoutMs: number): { signal: AbortSignal; clear: () => void } => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  return { signal: controller.signal, clear: () => clearTimeout(timeoutId) };
+};
+
+export const api = {
+  async get(endpoint: string, silentError = false): Promise<any> {
+    const { signal, clear } = requestWithTimeout({}, 30000);
+    try {
+      const retry = () => api.get(endpoint, silentError);
+      return await doRequest(
+        endpoint,
+        { method: 'GET', headers: getHeaders(), cache: 'no-store', signal },
+        retry,
+        silentError
+      );
+    } finally {
+      clear();
+    }
+  },
+
+  async post(endpoint: string, data: any, silentError = false): Promise<any> {
+    const { signal, clear } = requestWithTimeout({}, 30000);
+    try {
+      const retry = () => api.post(endpoint, data, silentError);
+      return await doRequest(
+        endpoint,
+        { method: 'POST', headers: getHeaders(), body: JSON.stringify(data), signal },
+        retry,
+        silentError
+      );
+    } finally {
+      clear();
+    }
+  },
+
+  async postForm(endpoint: string, formData: FormData, silentError = false): Promise<any> {
+    const { signal, clear } = requestWithTimeout({}, 60000);
+    try {
+      const retry = () => api.postForm(endpoint, formData, silentError);
+      return await doRequest(
+        endpoint,
+        { method: 'POST', headers: getFormHeaders(), body: formData, signal },
+        retry,
+        silentError
+      );
+    } finally {
+      clear();
+    }
+  },
+
+  async put(endpoint: string, data: any, silentError = false): Promise<any> {
+    const { signal, clear } = requestWithTimeout({}, 30000);
+    try {
+      const retry = () => api.put(endpoint, data, silentError);
+      return await doRequest(
+        endpoint,
+        { method: 'PUT', headers: getHeaders(), body: JSON.stringify(data), signal },
+        retry,
+        silentError
+      );
+    } finally {
+      clear();
+    }
+  },
+
+  async patch(endpoint: string, data: any, silentError = false): Promise<any> {
+    const retry = () => api.patch(endpoint, data, silentError);
+    return await doRequest(
+      endpoint,
+      { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(data) },
+      retry,
+      silentError
+    );
+  },
+
+  async delete(endpoint: string, silentError = false): Promise<any> {
+    const retry = () => api.delete(endpoint, silentError);
+    return await doRequest(
+      endpoint,
+      { method: 'DELETE', headers: getHeaders() },
+      retry,
+      silentError
+    );
+  },
 };
 
 // Função para debug - mostra a URL atual da API

@@ -24,6 +24,10 @@ export const calcularIRT = (
     return { valor: roundMoney(mc * 0.065), faixa: 'Prestador (Taxa Fixa 6,5%)' };
   }
 
+  if (mc <= 150000) {
+    return { valor: 0, faixa: 'Isento' };
+  }
+
   const f = [...taxasIRT].reverse().find((b) => mc > b.excesso) ?? taxasIRT[0];
   const irt = Math.max(0, roundMoney(f.parcelaFixa + (mc - f.excesso) * (f.taxa / 100)));
   return { valor: irt, faixa: f.faixa };

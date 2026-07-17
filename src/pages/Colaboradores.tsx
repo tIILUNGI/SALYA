@@ -557,7 +557,7 @@ const Colaboradores: React.FC = () => {
               </div>
 
               {!editingId && (
-                <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+                <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
                   Guarde primeiro os dados do colaborador para desbloquear o arquivo documental.
                 </div>
               )}
@@ -916,7 +916,6 @@ const Colaboradores: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Recursos Humanos</h1>
-          <p className="text-sm text-slate-500">Gestão de colaboradores e fichas individuais do sistema</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -952,11 +951,11 @@ const Colaboradores: React.FC = () => {
       )}
 
       {totalColaboradores >= 80 && totalColaboradores < 100 && (
-        <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex gap-3 items-start">
-          <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5">warning</span>
+        <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg flex gap-3 items-start">
+          <span className="material-symbols-outlined text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5">warning</span>
           <div>
-            <p className="font-semibold text-amber-900 dark:text-amber-200">Aproximando-se do limite</p>
-            <p className="text-sm text-amber-800 dark:text-amber-300 mt-1">Você tem {100 - totalColaboradores} colaboradores restantes até atingir o limite de 100 para o plano anual.</p>
+            <p className="font-semibold text-rose-900 dark:text-rose-200">Aproximando-se do limite</p>
+            <p className="text-sm text-rose-800 dark:text-rose-300 mt-1">Você tem {100 - totalColaboradores} colaboradores restantes até atingir o limite de 100 para o plano anual.</p>
           </div>
         </div>
       )}
@@ -979,7 +978,7 @@ const Colaboradores: React.FC = () => {
             </span>
             <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
               <div 
-                className={`h-full transition-all ${totalColaboradores >= 100 ? 'bg-red-500' : totalColaboradores >= 80 ? 'bg-amber-500' : 'bg-green-500'}`}
+                className={`h-full transition-all ${totalColaboradores >= 100 ? 'bg-rose-500' : totalColaboradores >= 80 ? 'bg-slate-400' : 'bg-primary'}`}
                 style={{ width: `${Math.min(totalColaboradores, 100)}%` }}
               />
             </div>
@@ -1056,9 +1055,14 @@ const Colaboradores: React.FC = () => {
                  <tr key={colaborador.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all group">
                    <td className="px-6 py-4">
                      <div className="flex items-center gap-3">
-                       <div className="size-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 text-white flex items-center justify-center font-bold text-xs shadow-sm shrink-0">
-                         {colaborador.nome.substring(0, 2).toUpperCase()}
-                       </div>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDetails(colaborador)}
+                          title="Visualizar Ficha"
+                          className="size-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 text-white flex items-center justify-center font-bold text-xs shadow-sm shrink-0 hover:opacity-90 transition-opacity"
+                        >
+                          {colaborador.nome.substring(0, 2).toUpperCase()}
+                        </button>
                        <div>
                          <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{colaborador.nome}</p>
                          <p className="text-[11px] font-medium text-slate-400 capitalize">{colaborador.cargo}</p>
@@ -1071,7 +1075,7 @@ const Colaboradores: React.FC = () => {
                    </td>
                    <td className="px-6 py-4 text-center align-middle">
                      <div className="flex justify-center">
-                     <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-semibold ${colaborador.status === 'Ativo' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/40' : colaborador.status === 'Afastado' ? 'bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/40' : 'bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/40'}`}>
+                     <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-semibold ${colaborador.status === 'Ativo' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/40' : colaborador.status === 'Afastado' ? 'bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700' : 'bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/40'}`}>
                        {colaborador.status}
                      </span>
                      </div>

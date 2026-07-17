@@ -357,7 +357,6 @@ const Relatórios: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Relatórios &amp; Insights</h1>
-          <p className="text-sm font-medium text-slate-500">Exporte dados em PDF ou CSV e acompanhe métricas em tempo real.</p>
         </div>
       </div>
 
