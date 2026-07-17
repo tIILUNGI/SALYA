@@ -1287,7 +1287,7 @@ const Configurações: React.FC = () => {
             {activeTab === 'assinatura' && (
               <div className="space-y-8">
                 {/* Status Atual */}
-                <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden">
+                <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 lg:p-10 rounded-2xl sm:rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
                   
                   <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-8">
@@ -1301,7 +1301,7 @@ const Configurações: React.FC = () => {
                       
                       <div className="flex flex-col gap-1">
                         <p className="text-sm text-slate-500 font-medium italic">Plano Actual:</p>
-                        <h4 className="text-4xl font-black text-primary uppercase tracking-tighter mb-2">{user?.activePlanName || user?.planType || 'DEMO'}</h4>
+                        <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-primary uppercase tracking-tighter mb-2 break-words">{user?.activePlanName || user?.planType || 'DEMO'}</h4>
                         <div className="flex items-center gap-4">
                           <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
                             user?.subscriptionStatus === 'ATIVA' ? 'bg-emerald-100 text-emerald-700' : 
@@ -1348,39 +1348,39 @@ const Configurações: React.FC = () => {
                 </div>
 
                 {/* Lista de Planos */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
                   {plans.map((p) => (
                     <div 
                       key={p.id} 
-                      className={`group p-8 rounded-[2.5rem] border-2 transition-all hover:scale-[1.02] flex flex-col relative ${
+                      className={`group p-5 sm:p-6 lg:p-8 rounded-2xl sm:rounded-[2.5rem] border-2 transition-all flex flex-col relative min-w-0 ${
                         user?.planType === p.type ? 'border-primary bg-primary/5 shadow-2xl shadow-primary/20' : 
-                        p.type === 'ANUAL' ? 'border-primary bg-primary/5 scale-105 shadow-xl' : 
-                        'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900'
+                        p.type === 'ANUAL' ? 'border-primary bg-primary/5 shadow-xl xl:scale-[1.02]' : 
+                        'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-primary/20'
                       }`}
                     >
                       {p.type === 'ANUAL' && (
-                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full">Recomendado</div>
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-4 py-1 rounded-full whitespace-nowrap">Recomendado</div>
                       )}
-                      <div className="mb-6">
-                        <div className={`size-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:rotate-12 ${
+                      <div className="mb-4 sm:mb-6">
+                        <div className={`size-10 sm:size-12 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-transform group-hover:rotate-12 ${
                            user?.planType === p.type || p.type === 'ANUAL' ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                         }`}>
-<span className="material-symbols-outlined text-2xl">
-              {p.type === 'DEMO' ? 'rocket_launch' : 
-               p.type === 'SEMESTRAL' ? 'person' : 
-               'groups'}
-            </span>
+                          <span className="material-symbols-outlined text-xl sm:text-2xl">
+                            {p.type === 'DEMO' ? 'rocket_launch' : 
+                             p.type === 'SEMESTRAL' ? 'person' : 
+                             'groups'}
+                          </span>
                         </div>
-                        <h5 className="font-black text-lg uppercase tracking-tight text-slate-800 dark:text-white mb-1">{p.name}</h5>
-                        <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">{p.category}</p>
+                        <h5 className="font-black text-base sm:text-lg uppercase tracking-tight text-slate-800 dark:text-white mb-1 break-words">{p.name}</h5>
+                        <p className="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-widest">{p.category}</p>
                       </div>
 
-                      <div className="mb-8">
-                        <div className="flex items-baseline gap-1 mb-2">
-                          <span className="text-3xl font-black text-slate-900 dark:text-white">{p.price.toLocaleString()}</span>
-                          <span className="text-xs font-black text-slate-400 uppercase">Kz / {p.durationDays} dias</span>
+                      <div className="mb-6 sm:mb-8">
+                        <div className="flex flex-col gap-0.5 mb-2 min-w-0">
+                          <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white break-all leading-tight">{p.price.toLocaleString()}</span>
+                          <span className="text-[10px] sm:text-xs font-black text-slate-400 uppercase">Kz / {p.durationDays} dias</span>
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed min-h-[3rem]">{p.description || `Plano ${p.name} ideal para as suas necessidades de processamento.`}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed min-h-[2.5rem] sm:min-h-[3rem]">{p.description || `Plano ${p.name} ideal para as suas necessidades de processamento.`}</p>
                       </div>
 
 <ul className="space-y-3 mb-10 flex-1">

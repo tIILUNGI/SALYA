@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import Swal from 'sweetalert2';
+import html2pdf from 'html2pdf.js';
 import { api } from '../services/api';
 import { AppContext } from '../App';
 import { Ferias } from '../types';
@@ -38,6 +39,74 @@ const FeriasPage: React.FC = () => {
     return Math.ceil(diff / (1000 * 3600 * 24)) + 1;
   }, []);
 
+  const DIAS_FERIAS_ANUAIS = 22;
+
+  const diasUsadosPorColaborador = useCallback((colaboradorId: number, ano: number) => {
+    return feriasList
+      .filter((f) => f.colaboradorId === colaboradorId && f.ano === ano && (f.status === 'Aprovado' || f.status === 'Gozado'))
+      .reduce((acc, f) => acc + (f.dias || calculatedDays(f.inicio, f.fim)), 0);
+  }, [feriasList, calculatedDays]);
+
+  const diasDisponiveis = useCallback((colaboradorId: number, ano: number) => {
+    return Math.max(0, DIAS_FERIAS_ANUAIS - diasUsadosPorColaborador(colaboradorId, ano));
+  }, [diasUsadosPorColaborador]);
+
+  const hasOverlap = useCallback((colaboradorId: number, inicio: string, fim: string, excludeId?: number) => {
+    const start = new Date(inicio);
+    const end = new Date(fim);
+    return feriasList.some((f) => {
+      if (f.colaboradorId !== colaboradorId) return false;
+      if (excludeId && f.id === excludeId) return false;
+      if (f.status === 'Rejeitado') return false;
+      const fStart = new Date(f.inicio);
+      const fEnd = new Date(f.fim);
+      return start <= fEnd && end >= fStart;
+    });
+  }, [feriasList]);
+
+  const hasDepartmentOverlap = useCallback((colaboradorId: number, inicio: string, fim: string) => {
+    const colab = colaboradores.find((c) => c.id === colaboradorId);
+    const dept = colab?.departamento;
+    if (!dept) return { overlap: false, colleague: '' };
+
+    const start = new Date(inicio);
+    const end = new Date(fim);
+    const conflict = feriasList.find((f) => {
+      if (f.colaboradorId === colaboradorId || f.status === 'Rejeitado') return false;
+      const other = colaboradores.find((c) => c.id === f.colaboradorId);
+      if (!other || other.departamento !== dept) return false;
+      const fStart = new Date(f.inicio);
+      const fEnd = new Date(f.fim);
+      return start <= fEnd && end >= fStart;
+    });
+
+    return conflict
+      ? { overlap: true, colleague: conflict.colaborador || 'outro colaborador', dept }
+      : { overlap: false, colleague: '', dept };
+  }, [feriasList, colaboradores]);
+
+  const getEffectiveStatus = useCallback((ferias: Ferias): Ferias['status'] => {
+    if (ferias.status !== 'Aprovado') return ferias.status;
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const fim = new Date(ferias.fim);
+    fim.setHours(0, 0, 0, 0);
+    if (fim < hoje) return 'Gozado';
+    return ferias.status;
+  }, []);
+
+  const autoMarkGozado = useCallback((list: Ferias[]): Ferias[] => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    return list.map((f) => {
+      if (f.status !== 'Aprovado') return f;
+      const fim = new Date(f.fim);
+      fim.setHours(0, 0, 0, 0);
+      if (fim < hoje) return { ...f, status: 'Gozado' as const };
+      return f;
+    });
+  }, []);
+
   const loadFerias = useCallback(async () => {
     if (!empresaId) return;
     setLoading(true);
@@ -47,7 +116,9 @@ const FeriasPage: React.FC = () => {
     if (isApiBroken) {
       const localData = localStorage.getItem(`salya_ferias_${empresaId}`);
       if (localData) {
-        setFeriasList(JSON.parse(localData));
+        const parsed = autoMarkGozado(JSON.parse(localData));
+        setFeriasList(parsed);
+        if (empresaId) localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify(parsed));
       } else {
         const activeColabs = colaboradores.filter(c => c.status === 'Ativo');
         const mock: Ferias[] = [];
@@ -75,8 +146,8 @@ const FeriasPage: React.FC = () => {
             ano: new Date().getFullYear()
           });
         }
-        setFeriasList(mock);
-        localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify(mock));
+        setFeriasList(autoMarkGozado(mock));
+        localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify(autoMarkGozado(mock)));
       }
       setLoading(false);
       return;
@@ -85,9 +156,13 @@ const FeriasPage: React.FC = () => {
     try {
       const data = await api.get(`/ferias?empresaId=${empresaId}`);
       if (Array.isArray(data)) {
-        setFeriasList(data);
+        const normalized = autoMarkGozado(data);
+        setFeriasList(normalized);
+        if (empresaId) localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify(normalized));
       } else if (data && typeof data === 'object' && '_embedded' in data) {
-        setFeriasList((data as any)._embedded?.ferias || []);
+        const normalized = autoMarkGozado((data as any)._embedded?.ferias || []);
+        setFeriasList(normalized);
+        if (empresaId) localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify(normalized));
       } else {
         throw new Error('API format not recognized');
       }
@@ -96,7 +171,9 @@ const FeriasPage: React.FC = () => {
       localStorage.setItem(isApiBrokenKey, 'true');
       const localData = localStorage.getItem(`salya_ferias_${empresaId}`);
       if (localData) {
-        setFeriasList(JSON.parse(localData));
+        const parsed = autoMarkGozado(JSON.parse(localData));
+        setFeriasList(parsed);
+        if (empresaId) localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify(parsed));
       } else {
         const activeColabs = colaboradores.filter(c => c.status === 'Ativo');
         const mock: Ferias[] = [];
@@ -124,13 +201,13 @@ const FeriasPage: React.FC = () => {
             ano: new Date().getFullYear()
           });
         }
-        setFeriasList(mock);
-        localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify(mock));
+        setFeriasList(autoMarkGozado(mock));
+        localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify(autoMarkGozado(mock)));
       }
     } finally {
       setLoading(false);
     }
-  }, [empresaId, colaboradores]);
+  }, [empresaId, colaboradores, autoMarkGozado]);
 
   useEffect(() => {
     loadFerias();
@@ -164,6 +241,27 @@ const FeriasPage: React.FC = () => {
     }
 
     const totalDays = calculatedDays(dataInicio, dataFim);
+
+    if (hasOverlap(Number(colabId), dataInicio, dataFim)) {
+      Swal.fire('Conflito de Período', 'Já existe um período de férias registado que se sobrepõe a estas datas para este colaborador.', 'error');
+      return;
+    }
+
+    const deptConflict = hasDepartmentOverlap(Number(colabId), dataInicio, dataFim);
+    if (deptConflict.overlap) {
+      Swal.fire(
+        'Conflito no Departamento',
+        `O departamento "${deptConflict.dept}" já tem férias de ${deptConflict.colleague} neste período. Ajuste as datas para evitar sobreposição.`,
+        'warning'
+      );
+      return;
+    }
+
+    if (totalDays > diasDisponiveis(Number(colabId), anoReferencia)) {
+      Swal.fire('Limite Excedido', `Este colaborador só tem ${diasDisponiveis(Number(colabId), anoReferencia)} dia(s) disponível(is) em ${anoReferencia}.`, 'error');
+      return;
+    }
+
     const payload = {
       colaboradorId: Number(colabId),
       colaborador: co.nome,
@@ -321,9 +419,54 @@ const FeriasPage: React.FC = () => {
     .filter(f => f.status === 'Gozado' && f.ano === new Date().getFullYear())
     .reduce((acc, curr) => acc + (curr.dias || 0), 0);
 
+  const totalDiasDisponiveisEquipa = colaboradores
+    .filter(c => c.status === 'Ativo')
+    .reduce((acc, c) => acc + diasDisponiveis(c.id, new Date().getFullYear()), 0);
+
+  const handleGerarMapaAGT = () => {
+    const ano = new Date().getFullYear();
+    const aprovadas = feriasList.filter(f => f.status === 'Aprovado' || f.status === 'Gozado');
+    const el = document.createElement('div');
+    el.innerHTML = `
+      <div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b;">
+        <h1 style="font-size: 18px; margin: 0 0 4px;">MAPA DE FÉRIAS — CONFORME AGT</h1>
+        <p style="font-size: 11px; color: #64748b; margin: 0 0 20px;">Ano de referência: ${ano} · Gerado por SALYA em ${new Date().toLocaleDateString('pt-AO')}</p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+          <thead>
+            <tr style="background: #f1f5f9;">
+              <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">Colaborador</th>
+              <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">Início</th>
+              <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: left;">Fim</th>
+              <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">Dias</th>
+              <th style="border: 1px solid #e2e8f0; padding: 8px; text-align: center;">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${aprovadas.length === 0 ? '<tr><td colspan="5" style="border:1px solid #e2e8f0;padding:12px;text-align:center;color:#94a3b8;">Sem períodos aprovados</td></tr>' :
+              aprovadas.map(f => `<tr>
+                <td style="border:1px solid #e2e8f0;padding:8px;">${f.colaborador}</td>
+                <td style="border:1px solid #e2e8f0;padding:8px;">${new Date(f.inicio).toLocaleDateString('pt-AO')}</td>
+                <td style="border:1px solid #e2e8f0;padding:8px;">${new Date(f.fim).toLocaleDateString('pt-AO')}</td>
+                <td style="border:1px solid #e2e8f0;padding:8px;text-align:center;">${f.dias}</td>
+                <td style="border:1px solid #e2e8f0;padding:8px;text-align:center;">${f.status}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        <p style="font-size: 9px; color: #94a3b8; margin-top: 16px; text-align: center;">Documento gerado automaticamente — Lei n.º 14/25 & AGT</p>
+      </div>
+    `;
+    (html2pdf() as any).from(el).set({
+      margin: 10,
+      filename: `mapa-ferias-agt-${ano}.pdf`,
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+    }).save();
+  };
+
   // Filters
   const filteredList = feriasList.filter(f => {
-    const matchStatus = filtroStatus === 'Todos' ? true : f.status === filtroStatus;
+    const effective = getEffectiveStatus(f);
+    const matchStatus = filtroStatus === 'Todos' ? true : effective === filtroStatus;
     const matchColab = filtroColaborador === 'Todos' ? true : f.colaboradorId === Number(filtroColaborador);
     return matchStatus && matchColab;
   });
@@ -335,17 +478,27 @@ const FeriasPage: React.FC = () => {
           <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Gestão de Férias</h1>
           <p className="text-sm text-slate-500">Agende, acompanhe e controle os períodos de licença e descanso da sua equipa.</p>
         </div>
-        <button 
-          onClick={() => setShowAddModal(true)} 
-          className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl font-semibold shadow-soft hover:shadow-lg transition-all flex items-center justify-center gap-2"
-        >
-          <span className="material-symbols-outlined text-lg">event_available</span>
-          Marcar Férias
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            type="button"
+            onClick={handleGerarMapaAGT}
+            className="bg-white dark:bg-slate-900 border border-primary/30 text-primary hover:bg-primary/5 px-5 py-2.5 rounded-xl font-semibold shadow-soft transition-all flex items-center justify-center gap-2 text-sm"
+          >
+            <span className="material-symbols-outlined text-lg">picture_as_pdf</span>
+            Gerar Mapa de Férias AGT
+          </button>
+          <button 
+            onClick={() => setShowAddModal(true)} 
+            className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl font-semibold shadow-soft hover:shadow-lg transition-all flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-lg">event_available</span>
+            Marcar Férias
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
           <div className="flex items-center justify-between">
             <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Em Férias Hoje</p>
@@ -364,11 +517,19 @@ const FeriasPage: React.FC = () => {
         </div>
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-blue-500 uppercase tracking-wider font-semibold">Días Utilizados ({new Date().getFullYear()})</p>
+            <p className="text-xs text-blue-500 uppercase tracking-wider font-semibold">Dias Utilizados ({new Date().getFullYear()})</p>
             <span className="material-symbols-outlined text-blue-500 text-xl">date_range</span>
           </div>
           <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{diasGozadosAno} dias</p>
           <p className="text-[10px] text-slate-400 mt-1">Acumulado total de dias já gozados.</p>
+        </div>
+        <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-emerald-500 uppercase tracking-wider font-semibold">Dias Disponíveis (Equipa)</p>
+            <span className="material-symbols-outlined text-emerald-500 text-xl">beach_access</span>
+          </div>
+          <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{totalDiasDisponiveisEquipa} dias</p>
+          <p className="text-[10px] text-slate-400 mt-1">Saldo restante ({DIAS_FERIAS_ANUAIS} dias/ano por colaborador).</p>
         </div>
       </div>
 
@@ -437,16 +598,22 @@ const FeriasPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filteredList.map((ferias) => {
                   const days = calculatedDays(ferias.inicio, ferias.fim);
+                  const effectiveStatus = getEffectiveStatus(ferias);
+                  const anoRef = ferias.ano || new Date().getFullYear();
+                  const gozou = diasUsadosPorColaborador(ferias.colaboradorId, anoRef);
+                  const disponivel = diasDisponiveis(ferias.colaboradorId, anoRef);
                   return (
-                    <tr key={ferias.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all align-middle">
+                    <tr key={ferias.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all align-middle group">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold text-center shrink-0">
+                          <div className="size-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 text-white flex items-center justify-center text-xs font-bold text-center shrink-0 shadow-sm">
                             {(ferias.colaborador || 'Colaborador').substring(0, 2).toUpperCase()}
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-slate-700 dark:text-white capitalize">{ferias.colaborador}</p>
-                            <p className="text-[10px] text-slate-450 uppercase font-medium">Ref. #{ferias.colaboradorId}</p>
+                            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
+                              Gozou {gozou} / Disp. {disponivel} dias
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -463,8 +630,8 @@ const FeriasPage: React.FC = () => {
                         {days} dias
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusBadge[ferias.status]}`}>
-                          {ferias.status}
+                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${statusBadge[effectiveStatus]}`}>
+                          {effectiveStatus}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -473,16 +640,18 @@ const FeriasPage: React.FC = () => {
                             <>
                               <button 
                                 onClick={() => handleChangeStatus(ferias.id, 'Aprovado')}
-                                className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-[10px] font-bold uppercase transition-all"
+                                className="px-2 py-1 border border-emerald-500 text-emerald-600 bg-transparent hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-md text-[10px] font-bold uppercase transition-all flex items-center gap-1"
                                 title="Aprovar Férias"
                               >
+                                <span className="material-symbols-outlined text-sm">check</span>
                                 Aprovar
                               </button>
                               <button 
                                 onClick={() => handleChangeStatus(ferias.id, 'Rejeitado')}
-                                className="px-2.5 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded text-[10px] font-bold uppercase transition-all"
+                                className="px-2 py-1 border border-rose-500 text-rose-600 bg-transparent hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-md text-[10px] font-bold uppercase transition-all flex items-center gap-1"
                                 title="Rejeitar Férias"
                               >
+                                <span className="material-symbols-outlined text-sm">close</span>
                                 Rejeitar
                               </button>
                             </>
@@ -507,10 +676,10 @@ const FeriasPage: React.FC = () => {
                           )}
                           <button
                             onClick={() => handleDeleteFerias(ferias.id)}
-                            className="size-7 rounded bg-rose-50 dark:bg-rose-950/20 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center"
+                            className="size-6 rounded text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
                             title="Eliminar marcação"
                           >
-                            <span className="material-symbols-outlined text-sm">delete</span>
+                            <span className="material-symbols-outlined text-base">delete</span>
                           </button>
                         </div>
                       </td>
@@ -553,6 +722,11 @@ const FeriasPage: React.FC = () => {
                     <option key={c.id} value={c.id}>{c.nome} · {c.cargo || 'Sem Cargo'}</option>
                   ))}
                 </select>
+                {colabId && (
+                  <p className="text-[10px] font-semibold text-emerald-600 mt-1">
+                    Dias disponíveis em {anoReferencia}: {diasDisponiveis(Number(colabId), anoReferencia)} de {DIAS_FERIAS_ANUAIS}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
