@@ -455,49 +455,90 @@ const Relatórios: React.FC = () => {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-card">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Folha de Pagamento Anual</h3>
-            <div className="px-3 py-1 bg-primary/10 text-primary dark:text-primary rounded-lg text-[10px] font-bold">Mensal</div>
+
+        {/* Area Chart — Folha Mensal com múltiplas séries */}
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-card">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white tracking-tight">Folha de Pagamento Anual</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Bruto, INSS e IRT por mês</p>
+            </div>
+            <div className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-[10px] font-bold">Mensal</div>
           </div>
           {loading ? (
             <div className="h-[300px] flex items-center justify-center text-xs text-slate-400 font-bold uppercase tracking-widest animate-pulse">Analizando Dados...</div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={chartProcessamento} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={chartProcessamento} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#9333ea" stopOpacity={0.1}/>
+                  <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#9333ea" stopOpacity={0.18}/>
                     <stop offset="95%" stopColor="#9333ea" stopOpacity={0}/>
                   </linearGradient>
+                  <linearGradient id="gradINSS" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.14}/>
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="gradIRT" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.14}/>
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                  </linearGradient>
                 </defs>
-                <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} fontWeight="bold" tickLine={false} axisLine={false} tickMargin={10} />
-                <YAxis stroke="#cbd5e1" fontSize={10} fontWeight="bold" tickLine={false} axisLine={false} tickMargin={10} />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <Tooltip contentStyle={{ backgroundColor: '#fff', borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} itemStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
-                <Area type="monotone" dataKey="total" stroke="#9333ea" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
+                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} fontWeight={700} tickLine={false} axisLine={false} tickMargin={10} />
+                <YAxis stroke="#cbd5e1" fontSize={10} fontWeight={700} tickLine={false} axisLine={false} tickMargin={8}
+                  tickFormatter={(v) => v >= 1000000 ? `${(v/1000000).toFixed(1)}M` : v >= 1000 ? `${(v/1000).toFixed(0)}K` : String(v)}
+                />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0f172a', borderRadius: '14px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', padding: '10px 16px' }}
+                  labelStyle={{ color: '#94a3b8', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}
+                  itemStyle={{ fontSize: '12px', fontWeight: 700 }}
+                  formatter={(value: number, name: string) => [
+                    `${value.toLocaleString('pt-AO')} Kz`,
+                    name === 'total' ? 'Bruto' : name === 'inss' ? 'INSS' : 'IRT'
+                  ]}
+                />
+                <Area type="monotone" dataKey="total" stroke="#9333ea" strokeWidth={2.5} fillOpacity={1} fill="url(#gradTotal)" dot={{ r: 3, fill: '#9333ea', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#9333ea' }} />
+                <Area type="monotone" dataKey="inss" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#gradINSS)" dot={{ r: 3, fill: '#ef4444', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#ef4444' }} />
+                <Area type="monotone" dataKey="irt" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#gradIRT)" dot={{ r: 3, fill: '#f59e0b', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#f59e0b' }} />
+                <Legend
+                  wrapperStyle={{ fontSize: '10px', fontWeight: 700, paddingTop: '16px', color: '#64748b' }}
+                  iconType="circle" iconSize={8}
+                  formatter={(value) => value === 'total' ? 'Bruto' : value === 'inss' ? 'INSS' : 'IRT'}
+                />
               </AreaChart>
             </ResponsiveContainer>
           )}
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-card">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Absentismo por Dept.</h3>
-            <span className="material-symbols-outlined text-slate-300">more_horiz</span>
+        {/* Bar Chart — Absentismo */}
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-card">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white tracking-tight">Absentismo por Departamento</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Faltas justificadas vs. não justificadas</p>
+            </div>
+            <div className="flex items-center gap-3 text-[10px] font-bold">
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400 inline-block"/>Faltas</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"/>Justificadas</span>
+            </div>
           </div>
           {loading ? (
             <div className="h-[300px] flex items-center justify-center text-xs text-slate-400 font-bold uppercase tracking-widest animate-pulse">Calculando Taxas...</div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartAbsentismo} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9"/>
-                <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} fontWeight="bold" tickLine={false} axisLine={false} tickMargin={10} />
-                <YAxis stroke="#cbd5e1" fontSize={10} fontWeight="bold" tickLine={false} axisLine={false} tickMargin={10} />
-                <Tooltip contentStyle={{ backgroundColor: '#fff', borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} itemStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
-                <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '20px' }} iconType="circle" />
-                <Bar dataKey="faltas" fill="#ef4444" radius={[6, 6, 0, 0]} barSize={20} />
-                <Bar dataKey="justificadas" fill="#10b981" radius={[6, 6, 0, 0]} barSize={20} />
+              <BarChart data={chartAbsentismo} margin={{ top: 10, right: 10, left: -10, bottom: 0 }} barGap={4}>
+                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9"/>
+                <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} fontWeight={700} tickLine={false} axisLine={false} tickMargin={10} />
+                <YAxis stroke="#cbd5e1" fontSize={10} fontWeight={700} tickLine={false} axisLine={false} tickMargin={8} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0f172a', borderRadius: '14px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', padding: '10px 16px' }}
+                  labelStyle={{ color: '#94a3b8', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}
+                  itemStyle={{ fontSize: '12px', fontWeight: 700 }}
+                  cursor={{ fill: 'rgba(148,163,184,0.06)', radius: 8 }}
+                />
+                <Bar dataKey="faltas" name="Faltas" fill="#f87171" radius={[8, 8, 0, 0]} barSize={22} />
+                <Bar dataKey="justificadas" name="Justificadas" fill="#10b981" radius={[8, 8, 0, 0]} barSize={22} />
               </BarChart>
             </ResponsiveContainer>
           )}
