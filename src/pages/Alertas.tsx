@@ -189,7 +189,7 @@ const Alertas: React.FC = () => {
     <div className="p-4 md:p-8 w-full max-w-full">
       <div className="flex justify-between items-start mb-8">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Centro de Alertas</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Centro de Alertas</h1>
         </div>
         <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-5 py-3 rounded-xl">
           <span className="material-symbols-outlined text-sm">notifications_active</span>

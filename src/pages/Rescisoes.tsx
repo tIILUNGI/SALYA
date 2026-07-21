@@ -48,7 +48,7 @@ const Rescisoes: React.FC = () => {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Rescisões de Contrato</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Rescisões de Contrato</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

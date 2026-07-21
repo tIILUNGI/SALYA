@@ -11,18 +11,40 @@ interface SearchResult {
   action: () => void;
 }
 
-interface GlobalSearchProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
+const GlobalSearch: React.FC = () => {
   const navigate = useNavigate();
   const { colaboradores, empresas, setEmpresa, setEmpresaId } = useContext(AppContext);
   const [query, setQuery] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Fechar o dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsFocused(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Ctrl+K atalho
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        inputRef.current?.focus();
+        setIsFocused(true);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   // Static pages and actions
   const staticItems: SearchResult[] = useMemo(() => [
@@ -32,7 +54,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
       description: 'Ver visão geral do sistema',
       category: 'Páginas',
       icon: 'dashboard',
-      action: () => { navigate('/dashboard'); onClose(); }
+      action: () => { navigate('/dashboard'); setIsFocused(false); setQuery(''); }
     },
     {
       id: 'page_colab',
@@ -40,7 +62,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
       description: 'Gestão de trabalhadores',
       category: 'Páginas',
       icon: 'group',
-      action: () => { navigate('/colaboradores'); onClose(); }
+      action: () => { navigate('/colaboradores'); setIsFocused(false); setQuery(''); }
     },
     {
       id: 'page_proc',
@@ -48,7 +70,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
       description: 'Efectuar liquidação mensal',
       category: 'Páginas',
       icon: 'payments',
-      action: () => { navigate('/processamento'); onClose(); }
+      action: () => { navigate('/processamento'); setIsFocused(false); setQuery(''); }
     },
     {
       id: 'page_proc_atraso',
@@ -56,7 +78,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
       description: 'Gerir pagamentos pendentes',
       category: 'Páginas',
       icon: 'history',
-      action: () => { navigate('/processamento-atraso'); onClose(); }
+      action: () => { navigate('/processamento-atraso'); setIsFocused(false); setQuery(''); }
     },
     {
       id: 'page_relat',
@@ -64,7 +86,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
       description: 'Exportar mapas e guias',
       category: 'Páginas',
       icon: 'assessment',
-      action: () => { navigate('/relatorios'); onClose(); }
+      action: () => { navigate('/relatorios'); setIsFocused(false); setQuery(''); }
     },
     {
       id: 'page_config',
@@ -72,7 +94,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
       description: 'Definições do sistema e empresa',
       category: 'Páginas',
       icon: 'settings',
-      action: () => { navigate('/configuracoes'); onClose(); }
+      action: () => { navigate('/configuracoes'); setIsFocused(false); setQuery(''); }
     },
     {
       id: 'page_profile',
@@ -80,7 +102,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
       description: 'Editar dados da conta',
       category: 'Páginas',
       icon: 'person',
-      action: () => { navigate('/profile'); onClose(); }
+      action: () => { navigate('/profile'); setIsFocused(false); setQuery(''); }
     },
     {
       id: 'action_new_colab',
@@ -88,9 +110,9 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
       description: 'Cadastrar novo funcionário',
       category: 'Ações',
       icon: 'person_add',
-      action: () => { navigate('/colaboradores'); /* Poderia disparar o modal aqui se houvesse um estado global */ onClose(); }
+      action: () => { navigate('/colaboradores'); setIsFocused(false); setQuery(''); }
     }
-  ], [navigate, onClose]);
+  ], [navigate]);
 
   const filteredResults = useMemo(() => {
     if (!query) return [];
@@ -114,7 +136,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
           description: colab.cargo || 'Colaborador',
           category: 'Colaboradores',
           icon: 'person',
-          action: () => { navigate('/colaboradores'); onClose(); }
+          action: () => { navigate('/colaboradores'); setIsFocused(false); setQuery(''); }
         });
       }
     });
@@ -128,29 +150,17 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
           description: `${emp.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF'}: ${emp.nif}`,
           category: 'Empresas',
           icon: 'apartment',
-          action: () => { setEmpresa(emp); setEmpresaId(emp.id); onClose(); }
+          action: () => { setEmpresa(emp); setEmpresaId(emp.id); setIsFocused(false); setQuery(''); }
         });
       }
     });
 
     return results.slice(0, 8); // Limit results for better UI
-  }, [query, staticItems, colaboradores, empresas, navigate, onClose, setEmpresa, setEmpresaId]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-      setQuery('');
-      setSelectedIndex(0);
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
+  }, [query, staticItems, colaboradores, empresas, navigate, setEmpresa, setEmpresaId]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
+      if (!isFocused) return;
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -161,40 +171,43 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
       } else if (e.key === 'Enter' && filteredResults[selectedIndex]) {
         filteredResults[selectedIndex].action();
       } else if (e.key === 'Escape') {
-        onClose();
+        inputRef.current?.blur();
+        setIsFocused(false);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, filteredResults, selectedIndex, onClose]);
-
-  if (!isOpen) return null;
+  }, [isFocused, filteredResults, selectedIndex]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-24 px-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
-        ref={containerRef}
-        className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in slide-in-from-top-4 duration-300"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center px-6 py-5 border-b border-slate-100 dark:border-slate-800">
-          <span className="material-symbols-outlined text-slate-400 mr-4">search</span>
+    <div ref={containerRef} className="relative hidden md:flex items-center flex-1 max-w-md mx-6">
+      <div className={`w-full flex items-center justify-between px-4 py-2 bg-slate-50 dark:bg-slate-800 border ${isFocused ? 'border-primary ring-2 ring-primary/20 bg-white dark:bg-slate-900' : 'border-slate-200 dark:border-slate-700 hover:border-primary/30 hover:bg-slate-100 dark:hover:bg-slate-700/50'} rounded-xl transition-all`}>
+        <div className="flex items-center gap-3 flex-1">
+          <span className={`material-symbols-outlined text-xl transition-colors ${isFocused ? 'text-primary' : 'text-slate-400'}`}>search</span>
           <input
             ref={inputRef}
             type="text"
-            placeholder="Procurar por colaboradores, empresas, páginas ou ações..."
-            className="flex-1 bg-transparent border-none outline-none text-slate-800 dark:text-slate-100 text-lg placeholder:text-slate-400"
+            placeholder="Pesquisar por tudo... (Ctrl+K)"
+            className="flex-1 bg-transparent border-none outline-none text-slate-800 dark:text-slate-100 text-sm placeholder:text-slate-400 w-full focus:ring-0"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
+            onFocus={() => setIsFocused(true)}
           />
-          <div className="flex items-center gap-1">
-            <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-[10px] font-bold text-slate-500 uppercase tracking-widest">ESC</span>
-          </div>
         </div>
+        {!isFocused && (
+          <div className="flex items-center gap-1 shrink-0 ml-2">
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 shadow-sm uppercase">Ctrl</span>
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 shadow-sm uppercase">K</span>
+          </div>
+        )}
+      </div>
+
+      {isFocused && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200 max-h-[80vh] flex flex-col">
 
         <div className="max-h-[min(60vh,450px)] overflow-y-auto p-4 custom-scrollbar">
           {!query ? (
@@ -270,25 +283,8 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        <div className="px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5">
-              <span className="p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md">
-                <span className="material-symbols-outlined text-[12px] block">arrow_downward</span>
-              </span>
-              <span className="material-symbols-outlined text-[12px] block">arrow_upward</span>
-              navegar
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="px-1.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md">ENTER</span>
-              abrir
-            </span>
-          </div>
-          <p>SALYA SEARCH 1.0</p>
         </div>
-      </div>
-      {/* Dimmed background closing area */}
-      <div className="absolute inset-0 -z-10" onClick={onClose} />
+      )}
     </div>
   );
 };

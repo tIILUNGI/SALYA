@@ -60,7 +60,7 @@ const Simulação: React.FC = () => {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Simulações Salariais</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Simulações Salariais</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

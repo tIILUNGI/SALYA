@@ -205,109 +205,46 @@ const Dashboard: React.FC = () => {
         <div className="space-y-12">
           {/* Executive Cards Section */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-            
-            <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all dark:bg-slate-900/90 dark:border-slate-800">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-500 mb-1">Entidades Geridas</p>
-                  <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalEmpresas}</h3>
-                  <p className="text-xs text-slate-400 mt-1">Empresas registadas no sistema</p>
+            {[
+              { title: "Entidades Geridas", value: stats.totalEmpresas, sub: "Empresas registadas no sistema", icon: "/entidades.png" },
+              { title: "Total Colaboradores", value: stats.totalColaboradores, sub: "Funcionários ativos monitorados", icon: "/total de colaboradores.png" },
+              { title: "Processamentos", value: stats.totalProcessamentos, sub: "Folhas de pagamento geradas", icon: "/processamento.png" },
+              { title: "Valor da Folha", value: new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(stats.valorFolhaMensal), sub: "Estimativa líquida base", icon: "/valor em folha.png" },
+              { title: "Custo Total Empresa", value: new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(stats.custoTotalEmpresa), sub: "Inclui INSS Patronal (8%)", icon: "/custo.png" },
+              { title: "Acumulado Histórico", value: new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(stats.acumuladoTotal), sub: "Total bruto processado", icon: "/valor em folha.png" },
+            ].map((card, idx) => (
+              <div key={idx} className="bg-white p-5 rounded-2xl h-[140px] flex flex-col justify-between shadow-sm border border-slate-100 hover:shadow-md transition-all dark:bg-slate-900/90 dark:border-slate-800">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 mb-2 leading-tight uppercase truncate">{card.title}</p>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white truncate">{card.value}</h3>
+                  </div>
+                  <div className="shrink-0 flex items-center justify-center size-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                     <img src={card.icon} alt={card.title} className="w-6 h-6 object-contain" />
+                  </div>
                 </div>
-                <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                  <span className="material-symbols-outlined text-2xl">domain</span>
-                </div>
+                <p className="text-xs text-slate-400 mt-2 truncate">{card.sub}</p>
               </div>
-            </div>
-
-            <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all dark:bg-slate-900/90 dark:border-slate-800">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-500 mb-1">Total Colaboradores</p>
-                  <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalColaboradores}</h3>
-                  <p className="text-xs text-slate-400 mt-1">Funcionários ativos monitorados</p>
-                </div>
-                <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600">
-                  <span className="material-symbols-outlined text-2xl">groups</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all dark:bg-slate-900/90 dark:border-slate-800">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-500 mb-1">Processamentos</p>
-                  <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalProcessamentos}</h3>
-                  <p className="text-xs text-slate-400 mt-1">Folhas de pagamento geradas</p>
-                </div>
-                <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                  <span className="material-symbols-outlined text-2xl">receipt_long</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all border-l-4 border-l-purple-500 dark:bg-slate-900/90 dark:border-slate-800">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Valor da Folha</p>
-                  <h3 className="text-3xl font-black text-slate-900 dark:text-white truncate">
-                    {new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(stats.valorFolhaMensal)}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">Estimativa líquida base</p>
-                </div>
-                <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600">
-                  <span className="material-symbols-outlined text-2xl">account_balance</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all border-l-4 border-l-blue-500 dark:bg-slate-900/90 dark:border-slate-800">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Custo Total Empresa</p>
-                  <h3 className="text-3xl font-black text-slate-900 dark:text-white truncate">
-                    {new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(stats.custoTotalEmpresa)}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">Inclui INSS Patronal (8%)</p>
-                </div>
-                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600">
-                  <span className="material-symbols-outlined text-2xl">monitoring</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass-card p-6 shadow-soft hover:shadow-lg transition-all border-l-4 border-l-emerald-500">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-500 mb-1">Acumulado Histórico</p>
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white truncate">
-                    {new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(stats.acumuladoTotal)}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">Total bruto processado</p>
-                </div>
-                <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600">
-                  <span className="material-symbols-outlined text-2xl">payments</span>
-                </div>
-              </div>
-            </div>
-
+            ))}
           </div>
 
           {/* Alertas de Compliance Section */}
           <div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Módulos de Sistema & Alertas</h2>
-            <p className="text-xs text-slate-400 mb-6">Dados reais da sua empresa — actualizados a partir do processamento e alertas activos</p>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Módulos de Sistema & Alertas</h2>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
               {/* Processamento do Mês */}
-              <div className="glass-card p-6 flex flex-col justify-between shadow-soft dark:bg-slate-900/90 dark:border-slate-800">
+              <div className="bg-white p-5 rounded-2xl flex flex-col justify-between shadow-sm border border-slate-100 dark:bg-slate-900/90 dark:border-slate-800">
                 <div>
-                  <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                    <span className="material-symbols-outlined text-primary">payments</span>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <img src="/processamento.png" alt="Processamento" className="w-5 h-5 object-contain" />
+                    </div>
+                    <h4 className="font-bold text-slate-900 dark:text-white">Processamento</h4>
                   </div>
-                  <h4 className="font-bold text-slate-900 dark:text-white mb-1">Processamento</h4>
-                  <p className="text-xs text-slate-500 mb-4 leading-relaxed">Recibos emitidos no mês corrente ({new Date().toLocaleDateString('pt-AO', { month: 'long' })}).</p>
                   <div className="flex items-baseline gap-2 mb-6">
-                    <span className="text-2xl font-black text-primary">{processamentosMes}</span>
+                    <span className="text-3xl font-black text-primary">{processamentosMes}</span>
                     <span className="text-[10px] text-slate-400 font-medium uppercase">de {stats.totalColaboradores} activos</span>
                   </div>
                 </div>
@@ -321,17 +258,18 @@ const Dashboard: React.FC = () => {
               </div>
               
               {/* Alerta Contratos */}
-              <div className={`glass-card p-6 flex flex-col justify-between shadow-soft dark:bg-slate-900/90 dark:border-slate-800 ${alertas.contratosExpirando === 0 ? 'border border-emerald-100 dark:border-emerald-900/30' : 'border border-rose-100 dark:border-rose-900/30'}`}>
+              <div className={`bg-white p-5 rounded-2xl flex flex-col justify-between shadow-sm dark:bg-slate-900/90 dark:border-slate-800 ${alertas.contratosExpirando === 0 ? 'border border-emerald-100 dark:border-emerald-900/30' : 'border border-rose-200 dark:border-rose-900/50'}`}>
                 <div>
-                  <div className="size-10 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center mb-4">
-                    <span className="material-symbols-outlined text-red-500">assignment_late</span>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="size-10 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+                      <img src="/contratos.png" alt="Contratos" className="w-5 h-5 object-contain" />
+                    </div>
+                    <h4 className="font-bold text-slate-900 dark:text-white">Contratos</h4>
                   </div>
-                  <h4 className="font-bold text-slate-900 dark:text-white mb-1">Contratos</h4>
-                  <p className="text-xs text-slate-500 mb-4 leading-relaxed">Gerencie prazos de expiração de contratos de trabalho.</p>
                   
                   <div className="flex items-center gap-4 mb-6">
                     <div>
-                      <span className={`block text-2xl font-black ${alertas.contratosExpirando === 0 ? 'text-emerald-600' : 'text-red-600'}`}>{alertas.contratosExpirando}</span>
+                      <span className={`block text-3xl font-black ${alertas.contratosExpirando === 0 ? 'text-emerald-600' : 'text-red-600'}`}>{alertas.contratosExpirando}</span>
                       <span className="text-[10px] text-slate-400 font-medium uppercase">{alertas.contratosExpirando === 0 ? 'Sem pendências' : 'A expirar'}</span>
                     </div>
                   </div>
@@ -346,17 +284,18 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Alerta Documentos */}
-              <div className={`glass-card p-6 flex flex-col justify-between shadow-soft dark:bg-slate-900/90 dark:border-slate-800 ${alertas.documentosExpirando === 0 ? 'border border-emerald-100 dark:border-emerald-900/30' : 'border border-rose-100 dark:border-rose-900/30'}`}>
+              <div className={`bg-white p-5 rounded-2xl flex flex-col justify-between shadow-sm dark:bg-slate-900/90 dark:border-slate-800 ${alertas.documentosExpirando === 0 ? 'border border-emerald-100 dark:border-emerald-900/30' : 'border border-rose-200 dark:border-rose-900/50'}`}>
                 <div>
-                  <div className="size-10 rounded-lg bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center mb-4">
-                    <span className="material-symbols-outlined text-rose-500">description</span>
+                   <div className="flex items-center gap-3 mb-6">
+                    <div className="size-10 rounded-xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
+                      <img src="/Documentos.png" alt="Documentos" className="w-5 h-5 object-contain" />
+                    </div>
+                    <h4 className="font-bold text-slate-900 dark:text-white">Documentos</h4>
                   </div>
-                  <h4 className="font-bold text-slate-900 dark:text-white mb-1">Documentos</h4>
-                  <p className="text-xs text-slate-500 mb-4 leading-relaxed">Monitoramento de validades e compliance documental.</p>
                   
                   <div className="flex items-center gap-4 mb-6">
                     <div>
-                      <span className={`block text-2xl font-black ${alertas.documentosExpirando === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{alertas.documentosExpirando}</span>
+                      <span className={`block text-3xl font-black ${alertas.documentosExpirando === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{alertas.documentosExpirando}</span>
                       <span className="text-[10px] text-slate-400 font-medium uppercase">{alertas.documentosExpirando === 0 ? 'Todos válidos' : 'A vencer'}</span>
                     </div>
                   </div>
@@ -371,15 +310,16 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Colaboradores Activos */}
-              <div className="glass-card p-6 flex flex-col justify-between shadow-soft dark:bg-slate-900/90 dark:border-slate-800">
+              <div className="bg-white p-5 rounded-2xl flex flex-col justify-between shadow-sm border border-slate-100 dark:bg-slate-900/90 dark:border-slate-800">
                 <div>
-                  <div className="size-10 rounded-lg bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center mb-4">
-                    <span className="material-symbols-outlined text-violet-600">groups</span>
+                   <div className="flex items-center gap-3 mb-6">
+                    <div className="size-10 rounded-xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center">
+                      <img src="/total de colaboradores.png" alt="Colaboradores" className="w-5 h-5 object-contain" />
+                    </div>
+                    <h4 className="font-bold text-slate-900 dark:text-white">Colaboradores</h4>
                   </div>
-                  <h4 className="font-bold text-slate-900 dark:text-white mb-1">Colaboradores</h4>
-                  <p className="text-xs text-slate-500 mb-4 leading-relaxed">Equipa activa registada na entidade actual.</p>
                   <div className="flex items-baseline gap-2 mb-6">
-                    <span className="text-2xl font-black text-violet-600">{stats.totalColaboradores}</span>
+                    <span className="text-3xl font-black text-violet-600">{stats.totalColaboradores}</span>
                     <span className="text-[10px] text-slate-400 font-medium uppercase">activos</span>
                   </div>
                 </div>
@@ -391,6 +331,7 @@ const Dashboard: React.FC = () => {
                   <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
                 </button>
               </div>
+
             </div>
           </div>
 
@@ -400,7 +341,6 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 dark:text-white">Distribuição por Departamento</h3>
-                  <p className="text-xs text-slate-400 mt-1">Colaboradores activos por área</p>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={280}>
@@ -433,7 +373,6 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 dark:text-white">Evolução de Custos</h3>
-                  <p className="text-xs text-slate-400 mt-1">Massa salarial processada em {new Date().getFullYear()} — dados reais</p>
                 </div>
               </div>
               {chartProcessamento.every((m) => m.bruto === 0) ? (
@@ -463,7 +402,6 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 dark:text-white">Absentismo por Departamento</h3>
-                  <p className="text-xs text-slate-400 mt-1">Dias não trabalhados e descontos por faltas ({new Date().getFullYear()})</p>
                 </div>
               </div>
               {chartAbsentismo.length === 0 ? (

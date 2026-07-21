@@ -90,7 +90,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           </div>
           
           <div className="text-center md:text-left space-y-2">
-            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-none uppercase">
+            <h1 className="text-3xl font-bold text-white tracking-tight leading-none">
               {name || 'Meu Perfil'}
             </h1>
             <p className="text-lg text-slate-400 font-medium flex items-center justify-center md:justify-start gap-2">
