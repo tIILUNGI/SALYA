@@ -220,11 +220,13 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all relative"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all relative"
               >
-                <span className={`material-symbols-outlined text-xl ${unreadCount > 0 ? 'text-primary' : ''}`}>
-                  {unreadCount > 0 ? 'notifications_active' : 'notifications'}
-                </span>
+                <img
+                  src="/Notificação.png"
+                  alt="Notificações"
+                  className={`w-5 h-5 object-contain ${unreadCount > 0 ? 'opacity-100' : 'opacity-60'}`}
+                />
                 {unreadCount > 0 && (
                   <span className="absolute top-2 right-2 size-2 bg-red-500 border-2 border-white dark:border-slate-900 rounded-full" />
                 )}
