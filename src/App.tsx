@@ -539,7 +539,7 @@ function MainLayout() {
   };
 
    return (
-     <div className="flex min-h-screen bg-background-light dark:bg-background-dark admin-professional">
+     <div className="flex min-h-screen min-w-0 overflow-x-hidden bg-background-light dark:bg-background-dark admin-professional">
        {/* Sidebar - passa as props de controle */}
        <Sidebar 
          currentPage={currentPage} 
@@ -551,12 +551,12 @@ function MainLayout() {
          setIsCollapsed={setIsSidebarCollapsed}
        />
        
-       <div className={`flex-1 flex flex-col min-h-screen ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'} w-full ${isSidebarCollapsed ? 'md:w-[calc(100%-5rem)]' : 'md:w-[calc(100%-16rem)]'} transition-all duration-300`}>
+       <div className={`flex-1 flex flex-col min-h-screen min-w-0 w-full overflow-x-hidden ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'} transition-all duration-300`}>
          {/* Subscription Barrier */}
          <SubscriptionBarrier />
          
          <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-         <main className="flex-1 p-0">
+         <main className="flex-1 p-0 min-w-0 overflow-x-hidden">
           <Outlet />
         </main>
         <footer className="py-8 text-center opacity-[0.05] pointer-events-none">

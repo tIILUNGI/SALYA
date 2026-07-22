@@ -8,6 +8,7 @@ import jsPDF from 'jspdf';
 
 import { api, API_BASE_URL } from '../services/api';
 import { AppContext } from '../App';
+import { formatKz, formatKzAxis, formatNumberAngola } from '../utils/formatMoney';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -47,10 +48,7 @@ interface ProcessamentoReport {
 
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const numToMonth = (n: number) => MONTHS[n - 1] || `Mês ${n}`;
-const fmt = (v?: number | null) => {
-  const a = typeof v === 'number' && Number.isFinite(v) ? v : 0;
-  return a.toLocaleString('pt-AO', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' Kz';
-};
+const fmt = (v?: number | null) => formatKz(v, 2);
 
 // ── CSV builder ───────────────────────────────────────────────────────────────
 
@@ -487,14 +485,15 @@ const Relatórios: React.FC = () => {
                 <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} fontWeight={700} tickLine={false} axisLine={false} tickMargin={10} />
                 <YAxis stroke="#cbd5e1" fontSize={10} fontWeight={700} tickLine={false} axisLine={false} tickMargin={8}
-                  tickFormatter={(v) => v >= 1000000 ? `${(v/1000000).toFixed(1)}M` : v >= 1000 ? `${(v/1000).toFixed(0)}K` : String(v)}
+                  tickFormatter={formatKzAxis}
+                  width={72}
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', borderRadius: '14px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', padding: '10px 16px' }}
                   labelStyle={{ color: '#94a3b8', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}
                   itemStyle={{ fontSize: '12px', fontWeight: 700 }}
                   formatter={(value: number, name: string) => [
-                    `${value.toLocaleString('pt-AO')} Kz`,
+                    formatKz(value, 0),
                     name === 'total' ? 'Bruto' : name === 'inss' ? 'INSS' : 'IRT'
                   ]}
                 />
@@ -530,12 +529,15 @@ const Relatórios: React.FC = () => {
               <BarChart data={chartAbsentismo} margin={{ top: 10, right: 10, left: -10, bottom: 0 }} barGap={4}>
                 <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9"/>
                 <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} fontWeight={700} tickLine={false} axisLine={false} tickMargin={10} />
-                <YAxis stroke="#cbd5e1" fontSize={10} fontWeight={700} tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis stroke="#cbd5e1" fontSize={10} fontWeight={700} tickLine={false} axisLine={false} tickMargin={8}
+                  tickFormatter={formatNumberAngola}
+                />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', borderRadius: '14px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', padding: '10px 16px' }}
                   labelStyle={{ color: '#94a3b8', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}
                   itemStyle={{ fontSize: '12px', fontWeight: 700 }}
                   cursor={{ fill: 'rgba(148,163,184,0.06)', radius: 8 }}
+                  formatter={(value: number, name: string) => [formatNumberAngola(value), name]}
                 />
                 <Bar dataKey="faltas" name="Faltas" fill="#f87171" radius={[8, 8, 0, 0]} barSize={22} />
                 <Bar dataKey="justificadas" name="Justificadas" fill="#10b981" radius={[8, 8, 0, 0]} barSize={22} />

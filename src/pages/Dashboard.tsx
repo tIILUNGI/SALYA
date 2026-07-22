@@ -5,17 +5,11 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 import { api } from '../services/api';
 import { AppContext } from '../App';
+import { formatKz, formatKzAxis, formatNumberAngola } from '../utils/formatMoney';
 
 // Formatação profissional para gráficos
-const formatKzShort = (value: number) => {
-  const v = Number(value) || 0;
-  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M Kz`;
-  if (v >= 1_000) return `${Math.round(v / 1_000)}K Kz`;
-  return `${v.toLocaleString('pt-AO')} Kz`;
-};
-
-const formatKzTooltip = (value: number) =>
-  new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(Number(value) || 0);
+const formatKzShort = formatKzAxis;
+const formatKzTooltip = (value: number) => formatKz(value, 0);
 
 const ChartTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
@@ -26,9 +20,11 @@ const ChartTooltip = ({ active, payload, label }: any) => {
         <p key={entry.dataKey} className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
           <span className="size-2 rounded-full" style={{ backgroundColor: entry.color }} />
           {entry.name}: <span className="font-semibold text-slate-800 dark:text-white">{
-            typeof entry.value === 'number' && ['bruto', 'liquido', 'descontoFaltas', 'total'].includes(entry.dataKey)
+            typeof entry.value === 'number' && ['bruto', 'liquido', 'descontoFaltas', 'total', 'inss', 'irt'].includes(entry.dataKey)
               ? formatKzTooltip(entry.value)
-              : entry.value
+              : typeof entry.value === 'number'
+                ? formatNumberAngola(entry.value)
+                : entry.value
           }</span>
         </p>
       ))}
@@ -209,9 +205,9 @@ const Dashboard: React.FC = () => {
               { title: "Entidades Geridas", value: stats.totalEmpresas, sub: "Empresas registadas no sistema", icon: "/entidades.png" },
               { title: "Total Colaboradores", value: stats.totalColaboradores, sub: "Funcionários ativos monitorados", icon: "/total de colaboradores.png" },
               { title: "Processamentos", value: stats.totalProcessamentos, sub: "Folhas de pagamento geradas", icon: "/processamento.png" },
-              { title: "Valor da Folha", value: new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(stats.valorFolhaMensal), sub: "Estimativa líquida base", icon: "/valor em folha.png" },
-              { title: "Custo Total Empresa", value: new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(stats.custoTotalEmpresa), sub: "Inclui INSS Patronal (8%)", icon: "/custo.png" },
-              { title: "Acumulado Histórico", value: new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(stats.acumuladoTotal), sub: "Total bruto processado", icon: "/valor em folha.png" },
+              { title: "Valor da Folha", value: formatKz(stats.valorFolhaMensal), sub: "Estimativa líquida base", icon: "/valor em folha.png" },
+              { title: "Custo Total Empresa", value: formatKz(stats.custoTotalEmpresa), sub: "Inclui INSS Patronal (8%)", icon: "/custo.png" },
+              { title: "Acumulado Histórico", value: formatKz(stats.acumuladoTotal), sub: "Total bruto processado", icon: "/valor em folha.png" },
             ].map((card, idx) => (
               <div key={idx} className="bg-white p-5 rounded-2xl h-[140px] flex flex-col justify-between shadow-sm border border-slate-100 hover:shadow-md transition-all dark:bg-slate-900/90 dark:border-slate-800">
                 <div className="flex justify-between items-start gap-2">
@@ -362,7 +358,7 @@ const Dashboard: React.FC = () => {
                   </Pie>
                   <Tooltip
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                    formatter={(value: number, name: string) => [`${value} colaborador(es)`, name]}
+                    formatter={(value: number, name: string) => [`${formatNumberAngola(value)} colaborador(es)`, name]}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '12px' }} />
                 </PieChart>
@@ -387,7 +383,7 @@ const Dashboard: React.FC = () => {
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} dy={8} />
-                    <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={formatKzShort} width={56} />
+                    <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={formatKzShort} width={72} />
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <Tooltip content={<ChartTooltip />} />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '12px' }} />
@@ -411,8 +407,8 @@ const Dashboard: React.FC = () => {
                   <BarChart data={chartAbsentismo} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barGap={4}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0"/>
                     <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} dy={8} />
-                    <YAxis yAxisId="left" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} width={32} />
-                    <YAxis yAxisId="right" orientation="right" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={formatKzShort} width={56} />
+                    <YAxis yAxisId="left" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} tickFormatter={formatNumberAngola} width={40} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={formatKzShort} width={72} />
                     <Tooltip content={<ChartTooltip />} />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '12px' }} />
                     <Bar yAxisId="left" name="Dias Perdidos" isAnimationActive={false} dataKey="diasPerdidos" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={20} />

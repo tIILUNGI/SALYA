@@ -423,13 +423,13 @@ const FeriasPage: React.FC = () => {
     .filter(c => c.status === 'Ativo')
     .reduce((acc, c) => acc + diasDisponiveis(c.id, new Date().getFullYear()), 0);
 
-  const handleGerarMapaAGT = () => {
+  const handleGerarMapaFerias = () => {
     const ano = new Date().getFullYear();
     const aprovadas = feriasList.filter(f => f.status === 'Aprovado' || f.status === 'Gozado');
     const el = document.createElement('div');
     el.innerHTML = `
       <div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b;">
-        <h1 style="font-size: 18px; margin: 0 0 4px;">MAPA DE FÉRIAS — CONFORME AGT</h1>
+        <h1 style="font-size: 18px; margin: 0 0 4px;">MAPA DE FÉRIAS</h1>
         <p style="font-size: 11px; color: #64748b; margin: 0 0 20px;">Ano de referência: ${ano} · Gerado por SALYA em ${new Date().toLocaleDateString('pt-AO')}</p>
         <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
           <thead>
@@ -452,12 +452,12 @@ const FeriasPage: React.FC = () => {
               </tr>`).join('')}
           </tbody>
         </table>
-        <p style="font-size: 9px; color: #94a3b8; margin-top: 16px; text-align: center;">Documento gerado automaticamente — Lei n.º 14/25 & AGT</p>
+        <p style="font-size: 9px; color: #94a3b8; margin-top: 16px; text-align: center;">Documento gerado automaticamente — Lei n.º 14/25</p>
       </div>
     `;
     (html2pdf() as any).from(el).set({
       margin: 10,
-      filename: `mapa-ferias-agt-${ano}.pdf`,
+      filename: `mapa-ferias-${ano}.pdf`,
       html2canvas: { scale: 2 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
     }).save();
@@ -480,11 +480,11 @@ const FeriasPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             type="button"
-            onClick={handleGerarMapaAGT}
+            onClick={handleGerarMapaFerias}
             className="bg-white dark:bg-slate-900 border border-primary/30 text-primary hover:bg-primary/5 px-5 py-2.5 rounded-xl font-semibold shadow-soft transition-all flex items-center justify-center gap-2 text-sm"
           >
             <span className="material-symbols-outlined text-lg">picture_as_pdf</span>
-            Gerar Mapa de Férias AGT
+            Gerar Mapa de Férias
           </button>
           <button 
             onClick={() => setShowAddModal(true)} 

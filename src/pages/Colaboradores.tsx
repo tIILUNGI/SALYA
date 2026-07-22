@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useCallback } from 'react';
+import React, { useState, useContext, useEffect, useCallback, useRef } from 'react';
 import Swal from 'sweetalert2';
 import html2pdf from 'html2pdf.js';
 
@@ -102,6 +102,29 @@ const createEmptyForm = (empresaId?: number): Partial<Colaborador> => ({
 const parseMoneyInput = (value: string) => Number(value.replace(/[^\d]/g, '')) || 0;
 const formatMoneyInput = (value?: number | null) => (value ?? 0).toLocaleString('pt-AO');
 const formatMoneyDisplay = (value?: number | null) => `${(value ?? 0).toLocaleString('pt-AO')} Kz`;
+
+const buildDeclaracaoExportNode = (sourceId: string) => {
+  const source = document.getElementById(sourceId);
+  if (!source) return null;
+
+  const clone = source.cloneNode(true) as HTMLElement;
+  clone.removeAttribute('id');
+  Object.assign(clone.style, {
+    width: '210mm',
+    height: '297mm',
+    minHeight: '297mm',
+    maxWidth: '210mm',
+    padding: '15mm 20mm',
+    fontSize: '11pt',
+    position: 'fixed',
+    left: '-10000px',
+    top: '0',
+    transform: 'none',
+    margin: '0',
+  });
+  document.body.appendChild(clone);
+  return clone;
+};
 const formatText = (value?: string | null) => value && value.trim() ? value : 'Não definido';
 const formatDateDisplay = (value?: string | null) => {
   if (!value) return 'Não definido';
@@ -134,6 +157,8 @@ const Colaboradores: React.FC = () => {
   // Declaração de Trabalho state
   const [declaracaoColab, setDeclaracaoColab] = useState<Colaborador | null>(null);
   const [declaracaoResponsavel, setDeclaracaoResponsavel] = useState('A Direcção');
+  const declaracaoViewportRef = useRef<HTMLDivElement>(null);
+  const [declaracaoPreviewScale, setDeclaracaoPreviewScale] = useState(1);
 
   const normalizeList = (data: any, key?: string) => {
     if (Array.isArray(data)) return data;
@@ -169,6 +194,25 @@ const Colaboradores: React.FC = () => {
       fetchDocumentos(editingId);
     }
   }, [editingId, fetchDocumentos, isModalOpen, modalTab]);
+
+  useEffect(() => {
+    if (!declaracaoColab) {
+      setDeclaracaoPreviewScale(1);
+      return;
+    }
+
+    const updateScale = () => {
+      const viewport = declaracaoViewportRef.current;
+      if (!viewport) return;
+      const availableWidth = viewport.clientWidth - 16;
+      const a4WidthPx = 793.701;
+      setDeclaracaoPreviewScale(Math.min(1, Math.max(0.35, availableWidth / a4WidthPx)));
+    };
+
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, [declaracaoColab]);
 
   // Lógica de cálculo automático de fim de contrato
   useEffect(() => {
@@ -1040,7 +1084,7 @@ const Colaboradores: React.FC = () => {
       </div>
 
        <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft overflow-visible">
-         <div className="overflow-x-auto overflow-y-visible">
+         <div className="table-responsive overflow-y-visible">
            <table className="min-w-full table-fixed text-left">
              <thead>
                <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
@@ -1265,23 +1309,29 @@ const Colaboradores: React.FC = () => {
         const salarioPorExtenso = numberToWords(salario);
 
         const handleExportPDFModal = () => {
-          const el = document.getElementById('declaracao-modal-quick');
-          if (!el) return;
-          (html2pdf() as any).from(el).set({
+          const exportNode = buildDeclaracaoExportNode('declaracao-modal-quick');
+          if (!exportNode) return;
+
+          (html2pdf() as any).from(exportNode).set({
             margin: 0,
             filename: `Declaracao_Trabalho_${dc.nome.replace(/ /g, '_')}.pdf`,
             image: { type: 'jpeg', quality: 1.0 },
             html2canvas: { scale: 3.5, useCORS: true, backgroundColor: '#ffffff', logging: false },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: 'avoid-all' }
-          }).save();
+          }).save().finally(() => {
+            exportNode.remove();
+          });
         };
 
         const handlePrintModal = () => {
-          const el = document.getElementById('declaracao-modal-quick');
-          if (!el) return;
+          const exportNode = buildDeclaracaoExportNode('declaracao-modal-quick');
+          if (!exportNode) return;
           const w = window.open('', '_blank');
-          if (!w) return;
+          if (!w) {
+            exportNode.remove();
+            return;
+          }
           w.document.write(`
             <html><head>
               <title>Declaração de Trabalho — ${dc.nome}</title>
@@ -1293,46 +1343,49 @@ const Colaboradores: React.FC = () => {
                 strong { font-weight: 600; color: #000; }
               </style>
             </head><body onload="window.print();window.onafterprint=()=>window.close();">
-              ${el.outerHTML}
+              ${exportNode.outerHTML}
             </body></html>
           `);
           w.document.close();
+          exportNode.remove();
         };
 
+        const previewHeightPx = 1122.52 * declaracaoPreviewScale;
+
         return (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
-            <div className="w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden rounded-2xl bg-white dark:bg-slate-950 shadow-2xl border border-slate-200 dark:border-slate-800">
+          <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/70 backdrop-blur-sm">
+            <div className="w-full sm:max-w-4xl max-h-[100dvh] sm:max-h-[92vh] flex flex-col overflow-hidden rounded-none sm:rounded-2xl bg-white dark:bg-slate-950 shadow-2xl border border-slate-200 dark:border-slate-800">
 
               {/* Cabeçalho do modal */}
-              <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-                <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="size-10 shrink-0 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center">
                     <span className="material-symbols-outlined text-indigo-500 text-xl">description</span>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-500">Documento Oficial</p>
                     <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">Declaração de Trabalho</h3>
-                    <p className="text-xs text-slate-400">{dc.nome} &mdash; {dc.cargo || 'Cargo não definido'}</p>
+                    <p className="text-xs text-slate-400 truncate">{dc.nome} &mdash; {dc.cargo || 'Cargo não definido'}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:justify-end">
                   <button
                     onClick={handlePrintModal}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                   >
                     <span className="material-symbols-outlined text-sm">print</span>
                     Imprimir
                   </button>
                   <button
                     onClick={handleExportPDFModal}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition-all shadow-sm"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition-all shadow-sm"
                   >
                     <span className="material-symbols-outlined text-sm">download</span>
                     Exportar PDF
                   </button>
                   <button
                     onClick={() => setDeclaracaoColab(null)}
-                    className="size-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center"
+                    className="size-9 shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center"
                   >
                     <span className="material-symbols-outlined text-lg">close</span>
                   </button>
@@ -1340,21 +1393,37 @@ const Colaboradores: React.FC = () => {
               </div>
 
               {/* Campo responsável */}
-              <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex items-center gap-3">
+              <div className="px-4 sm:px-6 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                 <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap tracking-wider">Responsável:</span>
                 <input
                   type="text"
                   value={declaracaoResponsavel}
                   onChange={e => setDeclaracaoResponsavel(e.target.value)}
-                  className="flex-grow max-w-xs text-xs px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg focus:border-indigo-400 outline-none transition-all"
+                  className="w-full sm:flex-1 sm:max-w-xs text-xs px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg focus:border-indigo-400 outline-none transition-all"
                   placeholder="Nome que aparecerá na assinatura..."
                 />
               </div>
 
               {/* Pré-visualização da declaração */}
-              <div className="flex-1 overflow-y-auto bg-slate-100 dark:bg-slate-900 p-4 custom-scrollbar">
+              <div ref={declaracaoViewportRef} className="flex-1 min-h-0 overflow-auto bg-slate-100 dark:bg-slate-900 p-2 sm:p-4 custom-scrollbar">
+                <div
+                  className="mx-auto"
+                  style={{
+                    width: declaracaoPreviewScale < 1 ? `${793.701 * declaracaoPreviewScale}px` : '210mm',
+                    height: declaracaoPreviewScale < 1 ? `${previewHeightPx}px` : '297mm',
+                  }}
+                >
+                  <div
+                    style={{
+                      transform: declaracaoPreviewScale < 1 ? `scale(${declaracaoPreviewScale})` : undefined,
+                      transformOrigin: 'top center',
+                      width: '210mm',
+                      height: '297mm',
+                    }}
+                  >
                 <div
                   id="declaracao-modal-quick"
+                  className="declaracao-preview-doc"
                   style={{
                     width: '210mm',
                     height: '297mm',
@@ -1375,7 +1444,7 @@ const Colaboradores: React.FC = () => {
                   <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');`}</style>
                   <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                     {/* Cabeçalho empresa */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15mm', borderBottom: '1px solid #f1f5f9', paddingBottom: '6mm' }}>
+                    <div className="declaracao-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15mm', borderBottom: '1px solid #f1f5f9', paddingBottom: '6mm', gap: '12px', flexWrap: 'wrap' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                         {empresa?.logoUrl && (
                           <img
@@ -1441,6 +1510,8 @@ const Colaboradores: React.FC = () => {
 
                   {/* Rodapé */}
                   <div style={{ textAlign: 'center', fontSize: '8pt', color: '#94a3b8', borderTop: '0.5px solid #f1f5f9', paddingTop: '4mm' }}>Processado por Salya</div>
+                </div>
+                  </div>
                 </div>
               </div>
             </div>

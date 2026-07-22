@@ -35,6 +35,13 @@ body {
   @apply antialiased transition-colors duration-300;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+#root {
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 /* Headers com mais presença (igual ao estilo das imagens) */
@@ -70,6 +77,14 @@ h1, h2, h3, h4, .font-app {
 
 .admin-professional table td {
   @apply py-4 px-6 text-sm text-slate-600 dark:text-slate-300 border-b border-slate-50 dark:border-slate-900;
+}
+
+.admin-professional .table-responsive {
+  @apply w-full overflow-x-auto;
+}
+
+.admin-professional .table-responsive table {
+  min-width: 640px;
 }
 /* --- FIM TEMA PROFISSIONAL --- */
 
