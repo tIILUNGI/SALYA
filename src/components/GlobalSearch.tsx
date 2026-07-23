@@ -241,7 +241,7 @@ const GlobalSearch: React.FC = () => {
 
                 return (
                   <div key={category} className="space-y-2">
-                    <h3 className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{category}</h3>
+                    <h3 className="px-3 text-[10px] font-bold text-slate-400">{category}</h3>
                     <div className="space-y-1">
                       {results.map((result) => {
                         const globalIndex = filteredResults.indexOf(result);

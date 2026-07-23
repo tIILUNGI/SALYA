@@ -500,7 +500,7 @@ const FeriasPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Em Férias Hoje</p>
+            <p className="text-xs text-slate-500 font-semibold">Em Férias Hoje</p>
             <span className="material-symbols-outlined text-primary text-xl">flight_takeoff</span>
           </div>
           <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{activeFeriasHoje}</p>
@@ -508,7 +508,7 @@ const FeriasPage: React.FC = () => {
         </div>
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Pendentes de Aprovação</p>
+            <p className="text-xs text-slate-400 font-semibold">Pendentes de Aprovação</p>
             <span className="material-symbols-outlined text-slate-400 text-xl">pending_actions</span>
           </div>
           <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{totalPendentes}</p>
@@ -516,7 +516,7 @@ const FeriasPage: React.FC = () => {
         </div>
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-blue-500 uppercase tracking-wider font-semibold">Dias Utilizados ({new Date().getFullYear()})</p>
+            <p className="text-xs text-blue-500 font-semibold">Dias Utilizados ({new Date().getFullYear()})</p>
             <span className="material-symbols-outlined text-blue-500 text-xl">date_range</span>
           </div>
           <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{diasGozadosAno} dias</p>
@@ -524,7 +524,7 @@ const FeriasPage: React.FC = () => {
         </div>
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-emerald-500 uppercase tracking-wider font-semibold">Dias Disponíveis (Equipa)</p>
+            <p className="text-xs text-emerald-500 font-semibold">Dias Disponíveis (Equipa)</p>
             <span className="material-symbols-outlined text-emerald-500 text-xl">beach_access</span>
           </div>
           <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{totalDiasDisponiveisEquipa} dias</p>
@@ -536,7 +536,7 @@ const FeriasPage: React.FC = () => {
       <div className="glass-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft mb-8 flex flex-col md:flex-row gap-6 items-center justify-between">
         <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
           <div className="flex flex-col gap-1 min-w-[160px]">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Colaborador</label>
+            <label className="text-xs font-bold text-slate-400">Colaborador</label>
             <select
               value={filtroColaborador}
               onChange={e => setFiltroColaborador(e.target.value)}
@@ -550,7 +550,7 @@ const FeriasPage: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-1 min-w-[160px]">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estado</label>
+            <label className="text-xs font-bold text-slate-400">Estado</label>
             <select
               value={filtroStatus}
               onChange={e => setFiltroStatus(e.target.value)}
@@ -564,7 +564,7 @@ const FeriasPage: React.FC = () => {
             </select>
           </div>
         </div>
-        <div className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+        <div className="text-xs font-bold text-slate-400">
           {filteredList.length} registo(s) encontrado(s)
         </div>
       </div>
@@ -585,13 +585,13 @@ const FeriasPage: React.FC = () => {
             <table className="min-w-full text-left">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-850 border-b border-slate-100 dark:border-slate-800">
-                  <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Colaborador</th>
-                  <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Ano Ref.</th>
-                  <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Inicio</th>
-                  <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Fim</th>
-                  <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase text-center whitespace-nowrap">Dias</th>
-                  <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Estado</th>
-                  <th className="px-6 py-4 text-xs font-medium text-slate-400 uppercase text-center whitespace-nowrap">Ações de Gestão</th>
+                  <th className="px-6 py-4 text-xs font-medium text-slate-400 whitespace-nowrap">Colaborador</th>
+                  <th className="px-6 py-4 text-xs font-medium text-slate-400 whitespace-nowrap">Ano Ref.</th>
+                  <th className="px-6 py-4 text-xs font-medium text-slate-400 whitespace-nowrap">Inicio</th>
+                  <th className="px-6 py-4 text-xs font-medium text-slate-400 whitespace-nowrap">Fim</th>
+                  <th className="px-6 py-4 text-xs font-medium text-slate-400 text-center whitespace-nowrap">Dias</th>
+                  <th className="px-6 py-4 text-xs font-medium text-slate-400 whitespace-nowrap">Estado</th>
+                  <th className="px-6 py-4 text-xs font-medium text-slate-400 text-center whitespace-nowrap">Ações de Gestão</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -629,7 +629,7 @@ const FeriasPage: React.FC = () => {
                         {days} dias
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${statusBadge[effectiveStatus]}`}>
+                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${statusBadge[effectiveStatus]}`}>
                           {effectiveStatus}
                         </span>
                       </td>
@@ -639,7 +639,7 @@ const FeriasPage: React.FC = () => {
                             <>
                               <button 
                                 onClick={() => handleChangeStatus(ferias.id, 'Aprovado')}
-                                className="px-2 py-1 border border-emerald-500 text-emerald-600 bg-transparent hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-md text-[10px] font-bold uppercase transition-all flex items-center gap-1"
+                                className="px-2 py-1 border border-emerald-500 text-emerald-600 bg-transparent hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-md text-[10px] font-bold transition-all flex items-center gap-1"
                                 title="Aprovar Férias"
                               >
                                 <span className="material-symbols-outlined text-sm">check</span>
@@ -647,7 +647,7 @@ const FeriasPage: React.FC = () => {
                               </button>
                               <button 
                                 onClick={() => handleChangeStatus(ferias.id, 'Rejeitado')}
-                                className="px-2 py-1 border border-rose-500 text-rose-600 bg-transparent hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-md text-[10px] font-bold uppercase transition-all flex items-center gap-1"
+                                className="px-2 py-1 border border-rose-500 text-rose-600 bg-transparent hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-md text-[10px] font-bold transition-all flex items-center gap-1"
                                 title="Rejeitar Férias"
                               >
                                 <span className="material-symbols-outlined text-sm">close</span>
@@ -658,7 +658,7 @@ const FeriasPage: React.FC = () => {
                           {ferias.status === 'Aprovado' && (
                             <button 
                               onClick={() => handleChangeStatus(ferias.id, 'Gozado')}
-                              className="px-2.5 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-[10px] font-bold uppercase transition-all"
+                              className="px-2.5 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-[10px] font-bold transition-all"
                               title="Marcar como Gozado"
                             >
                               Gozado
@@ -667,7 +667,7 @@ const FeriasPage: React.FC = () => {
                           {(ferias.status === 'Rejeitado' || ferias.status === 'Gozado') && (
                             <button 
                               onClick={() => handleChangeStatus(ferias.id, 'Pendente')}
-                              className="px-2.5 py-1 bg-slate-500 hover:bg-slate-600 text-white rounded text-[10px] font-bold uppercase transition-all"
+                              className="px-2.5 py-1 bg-slate-500 hover:bg-slate-600 text-white rounded text-[10px] font-bold transition-all"
                               title="Colocar de volta em análise"
                             >
                               Reanalisar
@@ -709,7 +709,7 @@ const FeriasPage: React.FC = () => {
             </div>
             <form onSubmit={handleCreateFerias} className="p-6 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Colaborador *</label>
+                <label className="text-xs font-bold text-slate-400 dark:text-slate-500">Colaborador *</label>
                 <select
                   required
                   value={colabId}
@@ -773,7 +773,7 @@ const FeriasPage: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-4 bg-primary text-white font-bold rounded-xl text-xs uppercase tracking-wider shadow-lg hover:bg-primary/95 transition-all mt-6"
+                className="w-full py-4 bg-primary text-white font-bold rounded-xl text-xs shadow-lg hover:bg-primary/95 transition-all mt-6"
               >
                 Agendar Férias
               </button>

@@ -650,13 +650,7 @@ const Configurações: React.FC = () => {
     <div className="p-4 md:p-8 w-full max-w-full">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <nav className="flex items-center gap-2 text-sm text-slate-500 mb-2">
-            <span className="hover:text-primary cursor-pointer">Início</span>
-            <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <span className="text-slate-900 dark:text-white font-medium">Configurações</span>
-          </nav>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-1 h-8 bg-primary rounded-full"></div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{setupStep === 'choice' ? 'Adicionar Nova Entidade' : (isConfigured ? 'Configurações do Sistema' : 'Novo Cadastro')}</h1>
           </div>
         </div>

@@ -98,10 +98,10 @@ const handleSubmit = async (e: React.FormEvent) => {
               {cargo || 'Utilizador Salya'}
             </p>
             <div className="pt-2 flex flex-wrap justify-center md:justify-start gap-3">
-              <span className="px-4 py-1.5 bg-white/5 backdrop-blur-md border border-white/10 rounded-full text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+              <span className="px-4 py-1.5 bg-white/5 backdrop-blur-md border border-white/10 rounded-full text-[10px] font-bold text-slate-300">
                 ID: {user?.id || '---'}
               </span>
-              <span className="px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-bold text-primary uppercase tracking-widest">
+              <span className="px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-bold text-primary">
                 {user?.role === 'ADMIN' ? 'Administrador' : 'Gestor'}
               </span>
             </div>
@@ -119,13 +119,13 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-none">Dados Pessoais</h2>
-                <p className="text-xs text-slate-500 mt-1 uppercase font-bold tracking-widest">Informações de Identidade</p>
+                <p className="text-xs text-slate-500 mt-1 font-bold">Informações de Identidade</p>
               </div>
             </div>
             
             <div className="space-y-8">
               <div className="group">
-                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-widest ml-1 transition-colors group-focus-within:text-primary">Nome Completo</label>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 ml-1 transition-colors group-focus-within:text-primary">Nome Completo</label>
                 <input
                   type="text"
                   value={name}
@@ -138,7 +138,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="group">
-                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-widest ml-1 transition-colors group-focus-within:text-primary">Endereço de Email</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 ml-1 transition-colors group-focus-within:text-primary">Endereço de Email</label>
                   <input
                     type="email"
                     value={email}
@@ -150,7 +150,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </div>
 
                 <div className="group">
-                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-widest ml-1 transition-colors group-focus-within:text-primary">Profissão / Função</label>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 ml-1 transition-colors group-focus-within:text-primary">Profissão / Função</label>
                   <input
                     type="text"
                     value={cargo}
@@ -173,13 +173,13 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-none">Segurança</h2>
-                <p className="text-xs text-slate-500 mt-1 uppercase font-bold tracking-widest">Controlo de Acesso</p>
+                <p className="text-xs text-slate-500 mt-1 font-bold">Controlo de Acesso</p>
               </div>
             </div>
 
             <div className="space-y-6">
               <div className="group">
-                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-widest ml-1 transition-colors group-focus-within:text-amber-500">Nova Palavra-passe</label>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 ml-1 transition-colors group-focus-within:text-amber-500">Nova Palavra-passe</label>
                 <input
                   type="password"
                   value={password}
@@ -190,7 +190,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
 
               <div className="group">
-                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-widest ml-1 transition-colors group-focus-within:text-amber-500">Confirmar Palavra-passe</label>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 ml-1 transition-colors group-focus-within:text-amber-500">Confirmar Palavra-passe</label>
                 <input
                   type="password"
                   value={confirmPassword}
@@ -209,7 +209,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full group relative overflow-hidden px-8 py-5 bg-slate-900 dark:bg-primary text-white rounded-[2rem] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-primary/20 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
+            className="w-full group relative overflow-hidden px-8 py-5 bg-slate-900 dark:bg-primary text-white rounded-[2rem] font-bold hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-primary/20 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
           >
             <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 dark:group-hover:opacity-100 dark:bg-primary/90 transition-opacity" />
             

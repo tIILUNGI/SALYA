@@ -54,10 +54,10 @@ const Rescisoes: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Formulário */}
         <div className="border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-sm">
-          <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Dados de Fim de Contrato</h3>
+          <h3 className="text-xs font-bold text-slate-400 mb-6">Dados de Fim de Contrato</h3>
           <div className="space-y-4">
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Funcionário</label>
+              <label className="block text-xs font-bold text-slate-500 mb-2">Funcionário</label>
               <select
                 value={selectedId}
                 onChange={e => { setSelectedId(e.target.value as any); setResult(null); }}
@@ -77,7 +77,7 @@ const Rescisoes: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Data de Saída</label>
+                <label className="block text-xs font-bold text-slate-500 mb-2">Data de Saída</label>
                 <input
                   type="date"
                   value={dataSaida}
@@ -86,7 +86,7 @@ const Rescisoes: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Motivo</label>
+                <label className="block text-xs font-bold text-slate-500 mb-2">Motivo</label>
                 <select
                   value={motivo}
                   onChange={e => { setMotivo(e.target.value); setResult(null); }}
@@ -100,7 +100,7 @@ const Rescisoes: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Dias de Férias não Gozadas</label>
+              <label className="block text-xs font-bold text-slate-500 mb-2">Dias de Férias não Gozadas</label>
               <input
                 type="number"
                 value={diasFerias}
@@ -114,7 +114,7 @@ const Rescisoes: React.FC = () => {
             <button
               onClick={handleCalcular}
               disabled={!selectedId || !dataSaida}
-              className="w-full bg-slate-800 dark:bg-slate-700 text-white py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:bg-slate-700 disabled:opacity-40 mt-2"
+              className="w-full bg-slate-800 dark:bg-slate-700 text-white py-4 rounded-xl text-xs font-bold transition-all hover:bg-slate-700 disabled:opacity-40 mt-2"
             >
               Calcular Fecho de Contas
             </button>
@@ -128,11 +128,11 @@ const Rescisoes: React.FC = () => {
           {!result ? (
             <div className="flex flex-col items-center justify-center min-h-[300px] text-center">
               <span className="material-symbols-outlined text-6xl text-slate-200 mb-4">person_remove</span>
-              <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Preencha os dados e calcule o fecho</p>
+              <p className="text-slate-400 font-bold text-xs">Preencha os dados e calcule o fecho</p>
             </div>
           ) : (
             <>
-              <h3 className="text-xs font-black uppercase tracking-widest text-red-500 mb-2">Fecho de Contas — LGT Angola</h3>
+              <h3 className="text-xs font-bold text-red-500 mb-2">Fecho de Contas — LGT Angola</h3>
               <p className="text-sm text-slate-500 mb-2">{selectedColab?.nome} · {result.meses} meses de serviço</p>
               <h1 className="text-4xl font-black text-slate-800 dark:text-white tracking-tight mb-8">
                 {fmt(result.total)} <span className="text-xl text-slate-400">Kz</span>
@@ -157,7 +157,7 @@ const Rescisoes: React.FC = () => {
 
               <button
                 onClick={() => setResult(null)}
-                className="w-full bg-red-50 text-red-600 border border-red-200 py-4 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
+                className="w-full bg-red-50 text-red-600 border border-red-200 py-4 rounded-xl text-xs font-bold hover:bg-red-500 hover:text-white transition-all"
               >
                 Prosseguir com Desligamento
               </button>

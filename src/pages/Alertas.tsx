@@ -193,7 +193,7 @@ const Alertas: React.FC = () => {
         </div>
         <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-5 py-3 rounded-xl">
           <span className="material-symbols-outlined text-sm">notifications_active</span>
-          <span className="text-xs font-black uppercase tracking-widest">{alertas.filter(a => a.status === 'Pendente').length} pendentes</span>
+          <span className="text-xs font-bold">{alertas.filter(a => a.status === 'Pendente').length} pendentes</span>
         </div>
       </div>
 
@@ -201,13 +201,13 @@ const Alertas: React.FC = () => {
       <div className="glass-card mb-6 p-2 flex gap-2 w-max">
         <button
           onClick={() => setActiveTab('Pendente')}
-          className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Pendente' ? 'bg-primary text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+          className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'Pendente' ? 'bg-primary text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
         >
           Pendentes ({alertas.filter(a => a.status === 'Pendente').length})
         </button>
         <button
           onClick={() => setActiveTab('Resolvido')}
-          className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'Resolvido' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+          className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'Resolvido' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
         >
           Resolvidos ({alertas.filter(a => a.status === 'Resolvido').length})
         </button>

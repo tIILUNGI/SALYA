@@ -212,7 +212,7 @@ const Dashboard: React.FC = () => {
               <div key={idx} className="bg-white p-5 rounded-2xl h-[140px] flex flex-col justify-between shadow-sm border border-slate-100 hover:shadow-md transition-all dark:bg-slate-900/90 dark:border-slate-800">
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 mb-2 leading-tight uppercase truncate">{card.title}</p>
+                    <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 mb-2 leading-tight truncate">{card.title}</p>
                     <h3 className="text-2xl font-bold text-slate-900 dark:text-white truncate">{card.value}</h3>
                   </div>
                   <div className="shrink-0 flex items-center justify-center size-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
@@ -241,7 +241,7 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div className="flex items-baseline gap-2 mb-6">
                     <span className="text-3xl font-black text-primary">{processamentosMes}</span>
-                    <span className="text-[10px] text-slate-400 font-medium uppercase">de {stats.totalColaboradores} activos</span>
+                    <span className="text-[10px] text-slate-400 font-medium">de {stats.totalColaboradores} activos</span>
                   </div>
                 </div>
                 <button
@@ -266,7 +266,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-center gap-4 mb-6">
                     <div>
                       <span className={`block text-3xl font-black ${alertas.contratosExpirando === 0 ? 'text-emerald-600' : 'text-red-600'}`}>{alertas.contratosExpirando}</span>
-                      <span className="text-[10px] text-slate-400 font-medium uppercase">{alertas.contratosExpirando === 0 ? 'Sem pendências' : 'A expirar'}</span>
+                      <span className="text-[10px] text-slate-400 font-medium">{alertas.contratosExpirando === 0 ? 'Sem Pendências' : 'A expirar'}</span>
                     </div>
                   </div>
                 </div>
@@ -292,7 +292,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-center gap-4 mb-6">
                     <div>
                       <span className={`block text-3xl font-black ${alertas.documentosExpirando === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{alertas.documentosExpirando}</span>
-                      <span className="text-[10px] text-slate-400 font-medium uppercase">{alertas.documentosExpirando === 0 ? 'Todos válidos' : 'A vencer'}</span>
+                      <span className="text-[10px] text-slate-400 font-medium">{alertas.documentosExpirando === 0 ? 'Todos Válidos' : 'A vencer'}</span>
                     </div>
                   </div>
                 </div>
@@ -316,7 +316,7 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div className="flex items-baseline gap-2 mb-6">
                     <span className="text-3xl font-black text-violet-600">{stats.totalColaboradores}</span>
-                    <span className="text-[10px] text-slate-400 font-medium uppercase">activos</span>
+                    <span className="text-[10px] text-slate-400 font-medium">activos</span>
                   </div>
                 </div>
                 <button

@@ -176,7 +176,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
             )}
             <div className="absolute left-0 top-full mt-2 w-screen max-w-[280px] sm:w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all z-50">
               <div className="p-4 border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alternar Entidade</h3>
+                <h3 className="text-[10px] font-bold text-slate-400">Alternar Entidade</h3>
               </div>
               <div className="max-h-64 overflow-y-auto">
                 {empresas.map((bus) => (
@@ -242,7 +242,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
                         <p className="text-[10px] text-slate-400 mt-0.5">{unreadCount} mensagens não lidas</p>
                       </div>
                       {notifications.length > 0 && (
-                        <button onClick={handleMarkAllRead} className="text-[10px] font-bold text-primary uppercase hover:underline">
+                        <button onClick={handleMarkAllRead} className="text-[10px] font-bold text-primary hover:underline">
                           Marcar tudo
                         </button>
                       )}
@@ -267,7 +267,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
                               <p className={`text-xs leading-relaxed ${notif.read ? 'text-slate-500' : 'text-slate-800 dark:text-slate-200 font-semibold'}`}>
                                 {notif.title}
                               </p>
-                              <span className="text-[9px] font-medium text-slate-400 shrink-0 uppercase">{notif.time}</span>
+                              <span className="text-[9px] font-medium text-slate-400 shrink-0">{notif.time}</span>
                             </div>
                             <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">{notif.message}</p>
                           </div>
@@ -277,7 +277,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
 
                     {notifications.some(n => n.tipo === 'backend') && (
                       <div className="p-3 bg-slate-50 dark:bg-slate-800/50 text-center">
-                        <button onClick={handleClearAll} className="text-[10px] font-bold text-rose-500 uppercase hover:underline">
+                        <button onClick={handleClearAll} className="text-[10px] font-bold text-rose-500 hover:underline">
                           Limpar Histórico
                         </button>
                       </div>
@@ -291,9 +291,9 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
           <div className="flex items-center gap-3 pl-2 group cursor-pointer" onClick={() => navigate('/profile')}>
             <div className="hidden lg:block text-right">
               <p className="text-xs font-bold text-slate-900 dark:text-white">{user?.name || 'Administrador'}</p>
-              {user?.cargo && <p className="text-[10px] text-slate-400 font-medium uppercase">{user.cargo}</p>}
+              {user?.cargo && <p className="text-[10px] text-slate-400 font-medium">{user.cargo}</p>}
             </div>
-            <div className="size-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary font-bold text-sm shadow-sm group-hover:shadow-md transition-all uppercase">
+            <div className="size-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary font-bold text-sm shadow-sm group-hover:shadow-md transition-all">
               {user?.name?.substring(0, 2) || 'US'}
             </div>
           </div>

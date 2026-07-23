@@ -1,6 +1,5 @@
 import React, { useState, useContext, useEffect, useCallback, useMemo } from 'react';
 import Swal from 'sweetalert2';
-import jsPDF from 'jspdf';
 import html2pdf from 'html2pdf.js';
 
 import { AppContext } from '../App';
@@ -221,7 +220,6 @@ const Processamento: React.FC = () => {
     return formSalario;
   }, [formSalario, formDiasTrabalhados, baseDays, formFaltas, faltaJustificada, descontarBaseJ]);
 
-  const descontoFaltasPorDia = useMemo(() => formSalario / baseDays, [formSalario, baseDays]);
 
   const descontoFaltas = useMemo(() => {
     let total = 0;
@@ -843,25 +841,25 @@ const Processamento: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="glass-card p-6 border border-slate-100">
-          <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Bruto</p>
+          <p className="text-xs text-slate-500 font-semibold">Total Bruto</p>
           <p className="text-2xl font-bold text-slate-800 mt-2">{formatMoney(totaisPeriodo.bruto)}</p>
           <div className="flex items-center gap-1 mt-1 text-emerald-500"><span className="material-symbols-outlined text-sm">trending_up</span><span className="text-[10px] font-medium">{historicoDoPeriodo.length} recibos</span></div>
         </div>
         <div className="glass-card p-6 border border-slate-100">
-          <p className="text-xs text-rose-500 uppercase tracking-wider font-semibold">Total Descontos</p>
+          <p className="text-xs text-rose-500 font-semibold">Total Descontos</p>
           <p className="text-2xl font-bold text-slate-800 mt-2">{formatMoney(totaisPeriodo.descontos)}</p>
           <p className="text-[10px] text-slate-400 mt-1">Inclui INSS e IRT</p>
         </div>
         <div className="glass-card p-6 border border-primary/10 bg-primary/5">
-          <p className="text-xs text-primary uppercase tracking-wider font-semibold">Total Líquido</p>
+          <p className="text-xs text-primary font-semibold">Total Líquido</p>
           <p className="text-2xl font-bold text-primary mt-2">{formatMoney(totaisPeriodo.liquido)}</p>
           <p className="text-[10px] text-primary/60 mt-1">Valor a transferir</p>
         </div>
         <div className={`glass-card p-6 border transition-all ${isPeriodoAtivo ? 'border-primary bg-primary/5 ring-2 ring-primary/20 shadow-lg shadow-primary/10' : 'border-slate-100 bg-slate-50'}`}>
           <div className="flex items-center justify-between gap-2">
-            <p className={`text-xs uppercase tracking-wider font-semibold ${isPeriodoAtivo ? 'text-primary' : 'text-slate-500'}`}>Período</p>
+            <p className={`text-xs font-semibold ${isPeriodoAtivo ? 'text-primary' : 'text-slate-500'}`}>Período</p>
             {isPeriodoAtivo && (
-              <span className="text-[9px] font-black uppercase tracking-widest bg-primary text-white px-2 py-0.5 rounded-full">Mês Actual</span>
+              <span className="text-[9px] font-bold bg-primary text-white px-2 py-0.5 rounded-full">Mês actual</span>
             )}
           </div>
           <p className={`text-xl font-bold mt-2 ${isPeriodoAtivo ? 'text-primary' : 'text-slate-700'}`}>{selectedMonth} {selectedYear}</p>
@@ -872,7 +870,7 @@ const Processamento: React.FC = () => {
         <table className="min-w-full table-fixed text-left">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100">
-              <th className="px-3 sm:px-4 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap w-10">
+              <th className="px-3 sm:px-4 py-4 text-xs font-medium text-slate-400 whitespace-nowrap w-10">
                 <input
                   type="checkbox"
                   checked={ativos.length > 0 && ativos.every((c) => selectedColabIds.has(c.id))}
@@ -887,10 +885,10 @@ const Processamento: React.FC = () => {
                   title="Seleccionar todos"
                 />
               </th>
-              <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap w-[28%]">Colaborador</th>
-              <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap w-[22%]">Cargo</th>
-              <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap text-right w-[25%]">Salário Base</th>
-              <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 uppercase whitespace-nowrap text-center w-[20%]">Ação</th>
+              <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 whitespace-nowrap w-[28%]">Colaborador</th>
+              <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 whitespace-nowrap w-[22%]">Cargo</th>
+              <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 whitespace-nowrap text-right w-[25%]">Salário Base</th>
+              <th className="px-4 sm:px-6 py-4 text-xs font-medium text-slate-400 whitespace-nowrap text-center w-[20%]">Ação</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -1027,7 +1025,7 @@ const Processamento: React.FC = () => {
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-xs text-slate-500 uppercase font-bold tracking-tight">Número de Faltas (Dias)</label>
+                  <label className="block text-xs text-slate-500 font-bold">Número de Faltas (Dias)</label>
                   <input type="number" min="0" max={baseDays} value={formFaltas} onChange={(e) => {
                     const val = Number(e.target.value) || 0;
                     setFormFaltas(val);
@@ -1038,7 +1036,7 @@ const Processamento: React.FC = () => {
                 </div>
                 {formFaltas > 0 && faltaJustificada && (
                   <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-3 not-italic">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">O que descontar?</p>
+                    <p className="text-xs font-bold text-slate-400">O que descontar?</p>
                     <div className="flex flex-wrap gap-4">
                       <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
                         <input type="checkbox" checked={descontarBaseJ} onChange={(e) => setDescontarBaseJ(e.target.checked)} className="rounded text-primary focus:ring-primary" />

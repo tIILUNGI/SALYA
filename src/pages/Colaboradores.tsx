@@ -159,6 +159,7 @@ const Colaboradores: React.FC = () => {
   const [declaracaoResponsavel, setDeclaracaoResponsavel] = useState('A Direcção');
   const declaracaoViewportRef = useRef<HTMLDivElement>(null);
   const [declaracaoPreviewScale, setDeclaracaoPreviewScale] = useState(1);
+  const [selectedColabIds, setSelectedColabIds] = useState<number[]>([]);
 
   const normalizeList = (data: any, key?: string) => {
     if (Array.isArray(data)) return data;
@@ -244,6 +245,25 @@ const Colaboradores: React.FC = () => {
 
   const listaDepartamentos = Array.from(new Set(colaboradores.map(c => c.departamento).filter(Boolean))) as string[];
   const listaTiposContrato = Array.from(new Set(colaboradores.map(c => c.tipoContrato).filter(Boolean))) as string[];
+
+  const isAllSelected = filteredColaboradores.length > 0 && filteredColaboradores.every((c) => selectedColabIds.includes(c.id));
+  const isSomeSelected = filteredColaboradores.some((c) => selectedColabIds.includes(c.id)) && !isAllSelected;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      const filteredIds = new Set(filteredColaboradores.map((c) => c.id));
+      setSelectedColabIds((prev) => prev.filter((id) => !filteredIds.has(id)));
+    } else {
+      const filteredIds = filteredColaboradores.map((c) => c.id);
+      setSelectedColabIds((prev) => Array.from(new Set([...prev, ...filteredIds])));
+    }
+  };
+
+  const handleSelectOne = (id: number) => {
+    setSelectedColabIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
 
   const openActionMenu = (e: React.MouseEvent<HTMLButtonElement>, colaboradorId: number) => {
     if (activeDropdownId === colaboradorId) {
@@ -1029,14 +1049,14 @@ const Colaboradores: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-xs font-bold text-slate-400 uppercase whitespace-nowrap shrink-0">Dpto:</span>
+              <span className="text-xs font-bold text-slate-400 whitespace-nowrap shrink-0">Dpto:</span>
               <select
                 value={deptFilter}
                 onChange={(e) => setDeptFilter(e.target.value)}
-                className="flex-1 min-w-0 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-150 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-primary/20"
+                className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-150 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="All">Todos Departamentos</option>
                 <option value="Sem Departamento">Sem Departamento</option>
@@ -1047,11 +1067,11 @@ const Colaboradores: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-xs font-bold text-slate-400 uppercase whitespace-nowrap shrink-0">Contrato:</span>
+              <span className="text-xs font-bold text-slate-400 whitespace-nowrap shrink-0">Contrato:</span>
               <select
                 value={contratoFilter}
                 onChange={(e) => setContratoFilter(e.target.value)}
-                className="flex-1 min-w-0 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-150 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-primary/20"
+                className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-150 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="All">Todos os Tipos</option>
                 {listaTiposContrato.map((tipo) => (
@@ -1059,10 +1079,8 @@ const Colaboradores: React.FC = () => {
                 ))}
               </select>
             </div>
-          </div>
 
-          <div className="overflow-x-auto -mx-1 px-1 pb-0.5">
-            <div className="flex flex-wrap sm:flex-nowrap gap-2 min-w-0 w-full sm:w-auto">
+            <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 ml-0 sm:ml-2">
               {[
                 { id: 'All', label: 'Todos' },
                 { id: 'Ativo', label: 'Ativos' },
@@ -1073,7 +1091,7 @@ const Colaboradores: React.FC = () => {
                   type="button"
                   key={option.id}
                   onClick={() => setFilter(option.id as FilterStatus)}
-                  className={`shrink-0 px-4 sm:px-5 py-2 rounded-lg text-xs font-semibold tracking-tight transition-all whitespace-nowrap ${filter === option.id ? 'bg-primary text-white shadow-soft' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-tight transition-all whitespace-nowrap ${filter === option.id ? 'bg-primary text-white shadow-soft' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
                 >
                   {option.label}
                 </button>
@@ -1083,22 +1101,60 @@ const Colaboradores: React.FC = () => {
         </div>
       </div>
 
-       <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft overflow-visible">
-         <div className="table-responsive overflow-y-visible">
-           <table className="min-w-full table-fixed text-left">
-             <thead>
-               <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap w-[40%]">Colaborador</th>
-                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap hidden md:table-cell w-[30%]">Contrato / NIF</th>
-                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap text-center w-[15%]">Status</th>
-                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap text-center w-[15%]">Ações</th>
-               </tr>
-             </thead>
-             <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-               {filteredColaboradores.map((colaborador) => (
-                 <tr key={colaborador.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all group">
-                   <td className="px-6 py-4">
-                     <div className="flex items-center gap-3">
+      {selectedColabIds.length > 0 && (
+        <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 px-6 py-3.5 rounded-2xl mb-4 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-primary text-xl">check_box</span>
+            <span className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
+              {selectedColabIds.length} colaborador(es) selecionado(s) de {filteredColaboradores.length}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSelectedColabIds([])}
+            className="text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white px-3 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg transition-all"
+          >
+            Limpar Seleção
+          </button>
+        </div>
+      )}
+
+      <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-soft overflow-visible w-full">
+        <div className="table-responsive overflow-y-visible w-full">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                <th className="px-4 py-4 w-12 text-center">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
+                    onChange={handleSelectAll}
+                    className="size-4 rounded border-slate-300 text-primary focus:ring-primary accent-purple-600 cursor-pointer"
+                    title="Selecionar Todos"
+                  />
+                </th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 whitespace-nowrap">Colaborador</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 whitespace-nowrap hidden md:table-cell">Contrato / NIF</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 whitespace-nowrap text-center">Status</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 whitespace-nowrap text-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+              {filteredColaboradores.map((colaborador) => {
+                const isSelected = selectedColabIds.includes(colaborador.id);
+                return (
+                  <tr key={colaborador.id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all group ${isSelected ? 'bg-purple-50/40 dark:bg-purple-950/20' : ''}`}>
+                    <td className="px-4 py-4 text-center align-middle">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleSelectOne(colaborador.id)}
+                        className="size-4 rounded border-slate-300 text-primary focus:ring-primary accent-purple-600 cursor-pointer"
+                      />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
                         <button
                           type="button"
                           onClick={() => handleOpenDetails(colaborador)}
@@ -1107,43 +1163,44 @@ const Colaboradores: React.FC = () => {
                         >
                           {colaborador.nome.substring(0, 2).toUpperCase()}
                         </button>
-                       <div>
-                         <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{colaborador.nome}</p>
-                         <p className="text-[11px] font-medium text-slate-400 capitalize">{colaborador.cargo}</p>
-                       </div>
-                     </div>
-                   </td>
-                   <td className="px-6 py-4 hidden md:table-cell">
-                     <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{colaborador.tipoContrato}</p>
-                     <p className="text-[10px] text-slate-400 font-mono mt-0.5">{colaborador.nif || 'NIF não registrado'}</p>
-                   </td>
-                   <td className="px-6 py-4 text-center align-middle">
-                     <div className="flex justify-center">
-                     <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-semibold ${colaborador.status === 'Ativo' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/40' : colaborador.status === 'Afastado' ? 'bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700' : 'bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/40'}`}>
-                       {colaborador.status}
-                     </span>
-                     </div>
-                   </td>
-                    <td className="px-6 py-4 text-center align-middle overflow-visible relative">
-                      <div className="flex justify-center">
-                      <div className="relative inline-block text-left no-print">
-                        <button
-                          type="button"
-                          onClick={(e) => openActionMenu(e, colaborador.id)}
-                          className="size-9 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-500 rounded-lg hover:text-primary hover:bg-slate-100 transition-all flex items-center justify-center mx-auto"
-                          title="Opções"
-                        >
-                          <span className="material-symbols-outlined text-xl">more_vert</span>
-                        </button>
-                      </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{colaborador.nome}</p>
+                          <p className="text-[11px] font-medium text-slate-400 capitalize">{colaborador.cargo}</p>
+                        </div>
                       </div>
                     </td>
-                 </tr>
-               ))}
-             </tbody>
-           </table>
-         </div>
-       </div>
+                    <td className="px-6 py-4 hidden md:table-cell">
+                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{colaborador.tipoContrato}</p>
+                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">{colaborador.nif || 'NIF não registrado'}</p>
+                    </td>
+                    <td className="px-6 py-4 text-center align-middle">
+                      <div className="flex justify-center">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-semibold ${colaborador.status === 'Ativo' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/40' : colaborador.status === 'Afastado' ? 'bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700' : 'bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/40'}`}>
+                          {colaborador.status}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center align-middle overflow-visible relative">
+                      <div className="flex justify-center">
+                        <div className="relative inline-block text-left no-print">
+                          <button
+                            type="button"
+                            onClick={(e) => openActionMenu(e, colaborador.id)}
+                            className="size-9 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-500 rounded-lg hover:text-primary hover:bg-slate-100 transition-all flex items-center justify-center mx-auto"
+                            title="Opções"
+                          >
+                            <span className="material-symbols-outlined text-xl">more_vert</span>
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {activeDropdownId !== null && dropdownPos && (() => {
         const colaborador = filteredColaboradores.find((c) => c.id === activeDropdownId);
