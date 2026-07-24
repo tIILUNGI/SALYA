@@ -120,34 +120,8 @@ const FeriasPage: React.FC = () => {
         setFeriasList(parsed);
         if (empresaId) localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify(parsed));
       } else {
-        const activeColabs = colaboradores.filter(c => c.status === 'Ativo');
-        const mock: Ferias[] = [];
-        if (activeColabs.length > 0) {
-          mock.push({
-            id: 1,
-            colaboradorId: activeColabs[0].id,
-            colaborador: activeColabs[0].nome,
-            inicio: new Date(new Date().getFullYear(), 11, 1).toISOString().split('T')[0],
-            fim: new Date(new Date().getFullYear(), 11, 22).toISOString().split('T')[0],
-            dias: 22,
-            status: 'Aprovado',
-            ano: new Date().getFullYear()
-          });
-        }
-        if (activeColabs.length > 1) {
-          mock.push({
-            id: 2,
-            colaboradorId: activeColabs[1].id,
-            colaborador: activeColabs[1].nome,
-            inicio: new Date().toISOString().split('T')[0],
-            fim: new Date(Date.now() + 15 * 24 * 3600 * 1000).toISOString().split('T')[0],
-            dias: 16,
-            status: 'Pendente',
-            ano: new Date().getFullYear()
-          });
-        }
-        setFeriasList(autoMarkGozado(mock));
-        localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify(autoMarkGozado(mock)));
+        setFeriasList([]);
+        localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify([]));
       }
       setLoading(false);
       return;
@@ -175,39 +149,13 @@ const FeriasPage: React.FC = () => {
         setFeriasList(parsed);
         if (empresaId) localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify(parsed));
       } else {
-        const activeColabs = colaboradores.filter(c => c.status === 'Ativo');
-        const mock: Ferias[] = [];
-        if (activeColabs.length > 0) {
-          mock.push({
-            id: 1,
-            colaboradorId: activeColabs[0].id,
-            colaborador: activeColabs[0].nome,
-            inicio: new Date(new Date().getFullYear(), 11, 1).toISOString().split('T')[0],
-            fim: new Date(new Date().getFullYear(), 11, 22).toISOString().split('T')[0],
-            dias: 22,
-            status: 'Aprovado',
-            ano: new Date().getFullYear()
-          });
-        }
-        if (activeColabs.length > 1) {
-          mock.push({
-            id: 2,
-            colaboradorId: activeColabs[1].id,
-            colaborador: activeColabs[1].nome,
-            inicio: new Date().toISOString().split('T')[0],
-            fim: new Date(Date.now() + 15 * 24 * 3600 * 1000).toISOString().split('T')[0],
-            dias: 16,
-            status: 'Pendente',
-            ano: new Date().getFullYear()
-          });
-        }
-        setFeriasList(autoMarkGozado(mock));
-        localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify(autoMarkGozado(mock)));
+        setFeriasList([]);
+        localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify([]));
       }
     } finally {
       setLoading(false);
     }
-  }, [empresaId, colaboradores, autoMarkGozado]);
+  }, [empresaId, autoMarkGozado]);
 
   useEffect(() => {
     loadFerias();
