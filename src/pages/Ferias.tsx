@@ -111,24 +111,10 @@ const FeriasPage: React.FC = () => {
     if (!empresaId) return;
     setLoading(true);
     const isApiBrokenKey = `salya_ferias_api_broken_${empresaId}`;
-    const isApiBroken = localStorage.getItem(isApiBrokenKey) === 'true';
-
-    if (isApiBroken) {
-      const localData = localStorage.getItem(`salya_ferias_${empresaId}`);
-      if (localData) {
-        const parsed = autoMarkGozado(JSON.parse(localData));
-        setFeriasList(parsed);
-        if (empresaId) localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify(parsed));
-      } else {
-        setFeriasList([]);
-        localStorage.setItem(`salya_ferias_${empresaId}`, JSON.stringify([]));
-      }
-      setLoading(false);
-      return;
-    }
 
     try {
-      const data = await api.get(`/ferias?empresaId=${empresaId}`);
+      const data = await api.get(`/ferias?empresaId=${empresaId}`, true);
+      localStorage.removeItem(isApiBrokenKey);
       if (Array.isArray(data)) {
         const normalized = autoMarkGozado(data);
         setFeriasList(normalized);
@@ -221,30 +207,17 @@ const FeriasPage: React.FC = () => {
     };
 
     const isApiBrokenKey = `salya_ferias_api_broken_${empresaId}`;
-    const isApiBroken = localStorage.getItem(isApiBrokenKey) === 'true';
-
-    if (isApiBroken) {
-      const createdItem: Ferias = {
-        id: Date.now(),
-        ...payload
-      };
-      const updated = [createdItem, ...feriasList];
-      await saveFeriasList(updated);
-      Swal.fire('Sucesso', 'Férias agendadas localmente.', 'success');
-      setShowAddModal(false);
-      resetForm();
-      return;
-    }
 
     try {
-      const data = await api.post(`/ferias?empresaId=${empresaId}`, payload);
+      const data = await api.post(`/ferias?empresaId=${empresaId}`, payload, true);
+      localStorage.removeItem(isApiBrokenKey);
       let createdItem: Ferias = { ...payload, status: 'Pendente', id: Date.now() };
       if (data && typeof data === 'object' && 'id' in data) {
         createdItem = data as Ferias;
       }
       const updated = [createdItem, ...feriasList];
       await saveFeriasList(updated);
-      Swal.fire('Sucesso', 'Férias agendadas com estado Pendente.', 'success');
+      Swal.fire('Sucesso', 'Férias agendadas com sucesso.', 'success');
       setShowAddModal(false);
       resetForm();
     } catch (error) {
@@ -284,17 +257,10 @@ const FeriasPage: React.FC = () => {
     if (!confirm.isConfirmed) return;
 
     const isApiBrokenKey = `salya_ferias_api_broken_${empresaId}`;
-    const isApiBroken = localStorage.getItem(isApiBrokenKey) === 'true';
-
-    if (isApiBroken) {
-      const updated = feriasList.map(f => f.id === id ? { ...f, status: newStatus } : f);
-      await saveFeriasList(updated);
-      Swal.fire('Status Atualizado', `Estado atualizado localmente para ${newStatus}.`, 'success');
-      return;
-    }
 
     try {
-      await api.put(`/ferias/${id}/status?empresaId=${empresaId}`, { status: newStatus });
+      await api.put(`/ferias/${id}/status?empresaId=${empresaId}`, { status: newStatus }, true);
+      localStorage.removeItem(isApiBrokenKey);
       const updated = feriasList.map(f => f.id === id ? { ...f, status: newStatus } : f);
       await saveFeriasList(updated);
       Swal.fire('Status Atualizado', `Férias definidas como ${newStatus}.`, 'success');
@@ -324,17 +290,10 @@ const FeriasPage: React.FC = () => {
     if (!confirm.isConfirmed) return;
 
     const isApiBrokenKey = `salya_ferias_api_broken_${empresaId}`;
-    const isApiBroken = localStorage.getItem(isApiBrokenKey) === 'true';
-
-    if (isApiBroken) {
-      const updated = feriasList.filter(f => f.id !== id);
-      await saveFeriasList(updated);
-      Swal.fire('Eliminado', 'Removido localmente do sistema.', 'success');
-      return;
-    }
 
     try {
-      await api.delete(`/ferias/${id}?empresaId=${empresaId}`);
+      await api.delete(`/ferias/${id}?empresaId=${empresaId}`, true);
+      localStorage.removeItem(isApiBrokenKey);
       const updated = feriasList.filter(f => f.id !== id);
       await saveFeriasList(updated);
       Swal.fire('Eliminado', 'Marcação de férias apagada do sistema.', 'success');
