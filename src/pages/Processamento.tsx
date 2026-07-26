@@ -589,13 +589,14 @@ const Processamento: React.FC = () => {
       filename: 'Recibo_' + receiptSnapshot.colaborador.nome.replace(/ /g, '_') + '_' + receiptSnapshot.ano + String(monthToNum(receiptSnapshot.mes)).padStart(2, '0') + '.pdf',
       image: { type: 'jpeg' as const, quality: 1.0 },
       html2canvas: { 
-        scale: 3.5, 
+        scale: 4, 
         useCORS: true, 
         letterRendering: true,
         backgroundColor: '#ffffff',
         logging: false
       },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' as const },
+      pagebreak: { mode: ['avoid-all'] }
     };
 
     html2pdf().from(element).set(options).save();
@@ -656,7 +657,6 @@ const Processamento: React.FC = () => {
     const totalDescontosExibido = receiptSnapshot.totalDescontos;
     const salarioLiquidoExibido = receiptSnapshot.salarioLiquido;
 
-    // CORREÇÃO: Pré-calcula o nome do mês para evitar JavaScript inline no PDF
     const getMonthName = () => {
       const m = receiptSnapshot.mes;
       if (!m) return '---';
@@ -685,132 +685,173 @@ const Processamento: React.FC = () => {
       ...(empresa?.categoria === 'Particular' ? [{ label: 'Segurança Social Patronal (8% pago por empregador)', valorRemun: 0, valorDesc: 0, qtd: '8%' }] : []),
     ];
 
-    return (
-      <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[110] p-4 backdrop-blur-sm">
-        <div className="bg-white rounded-[40px] max-w-[220mm] w-full max-h-[95vh] overflow-hidden shadow-2xl relative flex flex-col">
-          <div className="flex-1 overflow-x-auto overflow-y-auto p-4 sm:p-8 bg-slate-100">
-<div id="recibo-para-impressao"
-   className="bg-white mx-auto p-[8mm] shadow-none flex flex-col font-sans text-black leading-relaxed"
-   style={{
-     width: '190mm',
-     minHeight: '260mm',
-     maxHeight: '277mm',
-     boxSizing: 'border-box',
-     fontSize: '11px',
-     overflow: 'hidden'
-   }}
->
-<div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2mm', borderBottom: '1px solid #000', paddingBottom: '2mm' }}>
-                 <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: '3mm' }}>
-                   {empresa?.logoUrl && <img 
-                     src={getLogoUrl(empresa.logoUrl)} 
-                     alt="Logotipo" 
-                      style={{ 
-                        height: '16mm', 
-                        maxWidth: '38mm', 
-                        objectFit: 'contain', 
-                        objectPosition: 'left center',
-                        marginBottom: '2mm',
-                        borderRadius: '4px',
-                        border: '1px solid #f1f5f9',
-                        padding: '2px',
-                        backgroundColor: '#ffffff'
-                      }} 
-                     onError={(e) => {
-                       const target = e.currentTarget;
-                       target.onerror = null;
-                       target.src = '/logo.png';
-                     }}
-                   />}
-                   <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                     <h2 style={{ fontSize: '14px', fontWeight: '900', margin: '0 0 2px 0', color: '#000', textTransform: 'uppercase' }}>{empresa?.nome}</h2>
-                     <p style={{ fontSize: '9px', margin: '1px 0', color: '#475569', fontWeight: '700' }}>
-                       {empresa?.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF'}: {empresa?.nif}
-                     </p>
-                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#64758b' }}>{empresa?.endereco}, {empresa?.municipio}</p>
-                     <p style={{ fontSize: '8px', margin: '1px 0', color: '#64758b' }}>{empresa?.email} | {empresa?.telefone}</p>
-                   </div>
-                 </div>
-                 <div style={{ flex: 1, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
-                   <h1 style={{ fontSize: '14px', fontWeight: '900', margin: '0 0 6px 0', letterSpacing: '0.05em', color: '#000' }}>RECIBO DE VENCIMENTO</h1>
-                    <div style={{ display: 'inline-block', textAlign: 'left', fontSize: '9px', background: '#f8fafc', padding: '1mm 3mm', borderRadius: '6px', border: '1.5px solid #e2e8f0' }}>
-                       <p style={{ margin: '0 0 2px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: '1px', display: 'flex', gap: '1.5mm', justifyContent: 'space-between' }}>
-                         <span style={{ fontWeight: 'bold', color: '#64758b', fontSize: '8px' }}>PERÍODO:</span> 
-                         <strong style={{ color: '#0f172a' }}>{periodText}</strong>
-                       </p>
-                      <p style={{ margin: 0, display: 'flex', gap: '1.5mm', justifyContent: 'space-between' }}>
-                        <span style={{ fontWeight: 'bold', color: '#64758b', fontSize: '8px' }}>DATA:</span> 
-                        <strong style={{ color: '#0f172a' }}>{receiptSnapshot.dataProcessamento}</strong>
-                      </p>
-                    </div>
-                 </div>
-               </div>
-
-                <div style={{ display: 'flex', gap: '5mm', marginBottom: '5mm', padding: '5mm', border: '1.5px solid #000', borderRadius: '6px', background: '#fcfcfc' }}>
-                  <div style={{ flex: 1, fontSize: '11px', lineHeight: '1.5' }}>
-                    <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>NOME:</span> <span style={{ fontWeight: 'bold' }}>{receiptSnapshot.colaborador.nome}</span></div>
-                    <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>Nº MEC.:</span> <span>{(receiptSnapshot.colaborador as any).numeroColaborador || '---'}</span></div>
-                    <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>CATEGORIA:</span> <span>{receiptSnapshot.colaborador.cargo}</span></div>
-                    <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>CONTRIBUINTE:</span> <span>{receiptSnapshot.colaborador.nif}</span></div>
-                  </div>
-                  <div style={{ flex: 1, fontSize: '11px', lineHeight: '1.5' }}>
-                    <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>VENCIMENTO:</span> <span>{formatMoney(receiptSnapshot.salarioBase)}</span></div>
-                    <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>VENC./HORA:</span> <span>{formatMoney(valorHora)}</span></div>
-                    <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>DIAS ÚTEIS:</span> <span>{receiptSnapshot.diasTrabalhados}</span></div>
-                     <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>Nº INSS:</span> <span>{(receiptSnapshot.colaborador as any).inss || '---'}</span></div>
-                  </div>
-                </div>
-
-<table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '6mm' }}>
-                  <thead>
-                    <tr style={{ borderTop: '2px solid #000', borderBottom: '2px solid #eee', textAlign: 'left' }}>
-                      <th style={{ padding: '3mm 2mm', fontWeight: 'bold', color: '#94a3b8', fontSize: '10px' }}>DESCRIÇÃO</th>
-                      <th style={{ padding: '3mm 2mm', width: '20mm', textAlign: 'center', fontWeight: 'bold', color: '#94a3b8', fontSize: '10px' }}>QTD.</th>
-                      <th style={{ padding: '3mm 2mm', width: '35mm', textAlign: 'right', fontWeight: 'bold', color: '#94a3b8', fontSize: '10px' }}>REMUN.</th>
-                      <th style={{ padding: '3mm 2mm', width: '35mm', textAlign: 'right', fontWeight: 'bold', color: '#94a3b8', fontSize: '10px' }}>DESC.</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {receiptLines.map((line, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ padding: '2.5mm 2mm', fontWeight: '800', color: '#475569' }}>{line.label.toUpperCase()}</td>
-                        <td style={{ padding: '2.5mm 2mm', textAlign: 'center', color: '#64748b', fontWeight: '500' }}>{line.qtd}</td>
-                        <td style={{ padding: '2.5mm 2mm', textAlign: 'right', color: '#64748b', fontWeight: '500' }}>{line.valorRemun > 0 ? formatMoney(line.valorRemun) : ''}</td>
-                        <td style={{ padding: '2.5mm 2mm', textAlign: 'right', fontWeight: '700', color: line.valorDesc > 0 ? '#b91c1c' : '#000' }}>{line.valorDesc > 0 ? formatMoney(line.valorDesc) : ''}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-<div style={{ flex: '1 1 auto', minHeight: '3mm' }}></div>
-
-                <div style={{ borderTop: '1px solid #000', paddingTop: '2mm' }}>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8mm', marginBottom: '4mm' }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: '7px', fontWeight: 'bold', color: '#94a3b8', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Total Remun.</p>
-                      <p style={{ fontSize: '12px', fontWeight: 'bold', margin: 0, color: '#000' }}>{formatMoney(totalBrutoExibido)}</p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: '7px', fontWeight: 'bold', color: '#94a3b8', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Total Desc.</p>
-                      <p style={{ fontSize: '12px', fontWeight: 'bold', margin: 0, color: '#e11d48' }}>{formatMoney(totalDescontosExibido)}</p>
-                    </div>
-                  </div>
-                  <div style={{ background: '#000', color: '#fff', padding: '2mm 4mm', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '0.05em' }}>VALOR LÍQUIDO (KZ)</span>
-                    <span style={{ fontSize: '16px', fontWeight: '900' }}>{formatMoney(salarioLiquidoExibido)}</span>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: '2mm', textAlign: 'center', fontSize: '7px', color: '#94a3b8', fontWeight: 'bold' }}>
-                  Processado por SALYA
-                </div>
-              </div>
+    const renderA5 = () => (
+      <div style={{
+        width: '148mm',
+        height: '210mm',
+        padding: '6mm 8mm',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: '#ffffff'
+      }}>
+        {/* Top Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1.2px solid #000000', paddingBottom: '2mm', marginBottom: '2.5mm' }}>
+          <div style={{ display: 'flex', gap: '3mm', alignItems: 'center' }}>
+            {empresa?.logoUrl && (
+              <img 
+                src={getLogoUrl(empresa.logoUrl)} 
+                alt="Logotipo" 
+                style={{ 
+                  height: '11mm', 
+                  maxWidth: '28mm', 
+                  objectFit: 'contain',
+                  borderRadius: '4px',
+                  border: '1px solid #e2e8f0',
+                  padding: '1px',
+                  backgroundColor: '#ffffff'
+                }} 
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  target.onerror = null;
+                  target.src = '/logo.png';
+                }}
+              />
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <h2 style={{ fontSize: '10.5px', fontWeight: '800', margin: 0, color: '#000000', textTransform: 'uppercase', lineHeight: '1.2' }}>{empresa?.nome}</h2>
+              <span style={{ fontSize: '7.5px', color: '#111827', fontWeight: '600' }}>
+                {empresa?.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF'}: {empresa?.nif}
+              </span>
+              <span style={{ fontSize: '7px', color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '55mm' }}>
+                {empresa?.endereco}
+              </span>
             </div>
-          <div className="p-6 border-t flex gap-4 no-print bg-white">
-            <button onClick={handleGuardarPDF} className="flex-[2] py-4 bg-primary text-white rounded-2xl font-bold px-8 shadow-lg hover:shadow-primary/20 transition-all flex items-center justify-center gap-2">
+          </div>
+
+          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
+            <h1 style={{ fontSize: '10.5px', fontWeight: '850', margin: '0 0 1.5mm 0', color: '#000000', letterSpacing: '0.02em' }}>RECIBO DE VENCIMENTO</h1>
+            <div style={{ display: 'flex', gap: '2mm', fontSize: '7.5px', background: '#f8fafc', padding: '0.6mm 2mm', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+              <span>Período: <strong style={{ color: '#000000' }}>{periodText}</strong></span>
+              <span style={{ borderLeft: '1px solid #cbd5e1', paddingLeft: '2mm' }}>Emissão: <strong style={{ color: '#000000' }}>{receiptSnapshot.dataProcessamento}</strong></span>
+            </div>
+          </div>
+        </div>
+
+        {/* Employee Info Block */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1.1fr 0.9fr', 
+          gap: '3mm', 
+          padding: '2.5mm 3.5mm', 
+          border: '1.2px solid #000000', 
+          borderRadius: '5px', 
+          background: '#f8fafc',
+          marginBottom: '3mm',
+          fontSize: '8px',
+          lineHeight: '1.3'
+        }}>
+          <div>
+            <div style={{ marginBottom: '0.8mm' }}><span style={{ color: '#1f2937', fontWeight: '700' }}>Nome:</span> <strong style={{ color: '#000000' }}>{receiptSnapshot.colaborador.nome}</strong></div>
+            <div style={{ marginBottom: '0.8mm' }}><span style={{ color: '#1f2937', fontWeight: '700' }}>Nº Mecano.:</span> <strong style={{ color: '#000000' }}>{(receiptSnapshot.colaborador as any).numeroColaborador || '---'}</strong></div>
+            <div style={{ marginBottom: '0.8mm' }}><span style={{ color: '#1f2937', fontWeight: '700' }}>Cargo/Função:</span> <strong style={{ color: '#000000' }}>{receiptSnapshot.colaborador.cargo}</strong></div>
+            <div><span style={{ color: '#1f2937', fontWeight: '700' }}>Contribuinte:</span> <strong style={{ color: '#000000' }}>{receiptSnapshot.colaborador.nif}</strong></div>
+          </div>
+          <div>
+            <div style={{ marginBottom: '0.8mm' }}><span style={{ color: '#1f2937', fontWeight: '700' }}>Vencimento Base:</span> <strong style={{ color: '#000000' }}>{formatMoney(receiptSnapshot.salarioBase)}</strong></div>
+            <div style={{ marginBottom: '0.8mm' }}><span style={{ color: '#1f2937', fontWeight: '700' }}>Vencimento/Hora:</span> <strong style={{ color: '#000000' }}>{formatMoney(valorHora)}</strong></div>
+            <div style={{ marginBottom: '0.8mm' }}><span style={{ color: '#1f2937', fontWeight: '700' }}>Dias do Período:</span> <strong style={{ color: '#000000' }}>{receiptSnapshot.diasTrabalhados}</strong></div>
+            <div><span style={{ color: '#1f2937', fontWeight: '700' }}>Registo INSS:</span> <strong style={{ color: '#000000' }}>{(receiptSnapshot.colaborador as any).inss || '---'}</strong></div>
+          </div>
+        </div>
+
+        {/* Lines Table */}
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', marginBottom: 'auto' }}>
+          <thead>
+            <tr style={{ borderBottom: '1.2px solid #000000', textAlign: 'left' }}>
+              <th style={{ padding: '1mm 0.5mm', fontWeight: '700', color: '#000000' }}>Descrição</th>
+              <th style={{ padding: '1mm 0.5mm', width: '18mm', textAlign: 'center', fontWeight: '700', color: '#000000' }}>Qtd.</th>
+              <th style={{ padding: '1mm 0.5mm', width: '25mm', textAlign: 'right', fontWeight: '700', color: '#000000' }}>Vencimento</th>
+              <th style={{ padding: '1mm 0.5mm', width: '25mm', textAlign: 'right', fontWeight: '700', color: '#000000' }}>Desconto</th>
+            </tr>
+          </thead>
+          <tbody style={{ verticalAlign: 'top' }}>
+            {receiptLines.map((line, idx) => (
+              <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                <td style={{ padding: '1mm 0.5mm', fontWeight: '500', color: '#000000' }}>{line.label}</td>
+                <td style={{ padding: '1mm 0.5mm', textAlign: 'center', color: '#000000', fontWeight: '600' }}>{line.qtd}</td>
+                <td style={{ padding: '1mm 0.5mm', textAlign: 'right', color: '#000000', fontWeight: '700' }}>{line.valorRemun > 0 ? formatMoney(line.valorRemun) : ''}</td>
+                <td style={{ padding: '1mm 0.5mm', textAlign: 'right', fontWeight: '800', color: line.valorDesc > 0 ? '#b91c1c' : '#000000' }}>{line.valorDesc > 0 ? formatMoney(line.valorDesc) : ''}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Totals Block */}
+        <div style={{ borderTop: '1.2px solid #000000', paddingTop: '1.5mm', marginTop: '3mm' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6mm', marginBottom: '1.5mm' }}>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ fontSize: '6px', fontWeight: '700', color: '#1f2937', textTransform: 'uppercase', display: 'block', marginBottom: '0.2mm' }}>Total Rendimentos</span>
+              <strong style={{ fontSize: '9px', color: '#000000', fontWeight: '800' }}>{formatMoney(totalBrutoExibido)}</strong>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ fontSize: '6px', fontWeight: '700', color: '#1f2937', textTransform: 'uppercase', display: 'block', marginBottom: '0.2mm' }}>Total Descontos</span>
+              <strong style={{ fontSize: '9px', color: '#b91c1c', fontWeight: '800' }}>{formatMoney(totalDescontosExibido)}</strong>
+            </div>
+          </div>
+          
+          <div style={{ 
+            background: '#000000', 
+            color: '#ffffff', 
+            padding: '1.5mm 3.5mm', 
+            borderRadius: '4px', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center' 
+          }}>
+            <span style={{ fontSize: '7.5px', fontWeight: '850', letterSpacing: '0.02em' }}>VALOR LÍQUIDO</span>
+            <span style={{ fontSize: '11.5px', fontWeight: '900' }}>{formatMoney(salarioLiquidoExibido)}</span>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2.5mm', fontSize: '6.5px', color: '#111827', fontWeight: '700' }}>
+          <span>IBAN: {receiptSnapshot.colaborador.iban || '---'} ({receiptSnapshot.colaborador.banco || '---'})</span>
+          <span>Processado por SALYA</span>
+        </div>
+      </div>
+    );
+
+    return (
+      <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[110] p-2 backdrop-blur-sm">
+        <div className="bg-white rounded-2xl max-w-[320mm] w-full max-h-[98vh] overflow-hidden shadow-2xl relative flex flex-col">
+          <div className="flex-1 overflow-x-auto overflow-y-auto bg-slate-200" style={{ padding: '8px' }}>
+            <div
+              id="recibo-para-impressao"
+              style={{
+                width: '297mm',
+                height: '210mm',
+                boxSizing: 'border-box',
+                background: '#ffffff',
+                display: 'flex',
+                flexDirection: 'row',
+                overflow: 'hidden',
+                fontFamily: "'Arial', 'Helvetica Neue', sans-serif",
+                fontSize: '8.5px',
+                color: '#000000',
+                pageBreakInside: 'avoid'
+              }}
+            >
+              {renderA5()}
+              <div style={{ width: '1px', borderLeft: '1.2px dashed #94a3b8', height: '196mm', alignSelf: 'center', flexShrink: 0, margin: '0 1px' }} />
+              {renderA5()}
+            </div>
+          </div>
+          <div className="p-4 border-t flex gap-3 no-print bg-white">
+            <button onClick={handleGuardarPDF} className="flex-[2] py-3 bg-primary text-white rounded-xl font-bold px-8 shadow-md hover:bg-primary/90 transition-all flex items-center justify-center gap-2">
               <span className="material-symbols-outlined">download</span> Exportar Recibo (PDF)
             </button>
-            <button onClick={() => setShowReceiptModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-200 transition-all">Fechar</button>
+            <button onClick={() => setShowReceiptModal(false)} className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all">Fechar</button>
           </div>
         </div>
       </div>
