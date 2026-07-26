@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import Swal from 'sweetalert2';
 import html2pdf from 'html2pdf.js';
 import { api } from '../services/api';
@@ -29,15 +29,56 @@ const FeriasPage: React.FC = () => {
   const [filtroStatus, setFiltroStatus] = useState<string>('Todos');
   const [filtroColaborador, setFiltroColaborador] = useState<string>('Todos');
 
-  // Calculates total calendar days between two dates inclusive
-  const calculatedDays = useCallback((inicio: string, fim: string): number => {
-    if (!inicio || !fim) return 0;
-    const start = new Date(inicio);
-    const end = new Date(fim);
-    const diff = end.getTime() - start.getTime();
-    if (diff < 0) return 0;
-    return Math.ceil(diff / (1000 * 3600 * 24)) + 1;
+  // Holidays cache: { year -> Set<'YYYY-MM-DD'> }
+  const holidaysCache = useRef<Record<number, Set<string>>>({});
+  const [loadingHolidays, setLoadingHolidays] = useState(false);
+
+  const fetchHolidays = useCallback(async (year: number): Promise<Set<string>> => {
+    if (holidaysCache.current[year]) return holidaysCache.current[year];
+    setLoadingHolidays(true);
+    try {
+      const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/AO`);
+      if (response.ok) {
+        const data: Array<{ date: string }> = await response.json();
+        const set = new Set(data.map(h => h.date));
+        holidaysCache.current[year] = set;
+        return set;
+      }
+    } catch {
+      // silent fail — proceed without holidays
+    } finally {
+      setLoadingHolidays(false);
+    }
+    const empty = new Set<string>();
+    holidaysCache.current[year] = empty;
+    return empty;
   }, []);
+
+  // Calculates working days (Mon-Fri, excluding public holidays) between two dates inclusive
+  const calculatedDays = useCallback((inicio: string, fim: string, holidays: Set<string> = new Set()): number => {
+    if (!inicio || !fim) return 0;
+    const start = new Date(inicio + 'T00:00:00');
+    const end = new Date(fim + 'T00:00:00');
+    if (end < start) return 0;
+    let count = 0;
+    const cur = new Date(start);
+    while (cur <= end) {
+      const dow = cur.getDay();
+      const iso = cur.toISOString().split('T')[0];
+      if (dow !== 0 && dow !== 6 && !holidays.has(iso)) count++;
+      cur.setDate(cur.getDate() + 1);
+    }
+    return count;
+  }, []);
+
+  // Reactive working-day count for the form preview
+  const [previewDias, setPreviewDias] = useState(0);
+
+  useEffect(() => {
+    if (!dataInicio || !dataFim) { setPreviewDias(0); return; }
+    const year = new Date(dataInicio).getFullYear();
+    fetchHolidays(year).then(h => setPreviewDias(calculatedDays(dataInicio, dataFim, h)));
+  }, [dataInicio, dataFim, fetchHolidays, calculatedDays]);
 
   const DIAS_FERIAS_ANUAIS = 22;
 
@@ -174,7 +215,9 @@ const FeriasPage: React.FC = () => {
       return;
     }
 
-    const totalDays = calculatedDays(dataInicio, dataFim);
+    const year = new Date(dataInicio).getFullYear();
+    const holidays = await fetchHolidays(year);
+    const totalDays = calculatedDays(dataInicio, dataFim, holidays);
 
     if (hasOverlap(Number(colabId), dataInicio, dataFim)) {
       Swal.fire('Conflito de Período', 'Já existe um período de férias registado que se sobrepõe a estas datas para este colaborador.', 'error');
@@ -503,7 +546,7 @@ const FeriasPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filteredList.map((ferias) => {
-                  const days = calculatedDays(ferias.inicio, ferias.fim);
+                  const days = ferias.dias ?? calculatedDays(ferias.inicio, ferias.fim);
                   const effectiveStatus = getEffectiveStatus(ferias);
                   const anoRef = ferias.ano || new Date().getFullYear();
                   const gozou = diasUsadosPorColaborador(ferias.colaboradorId, anoRef);
@@ -660,8 +703,10 @@ const FeriasPage: React.FC = () => {
 
               {dataInicio && dataFim && (
                 <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center justify-between">
-                  <span className="text-xs text-slate-500">Dias Calculados:</span>
-                  <span className="text-sm font-extrabold text-primary">{calculatedDays(dataInicio, dataFim)} dias</span>
+                  <span className="text-xs text-slate-500">Dias úteis calculados:</span>
+                  <span className="text-sm font-extrabold text-primary">
+                    {loadingHolidays ? '...' : `${previewDias} dia(s) útil(eis)`}
+                  </span>
                 </div>
               )}
 
