@@ -624,7 +624,7 @@ const Processamento: React.FC = () => {
       console.error('Erro ao carregar recibo histórico:', error);
     }
     setReceiptSnapshot({
-      colaborador: { id: item.colaboradorId || 0, nome: item.nomeColaborador, nif: item.nifColaborador || '', cargo: item.cargo || '', salarioBase: item.salarioBaseProporcional || 0, status: 'Ativo', email: '', banco: item.banco, iban: item.iban, inss: ativos.find(c => c.id === item.colaboradorId)?.inss || '' } as any,
+      colaborador: { id: item.colaboradorId || 0, nome: item.nomeColaborador, nif: item.nifColaborador || '', cargo: item.cargo || '', salarioBase: item.salarioBaseProporcional || 0, status: 'Ativo', email: '', banco: item.banco, iban: item.iban, inss: ativos.find(c => c.id === item.colaboradorId)?.inss || '', numeroColaborador: (item as any).numeroColaborador || ativos.find(c => c.id === item.colaboradorId)?.numeroColaborador || '' } as any,
       mes: numToMonth(item.mes),
       ano: String(item.ano),
       dataProcessamento: item.createdAt ? new Date(item.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO'),
@@ -782,7 +782,9 @@ const Processamento: React.FC = () => {
             </div>
             <div style={{ fontSize: '7.5pt', color: '#374151', lineHeight: '1.3' }}>
               <span style={{ fontWeight: '400', color: '#6b7280' }}>Nº Mecano.: </span>
-              <span style={{ fontWeight: '600', color: '#111827' }}>{(receiptSnapshot.colaborador as any).numeroColaborador || '---'}</span>
+              <span style={{ fontWeight: '600', color: '#111827' }}>
+                {(receiptSnapshot.colaborador as any).numeroColaborador || (receiptSnapshot.colaborador?.id ? String(receiptSnapshot.colaborador.id).padStart(3, '0') : '---')}
+              </span>
             </div>
             <div style={{ fontSize: '7.5pt', color: '#374151', lineHeight: '1.3' }}>
               <span style={{ fontWeight: '400', color: '#6b7280' }}>Cargo/Função: </span>
