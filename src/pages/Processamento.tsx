@@ -781,7 +781,7 @@ const Processamento: React.FC = () => {
               <span style={{ fontWeight: '600', color: '#111827' }}>{receiptSnapshot.colaborador.nome}</span>
             </div>
             <div style={{ fontSize: '7.5pt', color: '#374151', lineHeight: '1.3' }}>
-              <span style={{ fontWeight: '400', color: '#6b7280' }}>Nº Mecano.: </span>
+              <span style={{ fontWeight: '400', color: '#6b7280' }}>Nº Colaborador: </span>
               <span style={{ fontWeight: '600', color: '#111827' }}>
                 {(receiptSnapshot.colaborador as any).numeroColaborador || (receiptSnapshot.colaborador?.id ? String(receiptSnapshot.colaborador.id).padStart(3, '0') : '---')}
               </span>

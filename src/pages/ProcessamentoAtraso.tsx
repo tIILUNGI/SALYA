@@ -505,7 +505,7 @@ const ProcessamentoAtraso: React.FC = () => {
               <div style={{ display: 'flex', gap: '5mm', marginBottom: '5mm', padding: '5mm', border: '1.5px solid #000', borderRadius: '6px', background: '#fcfcfc' }}>
                 <div style={{ flex: 1, fontSize: '11px', lineHeight: '1.5' }}>
                   <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>NOME:</span> <span style={{ fontWeight: 'bold' }}>{snap.colaborador.nome}</span></div>
-                  <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>Nº MEC.:</span> <span>{(snap.colaborador as any).numeroColaborador || '---'}</span></div>
+                  <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>Nº Colaborador:</span> <span>{(snap.colaborador as any).numeroColaborador || '---'}</span></div>
                   <div style={{ display: 'flex', marginBottom: '1mm' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>CATEGORIA:</span> <span>{snap.colaborador.cargo}</span></div>
                   <div style={{ display: 'flex' }}><span style={{ fontWeight: 'bold', width: '30mm', flexShrink: 0 }}>CONTRIBUINTE:</span> <span>{snap.colaborador.nif}</span></div>
                 </div>
