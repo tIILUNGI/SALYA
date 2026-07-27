@@ -654,8 +654,11 @@ const Processamento: React.FC = () => {
 
     const valorHora = receiptSnapshot.diasTrabalhados > 0 ? receiptSnapshot.salarioBase / (receiptSnapshot.diasTrabalhados * 8) : 0;
     const totalBrutoExibido = receiptSnapshot.totalBruto;
-    const totalDescontosExibido = receiptSnapshot.totalDescontos;
-    const salarioLiquidoExibido = receiptSnapshot.salarioLiquido;
+    const workerDescontosSum = (receiptSnapshot.valorINSS || 0) + (receiptSnapshot.valorIRT || 0) + (receiptSnapshot.faltas || 0);
+    const totalDescontosExibido = (typeof receiptSnapshot.totalDescontos === 'number' && receiptSnapshot.totalDescontos > 0)
+      ? receiptSnapshot.totalDescontos
+      : workerDescontosSum;
+    const salarioLiquidoExibido = receiptSnapshot.salarioLiquido || (totalBrutoExibido - totalDescontosExibido);
 
     const getMonthName = () => {
       const m = receiptSnapshot.mes;
@@ -670,6 +673,11 @@ const Processamento: React.FC = () => {
     const monthName = getMonthName();
     const periodText = `${monthName} / ${receiptSnapshot.ano}`;
 
+    // Quota patronal INSS: 8% do salário base
+    const inssPatronal = receiptSnapshot.colaborador.tipoContrato !== 'Prestador'
+      ? Math.round(receiptSnapshot.salarioBase * 0.08)
+      : 0;
+
     const receiptLines = [
       { label: `Salário Base`, valorRemun: receiptSnapshot.salarioBase, valorDesc: 0, qtd: `${receiptSnapshot.diasTrabalhados} Dias` },
       ...(receiptSnapshot.ganhoAlimentacao > 0 ? [{ label: 'Subsídio de Alimentação', valorRemun: receiptSnapshot.ganhoAlimentacao, valorDesc: 0, qtd: '1' }] : []),
@@ -680,147 +688,191 @@ const Processamento: React.FC = () => {
       ...(receiptSnapshot.bonus > 0 ? [{ label: 'Bónus / Prémio', valorRemun: receiptSnapshot.bonus, valorDesc: 0, qtd: '1' }] : []),
       ...receiptSnapshot.outrosGanhos.map((ganho) => ({ label: ganho.descricao, valorRemun: ganho.valor, valorDesc: 0, qtd: '1' })),
       { label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: receiptSnapshot.valorINSS > 0 ? '3%' : '0%' },
+      ...(inssPatronal > 0 ? [{ label: 'Seg. Social Patronal (INSS 8% s/ sal. base)', valorRemun: 0, valorDesc: inssPatronal, qtd: '8%' }] : []),
       { label: receiptSnapshot.colaborador.tipoContrato === 'Prestador' ? 'IRT Grupo B/C (Independente)' : 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: receiptSnapshot.percentualIRT ? (receiptSnapshot.percentualIRT % 1 === 0 ? `${receiptSnapshot.percentualIRT}%` : `${receiptSnapshot.percentualIRT.toFixed(1)}%`) : '-' },
       ...(receiptSnapshot.faltas > 0 ? [{ label: 'Faltas', valorRemun: 0, valorDesc: receiptSnapshot.faltas, qtd: receiptSnapshot.faltasDias ? `${receiptSnapshot.faltasDias} dias` : '-' }] : []),
-      ...(empresa?.categoria === 'Particular' ? [{ label: 'Segurança Social Patronal (8% pago por empregador)', valorRemun: 0, valorDesc: 0, qtd: '8%' }] : []),
     ];
 
-    const renderA5 = () => (
-      <div style={{
-        width: '148mm',
-        height: '210mm',
-        padding: '6mm 8mm',
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: '#ffffff'
-      }}>
-        {/* Top Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1.2px solid #000000', paddingBottom: '2mm', marginBottom: '2.5mm' }}>
-          <div style={{ display: 'flex', gap: '3mm', alignItems: 'center' }}>
+    const renderA5 = (incluirPatronal = true) => {
+      const linesToDisplay = incluirPatronal
+        ? receiptLines
+        : receiptLines.filter((l) => !l.label.includes('Patronal'));
+
+      return (
+        <div style={{
+          width: '148mm',
+          minHeight: '210mm',
+          height: '210mm',
+          padding: '5mm 7mm 4mm 7mm',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: '#ffffff',
+          overflow: 'hidden'
+        }}>
+        {/* ── Cabeçalho ─────────────────────────────────────────────────── */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1.5px solid #1a1a1a', paddingBottom: '2.5mm', marginBottom: '2.5mm', gap: '3mm' }}>
+          {/* Lado esquerdo: Logo + Info empresa */}
+          <div style={{ display: 'flex', gap: '2.5mm', alignItems: 'flex-start', flex: '1 1 auto', minWidth: 0 }}>
             {empresa?.logoUrl && (
-              <img 
-                src={getLogoUrl(empresa.logoUrl)} 
-                alt="Logotipo" 
-                style={{ 
-                  height: '11mm', 
-                  maxWidth: '28mm', 
+              <img
+                src={getLogoUrl(empresa.logoUrl)}
+                alt="Logotipo"
+                style={{
+                  height: '11mm',
+                  maxWidth: '28mm',
                   objectFit: 'contain',
-                  borderRadius: '4px',
-                  border: '1px solid #e2e8f0',
-                  padding: '1px',
-                  backgroundColor: '#ffffff'
-                }} 
-                onError={(e) => {
-                  const target = e.currentTarget;
-                  target.onerror = null;
-                  target.src = '/logo.png';
+                  borderRadius: '3px',
+                  flexShrink: 0
                 }}
+                onError={(e) => { const t = e.currentTarget; t.onerror = null; t.src = '/logo.png'; }}
               />
             )}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <h2 style={{ fontSize: '10.5px', fontWeight: '800', margin: 0, color: '#000000', textTransform: 'uppercase', lineHeight: '1.2' }}>{empresa?.nome}</h2>
-              <span style={{ fontSize: '7.5px', color: '#111827', fontWeight: '600' }}>
-                {empresa?.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF'}: {empresa?.nif}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6mm', minWidth: 0 }}>
+              <span style={{ fontSize: '9.5pt', fontWeight: '700', color: '#111827', textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: '1.1' }}>
+                {empresa?.nome}
               </span>
-              <span style={{ fontSize: '7px', color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '55mm' }}>
-                {empresa?.endereco}
+              <span style={{ fontSize: '7pt', color: '#4b5563', fontWeight: '400', lineHeight: '1.3' }}>
+                {empresa?.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF'}: <strong style={{ color: '#1f2937', fontWeight: '600' }}>{empresa?.nif}</strong>
               </span>
+              {empresa?.endereco && (
+                <span style={{ fontSize: '6.5pt', color: '#6b7280', lineHeight: '1.3', wordBreak: 'break-word' }}>
+                  {empresa.endereco}{empresa.municipio ? `, ${empresa.municipio}` : ''}
+                </span>
+              )}
+              {(empresa?.email || empresa?.telefone) && (
+                <span style={{ fontSize: '6pt', color: '#9ca3af', lineHeight: '1.3' }}>
+                  {[empresa.email, empresa.telefone].filter(Boolean).join('  |  ')}
+                </span>
+              )}
             </div>
           </div>
 
-          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
-            <h1 style={{ fontSize: '10.5px', fontWeight: '850', margin: '0 0 1.5mm 0', color: '#000000', letterSpacing: '0.02em' }}>RECIBO DE VENCIMENTO</h1>
-            <div style={{ display: 'flex', gap: '2mm', fontSize: '7.5px', background: '#f8fafc', padding: '0.6mm 2mm', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
-              <span>Período: <strong style={{ color: '#000000' }}>{periodText}</strong></span>
-              <span style={{ borderLeft: '1px solid #cbd5e1', paddingLeft: '2mm' }}>Emissão: <strong style={{ color: '#000000' }}>{receiptSnapshot.dataProcessamento}</strong></span>
+          {/* Lado direito: Título + Período + Emissão em coluna */}
+          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1mm', flexShrink: 0 }}>
+            <span style={{ fontSize: '10.5pt', fontWeight: '800', color: '#111827', letterSpacing: '0.03em', lineHeight: '1.1', textTransform: 'uppercase' }}>
+              Recibo de Vencimento
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5mm', marginTop: '0.5mm' }}>
+              <span style={{ fontSize: '7.5pt', color: '#374151' }}>
+                Período: <strong style={{ color: '#111827', fontWeight: '600' }}>{periodText}</strong>
+              </span>
+              <span style={{ fontSize: '7.5pt', color: '#374151' }}>
+                Emissão: <strong style={{ color: '#111827', fontWeight: '600' }}>{receiptSnapshot.dataProcessamento}</strong>
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Employee Info Block */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1.1fr 0.9fr', 
-          gap: '3mm', 
-          padding: '2.5mm 3.5mm', 
-          border: '1.2px solid #000000', 
-          borderRadius: '5px', 
-          background: '#f8fafc',
+        {/* ── Dados do Colaborador ───────────────────────────────────────── */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '0',
+          border: '1px solid #d1d5db',
+          borderRadius: '4px',
           marginBottom: '3mm',
-          fontSize: '8px',
-          lineHeight: '1.3'
+          overflow: 'hidden'
         }}>
-          <div>
-            <div style={{ marginBottom: '0.8mm' }}><span style={{ color: '#1f2937', fontWeight: '700' }}>Nome:</span> <strong style={{ color: '#000000' }}>{receiptSnapshot.colaborador.nome}</strong></div>
-            <div style={{ marginBottom: '0.8mm' }}><span style={{ color: '#1f2937', fontWeight: '700' }}>Nº Mecano.:</span> <strong style={{ color: '#000000' }}>{(receiptSnapshot.colaborador as any).numeroColaborador || '---'}</strong></div>
-            <div style={{ marginBottom: '0.8mm' }}><span style={{ color: '#1f2937', fontWeight: '700' }}>Cargo/Função:</span> <strong style={{ color: '#000000' }}>{receiptSnapshot.colaborador.cargo}</strong></div>
-            <div><span style={{ color: '#1f2937', fontWeight: '700' }}>Contribuinte:</span> <strong style={{ color: '#000000' }}>{receiptSnapshot.colaborador.nif}</strong></div>
+          {/* Coluna esquerda */}
+          <div style={{ padding: '2mm 3mm', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: '1mm' }}>
+            <div style={{ fontSize: '7.5pt', color: '#374151', lineHeight: '1.3' }}>
+              <span style={{ fontWeight: '400', color: '#6b7280' }}>Nome: </span>
+              <span style={{ fontWeight: '600', color: '#111827' }}>{receiptSnapshot.colaborador.nome}</span>
+            </div>
+            <div style={{ fontSize: '7.5pt', color: '#374151', lineHeight: '1.3' }}>
+              <span style={{ fontWeight: '400', color: '#6b7280' }}>Nº Mecano.: </span>
+              <span style={{ fontWeight: '600', color: '#111827' }}>{(receiptSnapshot.colaborador as any).numeroColaborador || '---'}</span>
+            </div>
+            <div style={{ fontSize: '7.5pt', color: '#374151', lineHeight: '1.3' }}>
+              <span style={{ fontWeight: '400', color: '#6b7280' }}>Cargo/Função: </span>
+              <span style={{ fontWeight: '600', color: '#111827' }}>{receiptSnapshot.colaborador.cargo}</span>
+            </div>
+            <div style={{ fontSize: '7.5pt', color: '#374151', lineHeight: '1.3' }}>
+              <span style={{ fontWeight: '400', color: '#6b7280' }}>Contribuinte: </span>
+              <span style={{ fontWeight: '600', color: '#111827' }}>{receiptSnapshot.colaborador.nif}</span>
+            </div>
           </div>
-          <div>
-            <div style={{ marginBottom: '0.8mm' }}><span style={{ color: '#1f2937', fontWeight: '700' }}>Vencimento Base:</span> <strong style={{ color: '#000000' }}>{formatMoney(receiptSnapshot.salarioBase)}</strong></div>
-            <div style={{ marginBottom: '0.8mm' }}><span style={{ color: '#1f2937', fontWeight: '700' }}>Vencimento/Hora:</span> <strong style={{ color: '#000000' }}>{formatMoney(valorHora)}</strong></div>
-            <div style={{ marginBottom: '0.8mm' }}><span style={{ color: '#1f2937', fontWeight: '700' }}>Dias do Período:</span> <strong style={{ color: '#000000' }}>{receiptSnapshot.diasTrabalhados}</strong></div>
-            <div><span style={{ color: '#1f2937', fontWeight: '700' }}>Registo INSS:</span> <strong style={{ color: '#000000' }}>{(receiptSnapshot.colaborador as any).inss || '---'}</strong></div>
+          {/* Coluna direita */}
+          <div style={{ padding: '2mm 3mm', display: 'flex', flexDirection: 'column', gap: '1mm' }}>
+            <div style={{ fontSize: '7.5pt', color: '#374151', lineHeight: '1.3' }}>
+              <span style={{ fontWeight: '400', color: '#6b7280' }}>Vencimento Base: </span>
+              <span style={{ fontWeight: '600', color: '#111827' }}>{formatMoney(receiptSnapshot.salarioBase)}</span>
+            </div>
+            <div style={{ fontSize: '7.5pt', color: '#374151', lineHeight: '1.3' }}>
+              <span style={{ fontWeight: '400', color: '#6b7280' }}>Vencimento/Hora: </span>
+              <span style={{ fontWeight: '600', color: '#111827' }}>{formatMoney(valorHora)}</span>
+            </div>
+            <div style={{ fontSize: '7.5pt', color: '#374151', lineHeight: '1.3' }}>
+              <span style={{ fontWeight: '400', color: '#6b7280' }}>Dias do Período: </span>
+              <span style={{ fontWeight: '600', color: '#111827' }}>{receiptSnapshot.diasTrabalhados}</span>
+            </div>
+            <div style={{ fontSize: '7.5pt', color: '#374151', lineHeight: '1.3' }}>
+              <span style={{ fontWeight: '400', color: '#6b7280' }}>Registo INSS: </span>
+              <span style={{ fontWeight: '600', color: '#111827' }}>{(receiptSnapshot.colaborador as any).inss || '---'}</span>
+            </div>
           </div>
         </div>
 
-        {/* Lines Table */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8px', marginBottom: 'auto' }}>
+        {/* ── Tabela de Rubricas ─────────────────────────────────────────── */}
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8pt' }}>
           <thead>
-            <tr style={{ borderBottom: '1.2px solid #000000', textAlign: 'left' }}>
-              <th style={{ padding: '1mm 0.5mm', fontWeight: '700', color: '#000000' }}>Descrição</th>
-              <th style={{ padding: '1mm 0.5mm', width: '18mm', textAlign: 'center', fontWeight: '700', color: '#000000' }}>Qtd.</th>
-              <th style={{ padding: '1mm 0.5mm', width: '25mm', textAlign: 'right', fontWeight: '700', color: '#000000' }}>Vencimento</th>
-              <th style={{ padding: '1mm 0.5mm', width: '25mm', textAlign: 'right', fontWeight: '700', color: '#000000' }}>Desconto</th>
+            <tr style={{ backgroundColor: '#1a1a1a', color: '#ffffff' }}>
+              <th style={{ padding: '1.5mm 2mm', fontWeight: '600', fontSize: '7.5pt', textAlign: 'left', letterSpacing: '0.03em' }}>Descrição</th>
+              <th style={{ padding: '1.5mm 1.5mm', width: '14mm', textAlign: 'center', fontWeight: '600', fontSize: '7.5pt', letterSpacing: '0.03em' }}>Qtd.</th>
+              <th style={{ padding: '1.5mm 2mm', width: '26mm', textAlign: 'right', fontWeight: '600', fontSize: '7.5pt', letterSpacing: '0.03em' }}>Vencimento</th>
+              <th style={{ padding: '1.5mm 2mm', width: '26mm', textAlign: 'right', fontWeight: '600', fontSize: '7.5pt', letterSpacing: '0.03em' }}>Desconto</th>
             </tr>
           </thead>
-          <tbody style={{ verticalAlign: 'top' }}>
-            {receiptLines.map((line, idx) => (
-              <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
-                <td style={{ padding: '1mm 0.5mm', fontWeight: '500', color: '#000000' }}>{line.label}</td>
-                <td style={{ padding: '1mm 0.5mm', textAlign: 'center', color: '#000000', fontWeight: '600' }}>{line.qtd}</td>
-                <td style={{ padding: '1mm 0.5mm', textAlign: 'right', color: '#000000', fontWeight: '700' }}>{line.valorRemun > 0 ? formatMoney(line.valorRemun) : ''}</td>
-                <td style={{ padding: '1mm 0.5mm', textAlign: 'right', fontWeight: '800', color: line.valorDesc > 0 ? '#b91c1c' : '#000000' }}>{line.valorDesc > 0 ? formatMoney(line.valorDesc) : ''}</td>
+          <tbody>
+            {linesToDisplay.map((line, idx) => (
+              <tr key={idx} style={{ borderBottom: '0.5px solid #e5e7eb', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f9fafb' }}>
+                <td style={{ padding: '2.8mm 2.5mm', fontWeight: '400', color: '#1f2937', fontSize: '8pt' }}>{line.label}</td>
+                <td style={{ padding: '2.8mm 1.5mm', textAlign: 'center', color: '#374151', fontWeight: '500', fontSize: '8pt' }}>{line.qtd}</td>
+                <td style={{ padding: '2.8mm 2.5mm', textAlign: 'right', color: '#1f2937', fontWeight: '500', fontSize: '8pt' }}>{line.valorRemun > 0 ? formatMoney(line.valorRemun) : ''}</td>
+                <td style={{ padding: '2.8mm 2.5mm', textAlign: 'right', fontWeight: '600', color: line.valorDesc > 0 ? '#b91c1c' : '#1f2937', fontSize: '8pt' }}>{line.valorDesc > 0 ? formatMoney(line.valorDesc) : ''}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {/* Totals Block */}
-        <div style={{ borderTop: '1.2px solid #000000', paddingTop: '1.5mm', marginTop: '3mm' }}>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6mm', marginBottom: '1.5mm' }}>
+        {/* Espaçador flexível para empurrar os totais para o fundo sem esticar as linhas da tabela */}
+        <div style={{ flexGrow: 1, minHeight: '4mm' }} />
+
+        {/* ── Rodapé de Totais ───────────────────────────────────────────── */}
+        <div style={{ marginTop: '3mm', borderTop: '1px solid #d1d5db', paddingTop: '2mm' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8mm', marginBottom: '2mm' }}>
             <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: '6px', fontWeight: '700', color: '#1f2937', textTransform: 'uppercase', display: 'block', marginBottom: '0.2mm' }}>Total Rendimentos</span>
-              <strong style={{ fontSize: '9px', color: '#000000', fontWeight: '800' }}>{formatMoney(totalBrutoExibido)}</strong>
+              <div style={{ fontSize: '6.5pt', fontWeight: '500', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5mm' }}>Total Rendimentos</div>
+              <div style={{ fontSize: '10pt', fontWeight: '700', color: '#111827' }}>{formatMoney(totalBrutoExibido)}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: '6px', fontWeight: '700', color: '#1f2937', textTransform: 'uppercase', display: 'block', marginBottom: '0.2mm' }}>Total Descontos</span>
-              <strong style={{ fontSize: '9px', color: '#b91c1c', fontWeight: '800' }}>{formatMoney(totalDescontosExibido)}</strong>
+              <div style={{ fontSize: '6.5pt', fontWeight: '500', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5mm' }}>Total Descontos</div>
+              <div style={{ fontSize: '10pt', fontWeight: '700', color: '#b91c1c' }}>{formatMoney(totalDescontosExibido)}</div>
             </div>
           </div>
-          
-          <div style={{ 
-            background: '#000000', 
-            color: '#ffffff', 
-            padding: '1.5mm 3.5mm', 
-            borderRadius: '4px', 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center' 
+
+          <div style={{
+            background: '#111827',
+            color: '#ffffff',
+            padding: '2mm 3mm',
+            borderRadius: '4px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
           }}>
-            <span style={{ fontSize: '7.5px', fontWeight: '850', letterSpacing: '0.02em' }}>VALOR LÍQUIDO</span>
-            <span style={{ fontSize: '11.5px', fontWeight: '900' }}>{formatMoney(salarioLiquidoExibido)}</span>
+            <span style={{ fontSize: '8pt', fontWeight: '600', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Valor Líquido</span>
+            <span style={{ fontSize: '12pt', fontWeight: '700', letterSpacing: '0.01em' }}>{formatMoney(salarioLiquidoExibido)}</span>
           </div>
         </div>
 
-        {/* Footer */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2.5mm', fontSize: '6.5px', color: '#111827', fontWeight: '700' }}>
-          <span>IBAN: {receiptSnapshot.colaborador.iban || '---'} ({receiptSnapshot.colaborador.banco || '---'})</span>
-          <span>Processado por SALYA</span>
+        {/* ── Rodapé discreto ───────────────────────────────────────────── */}
+        <div style={{ textAlign: 'center', marginTop: '2mm', fontSize: '6pt', color: '#d1d5db', letterSpacing: '0.05em' }}>
+          Processado por Salya
         </div>
       </div>
     );
+  };
 
     return (
       <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[110] p-2 backdrop-blur-sm">
@@ -837,14 +889,14 @@ const Processamento: React.FC = () => {
                 flexDirection: 'row',
                 overflow: 'hidden',
                 fontFamily: "'Arial', 'Helvetica Neue', sans-serif",
-                fontSize: '8.5px',
+                fontSize: '10px',
                 color: '#000000',
                 pageBreakInside: 'avoid'
               }}
             >
-              {renderA5()}
+              {renderA5(true)}
               <div style={{ width: '1px', borderLeft: '1.2px dashed #94a3b8', height: '196mm', alignSelf: 'center', flexShrink: 0, margin: '0 1px' }} />
-              {renderA5()}
+              {renderA5(false)}
             </div>
           </div>
           <div className="p-4 border-t flex gap-3 no-print bg-white">
