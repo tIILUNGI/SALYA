@@ -81,6 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'alertas', label: 'Alertas', icon: 'notifications_active' },
     { id: 'colaboradores', label: 'Colaboradores', icon: 'group' },
     { id: 'ferias', label: 'Gestão de Férias', icon: 'date_range' },
+    { id: 'assiduidade', label: 'Assiduidade & Faltas', icon: 'fingerprint' },
     { id: 'processamento', label: 'Processamento', icon: 'account_balance_wallet' },
     { id: 'processamento-atraso', label: 'Salários em Atraso', icon: 'history' },
     { id: 'relatorios', label: 'Relatórios', icon: 'assessment' },

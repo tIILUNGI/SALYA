@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Alertas from './pages/Alertas';
 import Relatorios from './pages/Relatorios';
 import Ferias from './pages/Ferias';
+import Assiduidade from './pages/Assiduidade';
 import Colaboradores from './pages/Colaboradores';
 import Processamento from './pages/Processamento';
 import ProcessamentoAtraso from './pages/ProcessamentoAtraso';
@@ -456,6 +457,7 @@ function App() {
             <Route path="/processamento-atraso" element={<ProcessamentoAtrasoRoute />} />
             <Route path="/relatorios" element={<RelatoriosRoute />} />
             <Route path="/ferias" element={<FeriasRoute />} />
+            <Route path="/assiduidade" element={<AssiduidadeRoute />} />
             <Route path="/configuracoes" element={<ConfiguracoesIndexRedirect />} />
             <Route path="/configuracoes/:tab" element={<Configuracoes />} />
             <Route path="/profile" element={<Profile />} />
@@ -495,6 +497,9 @@ function RelatoriosRoute() {
 }
 function FeriasRoute() {
   return useRequiresEmpresa() ? <Ferias /> : <Navigate to="/configuracoes/empresa" replace />;
+}
+function AssiduidadeRoute() {
+  return useRequiresEmpresa() ? <Assiduidade /> : <Navigate to="/configuracoes/empresa" replace />;
 }
 // Hot reload trigger for routing update
 
