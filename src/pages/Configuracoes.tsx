@@ -1342,73 +1342,102 @@ const Configurações: React.FC = () => {
 
                 {/* Lista de Planos */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
-                  {plans.map((p) => (
-                    <div 
-                      key={p.id} 
-                      className={`group p-5 sm:p-6 lg:p-8 rounded-2xl sm:rounded-[2.5rem] border-2 transition-all flex flex-col relative min-w-0 ${
-                        user?.planType === p.type ? 'border-primary bg-primary/5 shadow-2xl shadow-primary/20' : 
-                        p.type === 'ANUAL' ? 'border-primary bg-primary/5 shadow-xl xl:scale-[1.02]' : 
-                        'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-primary/20'
-                      }`}
-                    >
-                      {p.type === 'ANUAL' && (
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-4 py-1 rounded-full whitespace-nowrap">Recomendado</div>
-                      )}
-                      <div className="mb-4 sm:mb-6">
-                        <div className={`size-10 sm:size-12 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-transform group-hover:rotate-12 ${
-                           user?.planType === p.type || p.type === 'ANUAL' ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-                        }`}>
-                          <span className="material-symbols-outlined text-xl sm:text-2xl">
-                            {p.type === 'DEMO' ? 'rocket_launch' : 
-                             p.type === 'SEMESTRAL' ? 'person' : 
-                             'groups'}
-                          </span>
-                        </div>
-                        <h5 className="font-black text-base sm:text-lg uppercase tracking-tight text-slate-800 dark:text-white mb-1 break-words">{p.name}</h5>
-                        <p className="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-widest">{p.category}</p>
-                      </div>
+                  {plans.map((p) => {
+                    const isCurrent = user?.planType === p.type;
+                    const isRecommended = p.type === 'ANUAL';
+                    const isCorporativo = p.type === 'CORPORATIVO';
+                    const isDemo = p.type === 'DEMO';
 
-                      <div className="mb-6 sm:mb-8">
-                        <div className="flex flex-col gap-0.5 mb-2 min-w-0">
-                          <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white break-all leading-tight">{p.price.toLocaleString()}</span>
-                          <span className="text-[10px] sm:text-xs font-black text-slate-400 uppercase">Kz / {p.durationDays} dias</span>
-                        </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed min-h-[2.5rem] sm:min-h-[3rem]">{p.description || `Plano ${p.name} ideal para as suas necessidades de processamento.`}</p>
-                      </div>
+                    // Features dinâmicas baseadas nos dados reais do plano
+                    const maxColab = p.maxColaboradores ?? (isDemo ? 10 : p.type === 'SEMESTRAL' ? 10 : p.type === 'ANUAL' ? 100 : null);
+                    const maxRecib = p.maxRecibos ?? (isDemo ? 2 : -1);
+                    const maxUtil  = p.maxUtilizadores ?? (p.type === 'SEMESTRAL' ? 1 : 2);
+                    const hasFerias = p.type !== 'SEMESTRAL'; // DEMO, ANUAL, CORPORATIVO
+                    const hasSimulators = isCorporativo;
 
-<ul className="space-y-3 mb-10 flex-1">
-                         {[
-                           'Processamento Ilimitado',
-                           p.type === 'DEMO' ? 'Teste 24 horas' : `Acesso por ${p.durationDays} dias`,
-                           'Suporte Prioritário',
-                           'Relatórios de Business Intelligence',
-                         ].map((feat, i) => (
-                           <li key={i} className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
-                             <span className="material-symbols-outlined text-emerald-500 text-lg">check_circle</span>
-                             {feat}
-                           </li>
-                         ))}
-                          {p.type !== 'DEMO' && (
-                            <li className="flex items-center gap-3 text-xs font-bold text-primary bg-primary/5 px-3 py-2 rounded-lg border border-primary/20">
-                              <span className="material-symbols-outlined text-primary text-lg">business</span>
-                              {p.maxEmpresas || 0} {p.maxEmpresas === 1 ? 'Entidade' : 'Entidades'} & {(p.maxUsuarios && p.maxUsuarios >= 999) ? 'Utilizadores Ilimitados' : `${p.maxUsuarios || 0} Usuários`}
-                            </li>
-                          )}
-                       </ul>
+                    const features = [
+                      `${maxUtil} utilizador${maxUtil === 1 ? '' : 'es'}`,
+                      `${maxColab === -1 || maxColab === null ? '+100' : maxColab} colaboradores`,
+                      `${maxRecib === -1 ? 'Recibos ilimitados' : `${maxRecib} recibo${maxRecib === 1 ? '' : 's'}`}`,
+                      'IRT & INSS Automatizados',
+                      'Declaração de trabalho',
+                      ...(hasFerias ? ['Gestão de férias'] : []),
+                      'Relatório',
+                      ...(hasSimulators ? ['Simulador de 13º', 'Simulador de rescisão'] : []),
+                    ];
 
-                      <button 
-                        onClick={() => handleUpgradePlan(p.id, p.name)}
-                        disabled={user?.planType === p.type || (p.type === 'DEMO' && user?.planType !== 'DEMO')}
-                        className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest transition-all ${
-                          user?.planType === p.type || (p.type === 'DEMO' && user?.planType !== 'DEMO')
-                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-default' 
-                            : 'bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20'
+                    return (
+                      <div
+                        key={p.id}
+                        className={`group p-5 sm:p-6 lg:p-8 rounded-2xl sm:rounded-[2.5rem] border-2 transition-all flex flex-col relative min-w-0 ${
+                          isCurrent
+                            ? 'border-primary bg-primary/5 shadow-2xl shadow-primary/20'
+                            : isRecommended
+                            ? 'border-primary bg-primary/5 shadow-xl xl:scale-[1.02]'
+                            : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-primary/20'
                         }`}
                       >
-                        {user?.planType === p.type ? 'Plano Actual' : p.type === 'DEMO' ? 'Indisponível' : 'Escolher Plano'}
-                      </button>
-                    </div>
-                  ))}
+                        {isRecommended && (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-4 py-1 rounded-full whitespace-nowrap">Recomendado</div>
+                        )}
+
+                        {/* Header */}
+                        <div className="mb-4 sm:mb-6">
+                          <div className={`size-10 sm:size-12 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-transform group-hover:rotate-12 ${
+                            isCurrent || isRecommended ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                          }`}>
+                            <span className="material-symbols-outlined text-xl sm:text-2xl">
+                              {isDemo ? 'rocket_launch' : p.type === 'SEMESTRAL' ? 'home' : isCorporativo ? 'corporate_fare' : 'groups'}
+                            </span>
+                          </div>
+                          <h5 className="font-black text-base sm:text-lg uppercase tracking-tight text-slate-800 dark:text-white mb-1 break-words">{p.name}</h5>
+                          <p className="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-widest">{p.category}</p>
+                        </div>
+
+                        {/* Preço */}
+                        <div className="mb-6 sm:mb-8">
+                          <div className="flex flex-col gap-0.5 mb-2 min-w-0">
+                            {isDemo ? (
+                              <span className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-600 break-all leading-tight">GRATUITO</span>
+                            ) : p.sobreConsulta ? (
+                              <span className="text-xl sm:text-2xl lg:text-3xl font-black text-primary break-all leading-tight">Sob Consulta</span>
+                            ) : (
+                              <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white break-all leading-tight">{Number(p.price).toLocaleString('pt-AO')} Kz</span>
+                            )}
+                            <span className="text-[10px] sm:text-xs font-black text-slate-400 uppercase">
+                              {isDemo ? '24 Horas' : `${p.durationDays === 365 ? '12 Meses' : p.durationDays === 180 ? '6 Meses' : p.durationDays + ' dias'}`}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed min-h-[2.5rem] sm:min-h-[3rem]">
+                            {p.descricao || p.description || `Plano ${p.name}`}
+                          </p>
+                        </div>
+
+                        {/* Features */}
+                        <ul className="space-y-2.5 mb-8 flex-1">
+                          {features.map((feat, i) => (
+                            <li key={i} className="flex items-center gap-2.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                              <span className="material-symbols-outlined text-emerald-500 text-base flex-shrink-0">check_circle</span>
+                              {feat}
+                            </li>
+                          ))}
+                        </ul>
+
+                        {/* Botão */}
+                        <button
+                          onClick={() => handleUpgradePlan(p.id, p.name)}
+                          disabled={isCurrent || (isDemo && user?.planType !== 'DEMO')}
+                          className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest transition-all text-sm ${
+                            isCurrent || (isDemo && user?.planType !== 'DEMO')
+                              ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-default'
+                              : 'bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20'
+                          }`}
+                        >
+                          {isCurrent ? 'Plano Actual' : isDemo ? 'Indisponível' : isCorporativo ? 'Solicitar' : 'Escolher Plano'}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="p-8 rounded-3xl bg-slate-900 text-white flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">

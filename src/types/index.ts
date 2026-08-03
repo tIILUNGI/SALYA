@@ -26,27 +26,34 @@ export interface Plan {
   name: string;
   price: number;
   durationDays: number;
-  isActive: boolean;
+  isActive?: boolean;
+  active?: boolean;
   type: string;
   category: 'GRATUITO' | 'PAGO';
-  maxEmpresas?: number;
-  maxUsuarios?: number;
+  maxEntidades?: number;
+  maxEmpresas?: number;    // alias usado pelo frontend antigo
+  maxUtilizadores?: number;
+  maxUsuarios?: number;    // alias usado pelo frontend antigo
+  maxColaboradores?: number;
+  maxRecibos?: number;
+  descricao?: string;
+  description?: string;   // alias compatibilidade
+  sobreConsulta?: boolean;
 }
 
-export type PlanType = 'DEMO' | 'SEMESTRAL' | 'ANUAL';
+export type PlanType = 'DEMO' | 'SEMESTRAL' | 'ANUAL' | 'CORPORATIVO';
 
-export const PLAN_LIMITS: Record<PlanType, { maxEmpresas: number; maxUsuarios: number }> = {
-  DEMO: { maxEmpresas: 1, maxUsuarios: 1 },
-  SEMESTRAL: { maxEmpresas: 2, maxUsuarios: 2 },
-  ANUAL: { maxEmpresas: 5, maxUsuarios: 999 },
+export const PLAN_LIMITS: Record<PlanType, { maxEmpresas: number; maxUsuarios: number; maxColaboradores: number }> = {
+  DEMO:        { maxEmpresas: 1, maxUsuarios: 2,   maxColaboradores: 10 },
+  SEMESTRAL:   { maxEmpresas: 1, maxUsuarios: 1,   maxColaboradores: 10 },
+  ANUAL:       { maxEmpresas: 1, maxUsuarios: 2,   maxColaboradores: 100 },
+  CORPORATIVO: { maxEmpresas: 1, maxUsuarios: 2,   maxColaboradores: 999999 },
 };
 
 export const getPlanLimits = (planType?: string) => {
   if (!planType) return PLAN_LIMITS.DEMO;
-  const normalized = planType.trim().toUpperCase();
-  if (normalized === 'SEMESTRAL') return PLAN_LIMITS.SEMESTRAL;
-  if (normalized === 'ANUAL') return PLAN_LIMITS.ANUAL;
-  return PLAN_LIMITS.DEMO;
+  const normalized = planType.trim().toUpperCase() as PlanType;
+  return PLAN_LIMITS[normalized] ?? PLAN_LIMITS.DEMO;
 };
 
 export interface Empresa {
