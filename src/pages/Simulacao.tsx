@@ -59,8 +59,19 @@ const Simulação: React.FC = () => {
 
   return (
     <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Simulações Salariais</h1>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Simulações Salariais</h1>
+          <p className="text-xs text-slate-500 font-medium">Cálculo de cenários e estimativas de custos patronais.</p>
+        </div>
+        <a
+          href="/folha-angola"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg hover:scale-105 transition-all w-fit"
+        >
+          Mais Simuladores (13.º &amp; Rescisão) &rarr;
+        </a>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -2,11 +2,13 @@ import React, { useState, useContext, useEffect, useCallback, useMemo } from 're
 import Swal from 'sweetalert2';
 import html2pdf from 'html2pdf.js';
 
+import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { Colaborador } from '../types';
 import { api, getLogoUrl } from '../services/api';
 import { calcularINSS, calcularIRT, roundMoney } from '../utils/taxCalculations';
 import { countries } from '../data/countries';
+import { SimuladoresModalContent } from './FolhaAngola';
 
 
 
@@ -100,7 +102,9 @@ const CURRENT_MONTH_NUM = TODAY.getMonth() + 1;
 const CURRENT_YEAR = TODAY.getFullYear();
 
 const Processamento: React.FC = () => {
-  const { empresa, colaboradores, empresaId, setMessage } = useContext(AppContext);
+  const navigate = useNavigate();
+  const { empresa, colaboradores, empresaId, setMessage, user, effectivePlan } = useContext(AppContext);
+  const isCorporativo = (effectivePlan?.type === 'CORPORATIVO' || user?.planType === 'CORPORATIVO');
   const ativos = colaboradores.filter((colaborador) => colaborador.status === 'Ativo' && (!empresaId || colaborador.empresaId === empresaId || (colaborador as any).empresa?.id === empresaId));
 
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
@@ -111,6 +115,7 @@ const Processamento: React.FC = () => {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showHistóricoModal, setShowHistóricoModal] = useState(false);
   const [showSimulationModal, setShowSimulationModal] = useState(false);
+  const [showFolhaAngolaModal, setShowFolhaAngolaModal] = useState(false);
   const [selectedColab, setSelectedColab] = useState<Colaborador | null>(null);
   const [receiptSnapshot, setReceiptSnapshot] = useState<ReceiptSnapshot | null>(null);
   const [historico, setHistórico] = useState<HistóricoProcessamento[]>([]);
@@ -912,26 +917,109 @@ const Processamento: React.FC = () => {
     );
   };
 
+  const handleOpenFolhaAngola = () => {
+    if (!isCorporativo) {
+      Swal.fire({
+        title: 'Plano Corporativo Necessário',
+        html: '<p class="text-sm text-slate-600 dark:text-slate-300">Os <strong>Simuladores de 13.º Mês e Rescisão de Contrato</strong> são uma funcionalidade exclusiva do <strong>Plano Corporativo</strong>.</p>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ver Planos & Upgrade',
+        cancelButtonText: 'Fechar',
+        confirmButtonColor: '#9333ea',
+        cancelButtonColor: '#64748b'
+      }).then((res) => {
+        if (res.isConfirmed) {
+          navigate('/configuracoes');
+        }
+      });
+      return;
+    }
+    setShowFolhaAngolaModal(true);
+  };
+
+  const renderFolhaAngolaModal = () => {
+    if (!showFolhaAngolaModal) return null;
+    return (
+      <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-[120] p-4 overflow-y-auto">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-6 relative shadow-2xl my-8 text-white">
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-bold">
+                <span className="material-symbols-outlined text-xl">calculate</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Simuladores Folha Angola</h3>
+                <p className="text-xs text-slate-400">13.º Mês e Rescisão de Contrato (LGT 12/23 & IRT AGT)</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowFolhaAngolaModal(false)}
+              className="text-slate-400 hover:text-white p-2 rounded-lg transition-colors"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <SimuladoresModalContent />
+        </div>
+      </div>
+    );
+  };
+
   const renderMainContent = () => (
     <div className="space-y-6">
-      {/* Simulador em destaque — rascunho sem afectar o sistema */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <div className="size-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-2xl">science</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Simulador Salarial Geral (Livre para todos) */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 p-5 flex flex-col justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="size-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-2xl">science</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-800 dark:text-white">Simulador Salarial</h3>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  Livre
+                </span>
+              </div>
+            </div>
           </div>
-          <div>
-            <h3 className="text-base font-bold text-slate-800 dark:text-white">Simule salários antes de processar</h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowSimulationModal(true)}
+            className="w-full px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-base">calculate</span>
+            Abrir Simulador Salarial
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowSimulationModal(true)}
-          className="w-full sm:w-auto px-6 py-3 bg-primary hover:opacity-90 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 shrink-0"
-        >
-          <span className="material-symbols-outlined text-lg">calculate</span>
-          Abrir Simulador
-        </button>
+
+        {/* Simuladores de 13.º Mês & Rescisão (Exclusivo Corporativo) */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 p-5 flex flex-col justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="size-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-2xl">account_balance</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-800 dark:text-white">13.º Mês & Rescisão</h3>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  Plano Corporativo
+                </span>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleOpenFolhaAngola}
+            className="w-full px-5 py-2.5 bg-primary hover:opacity-90 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-primary/20"
+          >
+            <span className="material-symbols-outlined text-base">
+              {isCorporativo ? 'calculate' : 'lock'}
+            </span>
+            Abrir 13.º & Rescisão
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1218,6 +1306,7 @@ const Processamento: React.FC = () => {
       {renderReceiptModal()}
       {renderHistóricoModal()}
       {renderSimulationModal()}
+      {renderFolhaAngolaModal()}
     </div>
   );
 };
