@@ -1294,7 +1294,9 @@ const Configurações: React.FC = () => {
                       
                       <div className="flex flex-col gap-1">
                         <p className="text-sm text-slate-500 font-medium italic">Plano Actual:</p>
-                        <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-primary uppercase tracking-tighter mb-2 break-words">{user?.activePlanName || user?.planType || 'DEMO'}</h4>
+                        <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-primary uppercase tracking-tighter mb-2 break-words">
+                          {user?.activePlanName || (user?.planType === 'DEMO' ? 'Gratuito (DEMO)' : user?.planType === 'SEMESTRAL' ? 'Semestral (Doméstico)' : user?.planType === 'ANUAL' ? 'Anual (Empresarial)' : user?.planType === 'CORPORATIVO' ? 'Corporativo' : user?.planType || 'DEMO')}
+                        </h4>
                         <div className="flex items-center gap-4">
                           <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
                             user?.subscriptionStatus === 'ATIVA' ? 'bg-emerald-100 text-emerald-700' : 

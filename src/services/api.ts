@@ -18,7 +18,6 @@ const getApiBaseUrl = (): string => {
   // 1. Verifica se há uma URL salva no localStorage (útil para desenvolvimento)
   const savedUrl = localStorage.getItem('api_base_url');
   if (savedUrl && isLocalDevelopment()) {
-  
     return savedUrl;
   }
   
@@ -39,7 +38,6 @@ const getApiBaseUrl = (): string => {
   }
   
   // 4. Fallback final para produção
-
   return 'https://api.salya.ao/api';
 };
 
@@ -51,7 +49,6 @@ export const setApiBaseUrl = (url: string) => {
 
 // Exibe a URL sendo usada no console
 export const API_BASE_URL = getApiBaseUrl();
-
 
 const TOKEN_STORAGE_KEYS = ['salya_token', 'token'] as const;
 const REFRESH_TOKEN_KEY = 'salya_refresh_token';
@@ -138,7 +135,16 @@ const humanizeMessage = (error: any): string => {
     'logo too large': 'A imagem é demasiado grande (máx. 2MB).',
   };
 
-  // Busca por correspondência exata ou parcial
+  // Se a mensagem for uma mensagem descritiva do backend (ex: limites de plano), retorna-a directamente
+  const isGenericHttpText = message === 'Bad Request' || message === 'Internal Server Error' || message === 'Forbidden' || message === 'Unauthorized' || message.startsWith('HTTP ');
+  if (message && !isGenericHttpText) {
+    for (const [key, value] of Object.entries(mappings)) {
+      if (message.toLowerCase() === key.toLowerCase()) return value;
+    }
+    return message;
+  }
+
+  // Busca por correspondência exata ou parcial nas mensagens padrão
   for (const [key, value] of Object.entries(mappings)) {
     if (message.toLowerCase().includes(key.toLowerCase())) return value;
   }
@@ -150,7 +156,7 @@ const humanizeMessage = (error: any): string => {
   if (status === 409) return mappings['Conflict'] || 'Esta informação já existe no sistema.';
   if (status >= 500) return 'O sistema encontrou um erro técnico inesperado. Tente novamente em instantes.';
 
-  return 'Ocorreu um erro. Por favor, tente novamente ou contacte o suporte.';
+  return message || 'Ocorreu um erro. Por favor, tente novamente ou contacte o suporte.';
 };
 
 const buildErrorFromResponse = (response: Response, responseText: string) => {
@@ -427,7 +433,6 @@ export const api = {
 
 // Função para debug - mostra a URL atual da API
 export const showCurrentApiUrl = () => {
-
   return API_BASE_URL;
 };
 
