@@ -1407,7 +1407,7 @@ const Configurações: React.FC = () => {
                               <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white break-all leading-tight">{Number(p.price).toLocaleString('pt-AO')} Kz</span>
                             )}
                             <span className="text-[10px] sm:text-xs font-black text-slate-400 uppercase">
-                              {isDemo ? '24 Horas' : `${p.durationDays === 365 ? '12 Meses' : p.durationDays === 180 ? '6 Meses' : p.durationDays + ' dias'}`}
+                              {isDemo ? '30 Dias' : `${p.durationDays === 365 ? '12 Meses' : p.durationDays === 180 ? '6 Meses' : p.durationDays + ' dias'}`}
                             </span>
                           </div>
                           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed min-h-[2.5rem] sm:min-h-[3rem]">
