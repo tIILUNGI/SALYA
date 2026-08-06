@@ -27,8 +27,18 @@ interface RegistoPonto {
   origem: string;
 }
 
+const formatarAtrasosEmHoras = (minutosTotal: number): string => {
+  if (!minutosTotal || minutosTotal <= 0) return '0h';
+  const h = Math.floor(minutosTotal / 60);
+  const m = minutosTotal % 60;
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  return `${m}m`;
+};
+
 const Assiduidade: React.FC = () => {
   const { empresaId, colaboradores } = useContext(AppContext);
+  const colaboradoresAtivos = colaboradores.filter(c => c.status !== 'Afastado' && c.status !== 'Desligado');
   const [activeTab, setActiveTab] = useState<'mapa' | 'faltas' | 'registos'>('mapa');
 
   const [faltas, setFaltas] = useState<Falta[]>([]);
@@ -277,8 +287,8 @@ const Assiduidade: React.FC = () => {
             <p className="text-xs text-primary font-semibold">Atrasos Acumulados</p>
             <span className="material-symbols-outlined text-primary text-xl">schedule</span>
           </div>
-          <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{totalMinutosAtraso} min</p>
-          <p className="text-[10px] text-slate-400 mt-1">Total de minutos de atraso registados.</p>
+          <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{formatarAtrasosEmHoras(totalMinutosAtraso)}</p>
+          <p className="text-[10px] text-slate-400 mt-1">Total de horas de atraso registadas.</p>
         </div>
       </div>
 
@@ -328,7 +338,7 @@ const Assiduidade: React.FC = () => {
           <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
             <h3 className="font-bold text-slate-800 dark:text-white text-base">Visão Geral de Colaboradores</h3>
             <span className="text-xs text-slate-400 font-semibold">
-              {colaboradores.length} Colaboradores registados
+              {colaboradoresAtivos.length} Colaboradores ativos
             </span>
           </div>
 
@@ -343,7 +353,7 @@ const Assiduidade: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {colaboradores.map((colab) => {
+              {colaboradoresAtivos.map((colab) => {
                 const colabFaltas = faltas.filter(f => f.colaboradorId === colab.id);
                 const temInjustificadas = colabFaltas.some(f => f.descontaSalario);
 
@@ -553,7 +563,7 @@ const Assiduidade: React.FC = () => {
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-medium text-slate-800 dark:text-white"
                 >
                   <option value="">Selecione o colaborador...</option>
-                  {colaboradores.map(c => (
+                  {colaboradoresAtivos.map(c => (
                     <option key={c.id} value={c.id}>{c.nome} ({c.cargo || 'Sem Cargo'})</option>
                   ))}
                 </select>

@@ -941,21 +941,21 @@ const Processamento: React.FC = () => {
   const renderFolhaAngolaModal = () => {
     if (!showFolhaAngolaModal) return null;
     return (
-      <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-[120] p-4 overflow-y-auto">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-6 relative shadow-2xl my-8 text-white">
-          <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-800">
+      <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-[120] p-3 sm:p-4 overflow-y-auto">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-4 sm:p-5 relative shadow-2xl my-auto text-white">
+          <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-bold">
-                <span className="material-symbols-outlined text-xl">calculate</span>
+              <div className="size-9 sm:size-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">
+                <span className="material-symbols-outlined text-lg sm:text-xl">calculate</span>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Simuladores Folha Angola</h3>
-                <p className="text-xs text-slate-400">13.º Mês e Rescisão de Contrato (LGT 12/23 & IRT AGT)</p>
+                <h3 className="text-base sm:text-lg font-bold text-white leading-tight">Simuladores Folha Angola</h3>
+                <p className="text-[11px] sm:text-xs text-slate-400">13.º Mês e Rescisão de Contrato (LGT 12/23 & IRT AGT)</p>
               </div>
             </div>
             <button
               onClick={() => setShowFolhaAngolaModal(false)}
-              className="text-slate-400 hover:text-white p-2 rounded-lg transition-colors"
+              className="text-slate-400 hover:text-white p-2 rounded-lg transition-colors shrink-0"
             >
               <span className="material-symbols-outlined">close</span>
             </button>

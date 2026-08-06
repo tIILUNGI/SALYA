@@ -165,54 +165,54 @@ export function SimuladorDecimoTerceiro() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div>
-          <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Salário Base (Kz)</label>
+          <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Salário Base (Kz)</label>
           <input value={salario} onChange={e => setSalario(Number(e.target.value.replace(/\D/g,'')).toLocaleString('pt-AO'))}
             placeholder="Ex: 150.000"
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm font-bold text-white outline-none focus:border-primary" />
+            className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs sm:text-sm font-bold text-white outline-none focus:border-primary transition-colors" />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Meses Trabalhados</label>
+          <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Meses Trabalhados</label>
           <select value={meses} onChange={e => setMeses(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm font-bold text-white outline-none focus:border-primary">
+            className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs sm:text-sm font-bold text-white outline-none focus:border-primary">
             {Array.from({length: 12}, (_, i) => i + 1).map(m => (
               <option key={m} value={m}>{m} {m === 1 ? 'mês' : 'meses'}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Percentagem do Subsídio</label>
+          <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Percentagem</label>
           <select value={percentagem} onChange={e => setPercentagem(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm font-bold text-white outline-none focus:border-primary">
-            <option value="50">50% (Mínimo Legal)</option>
-            <option value="100">100% (1 Salário Completo)</option>
-            <option value="75">75% (Contrato Coletivo)</option>
+            className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs sm:text-sm font-bold text-white outline-none focus:border-primary">
+            <option value="50">50% — Mínimo Legal</option>
+            <option value="75">75% — Contrato Coletivo</option>
+            <option value="100">100% — 1 Salário Completo</option>
           </select>
         </div>
       </div>
       {erro && <p className="text-xs font-bold text-rose-400 bg-rose-950/40 border border-rose-900/50 p-3 rounded-xl">{erro}</p>}
       <button onClick={calcular} disabled={loading}
-        className="px-8 py-3 bg-primary hover:bg-primary/95 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-60">
+        className="w-full sm:w-auto px-8 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-60 shadow-lg shadow-primary/20">
         {loading ? 'A calcular...' : 'Calcular 13.º Mês'}
       </button>
 
       {result && (
-        <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-4">
+        <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
           <h4 className="font-bold text-white text-xs uppercase tracking-widest">Resultado do Cálculo</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             {[
               { label: 'Subsídio Bruto', value: result.valorBruto, color: 'text-slate-200' },
-              { label: 'INSS (Isento)', value: 0, color: 'text-emerald-400', badge: 'Isento' },
+              { label: 'INSS', value: 0, color: 'text-emerald-400', badge: 'Isento' },
               { label: 'IRT Retido', value: result.irt, color: 'text-amber-400' },
               { label: 'Valor Líquido', value: result.valorLiquido, color: 'text-white', highlight: true },
             ].map((item, i) => (
-              <div key={i} className={`rounded-xl p-4 text-center ${item.highlight ? 'bg-primary text-white' : 'bg-slate-900 border border-slate-800'}`}>
-                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${item.highlight ? 'text-slate-200' : 'text-slate-400'}`}>{item.label}</p>
+              <div key={i} className={`rounded-xl p-3 sm:p-4 text-center ${item.highlight ? 'bg-primary text-white' : 'bg-slate-900 border border-slate-800'}`}>
+                <p className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mb-1.5 ${item.highlight ? 'text-slate-200' : 'text-slate-400'}`}>{item.label}</p>
                 {item.badge
                   ? <p className="text-sm font-bold text-emerald-400">{item.badge}</p>
-                  : <p className={`text-lg font-black ${item.highlight ? 'text-white' : item.color}`}>{fmt(item.value)} <span className="text-xs">Kz</span></p>
+                  : <p className={`text-sm sm:text-base font-black ${item.highlight ? 'text-white' : item.color}`}>{fmt(item.value)} <span className="text-[10px]">Kz</span></p>
                 }
               </div>
             ))}
@@ -261,114 +261,139 @@ export function SimuladorRescisao() {
     finally { setLoading(false); }
   };
 
-  const linhaDetalhe = (label: string, value: number, destaque = false, isencao = false) => (
-    <div className={`flex justify-between items-center py-2.5 border-b border-slate-800/80 last:border-0 ${destaque ? 'font-black text-white' : ''}`}>
-      <span className="text-sm text-slate-300">{label}</span>
-      {isencao
-        ? <span className="text-xs font-bold text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-800">Isento</span>
-        : <span className={`text-sm font-bold ${destaque ? 'text-primary' : 'text-slate-200'}`}>{fmt(value)} Kz</span>
-      }
+  const Row = ({ label, value, amber = false }: { label: string; value: number; amber?: boolean }) => (
+    <div className="flex items-start justify-between gap-3 py-2 border-b border-slate-800/70 last:border-0">
+      <span className="text-[11px] sm:text-xs text-slate-400 leading-snug flex-1">{label}</span>
+      <span className={`text-[11px] sm:text-xs font-bold shrink-0 tabular-nums ${amber ? 'text-amber-400' : 'text-slate-200'}`}>{fmt(value)} Kz</span>
     </div>
   );
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="flex flex-col lg:flex-row gap-5 lg:gap-6">
+      {/* Coluna Formulário */}
+      <div className="flex-1 space-y-4">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dados do Colaborador</p>
+
         <div>
-          <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Salário Base (Kz)</label>
-          <input value={salario} onChange={e => setSalario(Number(e.target.value.replace(/\D/g,'')).toLocaleString('pt-AO'))}
+          <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Salário Base (Kz)</label>
+          <input
+            value={salario}
+            onChange={e => setSalario(Number(e.target.value.replace(/\D/g,'')).toLocaleString('pt-AO'))}
             placeholder="Ex: 200.000"
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm font-bold text-white outline-none focus:border-primary" />
+            className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs sm:text-sm font-bold text-white outline-none focus:border-primary transition-colors"
+          />
         </div>
-        <div>
-          <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Data de Entrada</label>
-          <input type="date" value={dataEntrada} onChange={e => setDataEntrada(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm font-bold text-white outline-none focus:border-primary" />
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Data de Entrada</label>
+            <input type="date" value={dataEntrada} onChange={e => setDataEntrada(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-white outline-none focus:border-primary transition-colors" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Data de Saída</label>
+            <input type="date" value={dataSaida} onChange={e => setDataSaida(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-white outline-none focus:border-primary transition-colors" />
+          </div>
         </div>
+
         <div>
-          <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Data de Saída</label>
-          <input type="date" value={dataSaida} onChange={e => setDataSaida(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm font-bold text-white outline-none focus:border-primary" />
-        </div>
-        <div>
-          <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Motivo da Rescisão</label>
+          <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Motivo da Rescisão</label>
           <select value={motivo} onChange={e => setMotivo(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm font-bold text-white outline-none focus:border-primary">
+            className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-white outline-none focus:border-primary">
             <option value="CADUCIDADE">Caducidade (fim de contrato a termo)</option>
             <option value="DESPEDIMENTO_SEM_JUSTA_CAUSA">Despedimento sem justa causa</option>
             <option value="DEMISSAO_VOLUNTARIA">Demissão voluntária</option>
           </select>
         </div>
+
         <div>
-          <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Dimensão da Empresa</label>
+          <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Dimensão da Empresa</label>
           <select value={tipoEmpresa} onChange={e => setTipoEmpresa(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm font-bold text-white outline-none focus:border-primary">
-            <option value="GRANDE">Grande Empresa (100% por ano)</option>
-            <option value="MEDIA">Média Empresa (50% por ano)</option>
-            <option value="PEQUENA">Pequena/Micro (35% por ano)</option>
+            className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-white outline-none focus:border-primary">
+            <option value="GRANDE">Grande Empresa — 100% / ano</option>
+            <option value="MEDIA">Média Empresa — 50% / ano</option>
+            <option value="PEQUENA">Pequena / Micro — 35% / ano</option>
           </select>
         </div>
+
         <div>
-          <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Dias de Férias Pendentes</label>
+          <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Dias de Férias Pendentes</label>
           <input type="number" min="0" max="66" value={diasFerias} onChange={e => setDiasFerias(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm font-bold text-white outline-none focus:border-primary" />
+            className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-white outline-none focus:border-primary" />
         </div>
+
+        {erro && <p className="text-xs font-bold text-rose-400 bg-rose-950/40 border border-rose-900/50 p-3 rounded-xl">{erro}</p>}
+
+        <button onClick={calcular} disabled={loading}
+          className="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-60 shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+          <span className="material-symbols-outlined text-base">calculate</span>
+          {loading ? 'A calcular...' : 'Calcular Rescisão'}
+        </button>
       </div>
-      {erro && <p className="text-xs font-bold text-rose-400 bg-rose-950/40 border border-rose-900/50 p-3 rounded-xl">{erro}</p>}
-      <button onClick={calcular} disabled={loading}
-        className="px-8 py-3 bg-primary hover:bg-primary/95 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-60">
-        {loading ? 'A calcular...' : 'Calcular Rescisão'}
-      </button>
 
-      {result && (
-        <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <h4 className="font-bold text-white text-xs uppercase tracking-widest">Mapa de Rescisão</h4>
-            <span className="text-xs font-bold text-slate-300 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full">
-              {result.anosAntiguidade} anos e {result.mesesRestantes} meses de antiguidade
-            </span>
+      {/* Coluna Resultado */}
+      <div className="flex-1 flex flex-col">
+        {!result ? (
+          <div className="flex-1 flex flex-col items-center justify-center min-h-[260px] bg-slate-950/50 border border-dashed border-slate-800 rounded-2xl text-center p-6">
+            <span className="material-symbols-outlined text-5xl text-slate-700 mb-3">receipt_long</span>
+            <p className="text-xs text-slate-500 font-semibold">Preencha os dados e calcule<br />para ver o mapa de rescisão</p>
           </div>
-
-          <div className="bg-slate-900 rounded-xl p-5 border border-slate-800">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Componentes</p>
-            {linhaDetalhe('Salário dos dias trabalhados no mês', result.detalhes.salarioDiasTrabalhadosMes)}
-            {linhaDetalhe('Prop. 13.º Mês (Subsídio de Natal)', result.detalhes.propDecimoTerceiro)}
-            {linhaDetalhe('Férias vencidas não gozadas', result.detalhes.feriasVencidas)}
-            {linhaDetalhe('Subsídio de Férias Vencidas (50%)', result.detalhes.subsidioFeriasVencidas)}
-            {linhaDetalhe('Prop. Férias do ano corrente', result.detalhes.propFerias)}
-            {linhaDetalhe('Subsídio de Férias Proporcional (50%)', result.detalhes.subsidioFeriasProp)}
-            {result.detalhes.indemnizacao > 0 && linhaDetalhe('Indemnização / Compensação por Antiguidade', result.detalhes.indemnizacao)}
-            <div className="mt-3 pt-3 border-t border-slate-700 flex justify-between font-black">
-              <span className="text-sm text-slate-300">Total Bruto</span>
-              <span className="text-sm text-white">{fmt(result.totalBruto)} Kz</span>
+        ) : (
+          <div className="flex-1 space-y-3">
+            {/* Cabeçalho resultado */}
+            <div className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mapa de Rescisão</p>
+              <span className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full">
+                {result.anosAntiguidade}a {result.mesesRestantes}m de antiguidade
+              </span>
             </div>
+
+            {/* Componentes */}
+            <div className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 space-y-0.5">
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Rendimentos</p>
+              <Row label="Salário dos dias trabalhados no mês" value={result.detalhes.salarioDiasTrabalhadosMes} />
+              <Row label="Prop. 13.º Mês (Subsídio de Natal)" value={result.detalhes.propDecimoTerceiro} />
+              <Row label="Férias vencidas não gozadas" value={result.detalhes.feriasVencidas} />
+              <Row label="Subsídio de Férias Vencidas (50%)" value={result.detalhes.subsidioFeriasVencidas} />
+              <Row label="Prop. Férias do ano corrente" value={result.detalhes.propFerias} />
+              <Row label="Subsídio de Férias Proporcional (50%)" value={result.detalhes.subsidioFeriasProp} />
+              {result.detalhes.indemnizacao > 0 && <Row label="Indemnização / Compensação" value={result.detalhes.indemnizacao} />}
+              <div className="flex justify-between items-center pt-2.5 mt-1 border-t border-slate-700">
+                <span className="text-xs font-black text-slate-300">Total Bruto</span>
+                <span className="text-xs font-black text-white tabular-nums">{fmt(result.totalBruto)} Kz</span>
+              </div>
+            </div>
+
+            {/* Descontos */}
+            <div className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 space-y-0.5">
+              <p className="text-[9px] font-black uppercase tracking-widest text-amber-500/80 mb-2">Descontos</p>
+              <Row label="INSS (3% sobre salário do mês)" value={result.descontos.inssColaborador} amber />
+              <Row label="IRT sobre salário do mês (AGT)" value={result.descontos.irtMes} amber />
+              <Row label="IRT sobre 13.º Mês (AGT)" value={result.descontos.irtDecimoTerceiro} amber />
+              <div className="flex justify-between items-center pt-2.5 mt-1 border-t border-slate-700">
+                <span className="text-xs font-black text-amber-400">Total Descontos</span>
+                <span className="text-xs font-black text-amber-400 tabular-nums">{fmt(result.totalDescontos)} Kz</span>
+              </div>
+            </div>
+
+            {/* Total líquido */}
+            <div className="bg-primary rounded-xl px-4 py-4 flex items-center justify-between text-white shadow-xl shadow-primary/25">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest opacity-80 mb-1">Total Líquido a Receber</p>
+                <p className="text-2xl font-black tabular-nums">{fmt(result.totalLiquido)} <span className="text-sm font-semibold opacity-70">Kz</span></p>
+              </div>
+              <span className="material-symbols-outlined text-4xl opacity-20">payments</span>
+            </div>
+
+            {result.notaIndemnizacao && (
+              <div className="bg-slate-950 border border-slate-800 rounded-xl p-3">
+                <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{result.notaIndemnizacao}</p>
+              </div>
+            )}
           </div>
-
-          <div className="bg-slate-900 rounded-xl p-5 border border-slate-800">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400 mb-3">Descontos e Retenções</p>
-            {linhaDetalhe('INSS (3% sobre salário do mês)', result.descontos.inssColaborador)}
-            {linhaDetalhe('IRT sobre salário do mês (AGT)', result.descontos.irtMes)}
-            {linhaDetalhe('IRT sobre 13.º Mês (AGT)', result.descontos.irtDecimoTerceiro)}
-            <div className="mt-3 pt-3 border-t border-slate-700 flex justify-between font-black">
-              <span className="text-sm text-amber-400">Total Descontos</span>
-              <span className="text-sm text-amber-400">{fmt(result.totalDescontos)} Kz</span>
-            </div>
-          </div>
-
-          <div className="bg-primary rounded-xl p-5 flex justify-between items-center text-white shadow-lg shadow-primary/20">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest opacity-80">Total Líquido a Receber</p>
-              <p className="text-2xl font-black">{fmt(result.totalLiquido)} Kz</p>
-            </div>
-          </div>
-
-          {result.notaIndemnizacao && (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
-              <p className="text-xs text-slate-300 font-medium">{result.notaIndemnizacao}</p>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -376,24 +401,28 @@ export function SimuladorRescisao() {
 export function SimuladoresModalContent() {
   const [simuladorAtivo, setSimuladorAtivo] = useState<'d13' | 'rescisao'>('d13');
   return (
-    <div className="bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 overflow-hidden text-white">
-      <div className="flex border-b border-slate-800 bg-slate-950/50">
+    <div className="bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 text-white w-full max-w-full flex flex-col">
+      {/* Tabs */}
+      <div className="flex border-b border-slate-800 bg-slate-950/70 shrink-0 rounded-t-3xl overflow-hidden">
         <button onClick={() => setSimuladorAtivo('d13')}
-          className={`flex-1 py-4 text-xs font-bold uppercase tracking-widest transition-all ${simuladorAtivo === 'd13' ? 'text-primary border-b-2 border-primary bg-primary/10' : 'text-slate-400 hover:text-slate-200'}`}>
-          Simulador de 13.º Mês
+          className={`flex-1 py-3.5 px-3 text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all relative ${simuladorAtivo === 'd13' ? 'text-primary bg-primary/10' : 'text-slate-500 hover:text-slate-300'}`}>
+          {simuladorAtivo === 'd13' && <span className="absolute bottom-0 left-4 right-4 h-[2px] bg-primary rounded-t-full" />}
+          13.º Mês
         </button>
         <button onClick={() => setSimuladorAtivo('rescisao')}
-          className={`flex-1 py-4 text-xs font-bold uppercase tracking-widest transition-all ${simuladorAtivo === 'rescisao' ? 'text-primary border-b-2 border-primary bg-primary/10' : 'text-slate-400 hover:text-slate-200'}`}>
-          Simulador de Rescisão de Contrato
+          className={`flex-1 py-3.5 px-3 text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all relative ${simuladorAtivo === 'rescisao' ? 'text-primary bg-primary/10' : 'text-slate-500 hover:text-slate-300'}`}>
+          {simuladorAtivo === 'rescisao' && <span className="absolute bottom-0 left-4 right-4 h-[2px] bg-primary rounded-t-full" />}
+          Rescisão de Contrato
         </button>
       </div>
 
-      <div className="p-6 md:p-8">
+      {/* Conteúdo com scroll */}
+      <div className="p-4 sm:p-5 md:p-6 overflow-y-auto max-h-[65vh] flex-1">
         {simuladorAtivo === 'd13' ? <SimuladorDecimoTerceiro /> : <SimuladorRescisao />}
       </div>
 
-      <div className="px-8 pb-6">
-        <p className="text-[10px] text-slate-400 text-center font-medium">
+      <div className="px-5 pb-4 border-t border-slate-800/60">
+        <p className="text-[10px] text-slate-600 text-center font-medium pt-3">
           Cálculos em conformidade com a Lei Geral do Trabalho n.º 12/23 e tabela de IRT da AGT.
         </p>
       </div>
@@ -435,7 +464,7 @@ const FolhaAngola: React.FC = () => {
           <FormularioRegisto onSuccess={(l) => setLead(l)} />
         ) : (
           <div>
-            <div className="bg-slate-950 px-8 py-4 flex items-center justify-between border-b border-slate-800 rounded-t-3xl border">
+            <div className="bg-slate-950 px-6 py-3.5 flex items-center justify-between border-b border-slate-800 rounded-t-3xl border">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xs">
                   {lead.nome.charAt(0).toUpperCase()}
@@ -445,7 +474,7 @@ const FolhaAngola: React.FC = () => {
                   <p className="text-xs text-white font-bold">{lead.nome}</p>
                 </div>
               </div>
-              <button onClick={sair} className="text-xs text-slate-400 hover:text-white transition-colors font-bold">Alterar Email / Sair &rarr;</button>
+              <button onClick={sair} className="text-xs text-slate-400 hover:text-white transition-colors font-bold">Alterar / Sair &rarr;</button>
             </div>
             <SimuladoresModalContent />
           </div>
@@ -456,3 +485,4 @@ const FolhaAngola: React.FC = () => {
 };
 
 export default FolhaAngola;
+
