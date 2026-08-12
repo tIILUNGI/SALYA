@@ -75,6 +75,14 @@ export const getRefreshToken = () => {
 };
 
 export const clearAuthStorage = () => {
+  // Tenta revogar o token no servidor (fire-and-forget, não bloqueia o logout)
+  const token = getAuthToken();
+  if (token) {
+    fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+    }).catch(() => { /* silently ignore errors */ });
+  }
   AUTH_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
 };
 
