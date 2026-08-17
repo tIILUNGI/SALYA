@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import { AppContext } from '../App';
 import { api, getLogoUrl } from '../services/api';
 import { countries } from '../data/countries';
-import { PLAN_LIMITS, PlanType, getPlanLimits } from '../types';
+import { getPlanLimits } from '../types';
 
 
 interface ConfiguraçãoEmpresa {
@@ -296,10 +296,23 @@ const Configurações: React.FC = () => {
     fetchPlans();
   }, []);
 
-  const handleUpgradePlan = async (planId: number, planName: string) => {
+  const [subBillingCycle, setSubBillingCycle] = useState<'MENSAL' | 'ANUAL'>('MENSAL');
+
+  // Modal de seleção de modalidade de pagamento
+  const [billingModal, setBillingModal] = useState<{ open: boolean; planId: number; planName: string; isMicro: boolean; isProfissional: boolean } | null>(null);
+  const [modalCycle, setModalCycle] = useState<'MENSAL' | 'ANUAL'>('MENSAL');
+
+  const openBillingModal = (planId: number, planName: string, isMicro: boolean, isProfissional: boolean) => {
+    setModalCycle('MENSAL');
+    setBillingModal({ open: true, planId, planName, isMicro, isProfissional });
+  };
+  const closeBillingModal = () => setBillingModal(null);
+
+  const handleUpgradePlan = async (planId: number, planName: string, cycle: 'MENSAL' | 'ANUAL' = subBillingCycle) => {
+    const cycleText = cycle === 'ANUAL' ? 'Anual (12 Meses)' : 'Mensal (30 Dias)';
     const result = await Swal.fire({
       title: `Confirmar Plano ${planName}`,
-      text: `Deseja assinar o plano ${planName}? Se for um plano pago, será necessário aprovação após o pagamento.`,
+      text: `Deseja assinar o plano ${planName} na modalidade ${cycleText}? Se for um plano pago, será necessário aprovação após o pagamento.`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#9333ea',
@@ -309,7 +322,7 @@ const Configurações: React.FC = () => {
 
     if (result.isConfirmed) {
       try {
-        await api.post(`/plans/${planId}/subscribe`, {});
+        await api.post(`/plans/${planId}/subscribe?billingCycle=${cycle}`, { billingCycle: cycle });
         
         await Swal.fire({
           title: 'Subscrição Solicitada!',
@@ -1295,7 +1308,7 @@ const Configurações: React.FC = () => {
                       <div className="flex flex-col gap-1">
                         <p className="text-sm text-slate-500 font-medium italic">Plano Actual:</p>
                         <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-primary uppercase tracking-tighter mb-2 break-words">
-                          {user?.activePlanName || (user?.planType === 'DEMO' ? 'Gratuito (DEMO)' : user?.planType === 'SEMESTRAL' ? 'Semestral (Doméstico)' : user?.planType === 'ANUAL' ? 'Anual (Empresarial)' : user?.planType === 'CORPORATIVO' ? 'Corporativo' : user?.planType || 'DEMO')}
+                          {user?.activePlanName || (user?.planType === 'DEMO' ? 'Gratuito (DEMO - 7 Dias)' : user?.planType === 'SEMESTRAL' ? 'Micro Empresa' : user?.planType === 'ANUAL' ? 'Profissional' : user?.planType === 'CORPORATIVO' ? 'Corporativo' : user?.planType || 'DEMO')}
                         </h4>
                         <div className="flex items-center gap-4">
                           <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
@@ -1342,6 +1355,33 @@ const Configurações: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Seletor de Modalidade Mensal / Anual */}
+                <div className="flex items-center justify-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <span 
+                    onClick={() => setSubBillingCycle('MENSAL')} 
+                    className={`text-sm font-bold cursor-pointer transition-colors ${subBillingCycle === 'MENSAL' ? 'text-primary font-black' : 'text-slate-400'}`}
+                  >
+                    Pagamento Mensal
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSubBillingCycle(subBillingCycle === 'MENSAL' ? 'ANUAL' : 'MENSAL')}
+                    className="relative w-14 h-8 bg-slate-200 dark:bg-slate-700 rounded-full p-1 transition-colors outline-none"
+                    title="Alternar Modalidade de Pagamento"
+                  >
+                    <div className={`w-6 h-6 bg-primary rounded-full shadow-md transform transition-transform ${subBillingCycle === 'ANUAL' ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                  <span 
+                    onClick={() => setSubBillingCycle('ANUAL')} 
+                    className={`text-sm font-bold cursor-pointer transition-colors flex items-center gap-1.5 ${subBillingCycle === 'ANUAL' ? 'text-primary font-black' : 'text-slate-400'}`}
+                  >
+                    Pagamento Anual
+                    <span className="text-[10px] bg-primary/10 text-primary font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      12 Meses
+                    </span>
+                  </span>
+                </div>
+
                 {/* Lista de Planos */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
                   {plans.map((p) => {
@@ -1349,23 +1389,60 @@ const Configurações: React.FC = () => {
                     const isRecommended = p.type === 'ANUAL';
                     const isCorporativo = p.type === 'CORPORATIVO';
                     const isDemo = p.type === 'DEMO';
+                    const isMicro = p.type === 'SEMESTRAL';
 
-                    // Features dinâmicas baseadas nos dados reais do plano
-                    const maxColab = p.maxColaboradores ?? (isDemo ? 10 : p.type === 'SEMESTRAL' ? 10 : p.type === 'ANUAL' ? 100 : null);
-                    const maxRecib = p.maxRecibos ?? (isDemo ? 2 : -1);
-                    const maxUtil  = p.maxUtilizadores ?? (p.type === 'SEMESTRAL' ? 1 : 2);
-                    const hasFerias = p.type !== 'SEMESTRAL'; // DEMO, ANUAL, CORPORATIVO
-                    const hasSimulators = isCorporativo;
+                    const displayName = isDemo ? 'Demo (7 dias)' : isMicro ? 'Micro Empresa' : isRecommended ? 'Profissional' : p.name;
 
-                    const features = [
-                      `${maxUtil} utilizador${maxUtil === 1 ? '' : 'es'}`,
-                      `${maxColab === -1 || maxColab === null ? '+100' : maxColab} colaboradores`,
-                      `${maxRecib === -1 ? 'Recibos ilimitados' : `${maxRecib} recibo${maxRecib === 1 ? '' : 's'}`}`,
-                      'IRT & INSS Automatizados',
-                      'Declaração de trabalho',
-                      ...(hasFerias ? ['Gestão de férias'] : []),
-                      'Relatório',
-                      ...(hasSimulators ? ['Simulador de 13º', 'Simulador de rescisão'] : []),
+                    // Cálculo do Preço conforme Modalidade
+                    let displayPrice = '';
+                    let displayCycleText = '';
+
+                    if (isDemo) {
+                      displayPrice = 'GRATUITO';
+                      displayCycleText = '7 Dias';
+                    } else if (p.sobreConsulta || isCorporativo) {
+                      displayPrice = 'Sob Consulta';
+                      displayCycleText = '12 Meses';
+                    } else if (isMicro) {
+                      displayPrice = subBillingCycle === 'MENSAL' ? '5.700 Kz' : '68.400 Kz';
+                      displayCycleText = subBillingCycle === 'MENSAL' ? 'mês' : 'ano (12 Meses)';
+                    } else if (isRecommended) {
+                      displayPrice = subBillingCycle === 'MENSAL' ? '10.830 Kz' : '129.960 Kz';
+                      displayCycleText = subBillingCycle === 'MENSAL' ? 'mês' : 'ano (12 Meses)';
+                    } else {
+                      displayPrice = `${Number(p.price).toLocaleString('pt-AO')} Kz`;
+                      displayCycleText = `${p.durationDays === 365 ? '12 Meses' : p.durationDays + ' dias'}`;
+                    }
+
+                    // Features detalhadas
+                    const featureItems = isDemo ? [
+                      { text: 'Acesso total ao sistema', allowed: true },
+                      { text: '1 entidade (empresa ou particular)', allowed: true },
+                      { text: '2 utilizadores', allowed: true },
+                      { text: 'Colaboradores ilimitados', allowed: true },
+                      { text: 'Emissão ilimitada de recibos', allowed: true },
+                      { text: 'IRT & INSS Automatizados', allowed: true },
+                    ] : isMicro ? [
+                      { text: '1 entidade', allowed: true },
+                      { text: '1 utilizador', allowed: true },
+                      { text: '10 colaboradores', allowed: true },
+                      { text: 'Recibos ilimitados', allowed: true },
+                      { text: 'IRT & INSS Automatizados', allowed: true },
+                    ] : isRecommended ? [
+                      { text: '1 entidade (empresa ou particular)', allowed: true },
+                      { text: '2 utilizadores', allowed: true },
+                      { text: '100 colaboradores', allowed: true },
+                      { text: 'Recibos ilimitados', allowed: true },
+                      { text: 'IRT & INSS Automatizados', allowed: true },
+                      { text: 'Acesso a Biometria & Assiduidade', allowed: true },
+                      { text: 'Gestão de férias & Relatórios', allowed: true },
+                    ] : [
+                      { text: '+1 entidade', allowed: true },
+                      { text: '+2 utilizadores', allowed: true },
+                      { text: '+100 colaboradores', allowed: true },
+                      { text: 'Recibos ilimitados', allowed: true },
+                      { text: 'Acesso a Biometria & Assiduidade', allowed: true },
+                      { text: 'Simulador de 13º & Rescisão', allowed: true },
                     ];
 
                     return (
@@ -1389,45 +1466,49 @@ const Configurações: React.FC = () => {
                             isCurrent || isRecommended ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                           }`}>
                             <span className="material-symbols-outlined text-xl sm:text-2xl">
-                              {isDemo ? 'rocket_launch' : p.type === 'SEMESTRAL' ? 'home' : isCorporativo ? 'corporate_fare' : 'groups'}
+                              {isDemo ? 'rocket_launch' : isMicro ? 'store' : isCorporativo ? 'corporate_fare' : 'groups'}
                             </span>
                           </div>
-                          <h5 className="font-black text-base sm:text-lg uppercase tracking-tight text-slate-800 dark:text-white mb-1 break-words">{p.name}</h5>
+                          <h5 className="font-black text-base sm:text-lg uppercase tracking-tight text-slate-800 dark:text-white mb-1 break-words">{displayName}</h5>
                           <p className="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-widest">{p.category}</p>
                         </div>
 
                         {/* Preço */}
                         <div className="mb-6 sm:mb-8">
                           <div className="flex flex-col gap-0.5 mb-2 min-w-0">
-                            {isDemo ? (
-                              <span className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-600 break-all leading-tight">GRATUITO</span>
-                            ) : p.sobreConsulta ? (
-                              <span className="text-xl sm:text-2xl lg:text-3xl font-black text-primary break-all leading-tight">Sob Consulta</span>
-                            ) : (
-                              <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white break-all leading-tight">{Number(p.price).toLocaleString('pt-AO')} Kz</span>
-                            )}
+                            <span className={`text-xl sm:text-2xl lg:text-3xl font-black break-all leading-tight ${isDemo ? 'text-emerald-600' : isCorporativo ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>
+                              {displayPrice}
+                            </span>
                             <span className="text-[10px] sm:text-xs font-black text-slate-400 uppercase">
-                              {isDemo ? '30 Dias' : `${p.durationDays === 365 ? '12 Meses' : p.durationDays === 180 ? '6 Meses' : p.durationDays + ' dias'}`}
+                              / {displayCycleText}
                             </span>
                           </div>
                           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed min-h-[2.5rem] sm:min-h-[3rem]">
-                            {p.descricao || p.description || `Plano ${p.name}`}
+                            {isMicro ? 'Ideal para gestão de micro empresas' : isRecommended ? 'Ideal para pequenas e médias empresas' : isDemo ? '7 dias de teste completo' : p.descricao || p.description || `Plano ${p.name}`}
                           </p>
                         </div>
 
                         {/* Features */}
                         <ul className="space-y-2.5 mb-8 flex-1">
-                          {features.map((feat, i) => (
-                            <li key={i} className="flex items-center gap-2.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
-                              <span className="material-symbols-outlined text-emerald-500 text-base flex-shrink-0">check_circle</span>
-                              {feat}
+                          {featureItems.map((feat, i) => (
+                            <li key={i} className={`flex items-center gap-2.5 text-xs font-medium ${feat.allowed ? 'text-slate-600 dark:text-slate-400' : 'text-rose-500 dark:text-rose-400'}`}>
+                              <span className={`material-symbols-outlined text-base flex-shrink-0 ${feat.allowed ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                {feat.allowed ? 'check_circle' : 'cancel'}
+                              </span>
+                              {feat.text}
                             </li>
                           ))}
                         </ul>
 
                         {/* Botão */}
                         <button
-                          onClick={() => handleUpgradePlan(p.id, p.name)}
+                          onClick={() => {
+                            if (!isCurrent && !isDemo && !isCorporativo) {
+                              openBillingModal(p.id, displayName, isMicro, isRecommended);
+                            } else if (isCorporativo) {
+                              handleUpgradePlan(p.id, displayName, 'ANUAL');
+                            }
+                          }}
                           disabled={isCurrent || (isDemo && user?.planType !== 'DEMO')}
                           className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest transition-all text-sm ${
                             isCurrent || (isDemo && user?.planType !== 'DEMO')
@@ -1470,6 +1551,93 @@ const Configurações: React.FC = () => {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Modalidade de Pagamento */}
+      {billingModal?.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fadeIn">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">Modalidade de Pagamento</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Escolha como pretende pagar o plano <strong>{billingModal.planName}</strong></p>
+              </div>
+              <button
+                onClick={closeBillingModal}
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+
+            {/* Opções */}
+            <div className="p-6 space-y-3">
+              {/* Mensal */}
+              <button
+                onClick={() => setModalCycle('MENSAL')}
+                className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all ${modalCycle === 'MENSAL' ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-700 hover:border-slate-200'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${modalCycle === 'MENSAL' ? 'border-primary bg-primary' : 'border-slate-300'}`}>
+                    {modalCycle === 'MENSAL' && <div className="w-2 h-2 rounded-full bg-white" />}
+                  </div>
+                  <div className="text-left">
+                    <p className="font-black text-slate-900 dark:text-white text-sm">Pagamento Mensal</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Cobrado mensalmente, cancele quando quiser</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-black text-slate-900 dark:text-white text-base">
+                    {billingModal.isMicro ? '5.700 Kz' : billingModal.isProfissional ? '10.830 Kz' : '-'}
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">/mês</p>
+                </div>
+              </button>
+
+              {/* Anual */}
+              <button
+                onClick={() => setModalCycle('ANUAL')}
+                className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all ${modalCycle === 'ANUAL' ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-700 hover:border-slate-200'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${modalCycle === 'ANUAL' ? 'border-primary bg-primary' : 'border-slate-300'}`}>
+                    {modalCycle === 'ANUAL' && <div className="w-2 h-2 rounded-full bg-white" />}
+                  </div>
+                  <div className="text-left">
+                    <p className="font-black text-slate-900 dark:text-white text-sm">Pagamento Anual</p>
+                    <p className="text-xs text-slate-500 mt-0.5">12 meses de uma só vez</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-black text-primary text-base">
+                    {billingModal.isMicro ? '68.400 Kz' : billingModal.isProfissional ? '129.960 Kz' : '-'}
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">/ano</p>
+                </div>
+              </button>
+            </div>
+
+            {/* Acções */}
+            <div className="p-6 pt-0 flex flex-col gap-3">
+              <button
+                onClick={async () => {
+                  closeBillingModal();
+                  await handleUpgradePlan(billingModal.planId, billingModal.planName, modalCycle);
+                }}
+                className="w-full py-4 bg-primary text-white font-black rounded-2xl uppercase tracking-widest hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all"
+              >
+                Confirmar e Assinar
+              </button>
+              <button
+                onClick={closeBillingModal}
+                className="w-full py-3 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}

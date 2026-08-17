@@ -57,6 +57,9 @@ const Login: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<string>(
     () => sessionStorage.getItem('salya_selected_plan') || ''
   );
+  const [planCycle, setPlanCycle] = useState<'MENSAL' | 'ANUAL'>(
+    () => (sessionStorage.getItem('salya_selected_cycle') as 'MENSAL' | 'ANUAL') || 'MENSAL'
+  );
   const [remainingAttempts, setRemainingAttempts] = useState<number>(0);
   const [canResend, setCanResend] = useState<boolean>(true);
 
@@ -68,17 +71,32 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     setIsLoading(true);
+    const searchParams = new URLSearchParams(location.search);
+    const planParam = searchParams.get('plan');
+    const cycleParam = searchParams.get('cycle');
+    
+    if (cycleParam) {
+      sessionStorage.setItem('salya_selected_cycle', cycleParam);
+    }
+
     api.get('/auth/plans', true)
       .then((data: any) => {
         if (Array.isArray(data)) {
           setPlans(data);
+          if (planParam) {
+            const matched = data.find(p => p.type === planParam || String(p.id) === planParam);
+            if (matched) {
+              setSelectedPlan(String(matched.id));
+              sessionStorage.setItem('salya_selected_plan', String(matched.id));
+            }
+          }
         }
       })
       .catch(() => {
         showError('Não foi possível carregar os planos no momento.');
       })
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [location.search]);
 
   const startCleanSession = (token: string, user: any, refreshToken?: string | null) => {
     clearAuthStorage();
@@ -152,14 +170,17 @@ const Login: React.FC = () => {
         navigate('/registar/planos');
         return;
       }
-      // Encontrar o planType para enviar como fallback
+      // Encontrar o planType e billingCycle para enviar no cadastro
       const selectedPlanObj = plans.find(p => String(p.id) === selectedPlan);
+      const cycle = sessionStorage.getItem('salya_selected_cycle') || 'MENSAL';
+
       const response = await api.post('/auth/register', { 
         name, 
         email, 
         password, 
         planId: planIdNum,
-        planType: selectedPlanObj?.type || null
+        planType: selectedPlanObj?.type || null,
+        billingCycle: cycle
       }, true);
 
       if (response.requiresVerification) {
@@ -408,31 +429,87 @@ const Login: React.FC = () => {
 
           {/* SELECT PLAN MODE */}
           {mode === 'select-plan' && (
-            <div className="space-y-8 animate-fadeIn">
+            <div className="space-y-6 animate-fadeIn">
               <div>
                 <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Escolha o seu Plano</h2>
                 <p className="text-sm font-medium text-slate-500">Soluções adaptadas ao tamanho da sua equipa.</p>
               </div>
 
-              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                {plans.map(p => (
-                  <div 
-                    key={p.id} 
-                    onClick={() => { const id = String(p.id); setSelectedPlan(id); sessionStorage.setItem('salya_selected_plan', id); }} 
-                    className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${selectedPlan === String(p.id) ? 'border-primary bg-primary/5 shadow-soft' : 'border-slate-50 hover:border-slate-100 dark:border-slate-800'}`}
-                  >
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-slate-800 dark:text-white">{p.name}</span>
-                      <span className="text-primary uppercase text-xs">{p.price ? `${Number(p.price).toLocaleString('pt-BR')} KZ` : 'Testar'}</span>
+              {/* Toggle Mensal / Anual */}
+              <div className="flex items-center justify-center gap-3 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+                <button
+                  type="button"
+                  onClick={() => { setPlanCycle('MENSAL'); sessionStorage.setItem('salya_selected_cycle', 'MENSAL'); }}
+                  className={`flex-1 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${
+                    planCycle === 'MENSAL'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  Mensal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setPlanCycle('ANUAL'); sessionStorage.setItem('salya_selected_cycle', 'ANUAL'); }}
+                  className={`flex-1 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${
+                    planCycle === 'ANUAL'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  Anual
+                </button>
+              </div>
+
+              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                {plans.map(p => {
+                  const isDemo = p.type === 'DEMO';
+                  const isMicro = p.type === 'SEMESTRAL';
+                  const isPro = p.type === 'ANUAL';
+                  const displayName = isDemo ? 'Demo (7 dias)' : isMicro ? 'Micro Empresa' : isPro ? 'Profissional' : p.name;
+                  
+                  let priceLabel = '';
+                  let subLabel = '';
+                  if (isDemo) {
+                    priceLabel = 'Gratuito';
+                    subLabel = '7 dias de acesso total';
+                  } else if (isMicro) {
+                    priceLabel = planCycle === 'MENSAL' ? '5.700 Kz/mês' : '68.400 Kz/ano';
+                    subLabel = planCycle === 'MENSAL' ? 'Pagamento mensal' : 'Pagamento anual (12 meses)';
+                  } else if (isPro) {
+                    priceLabel = planCycle === 'MENSAL' ? '10.830 Kz/mês' : '129.960 Kz/ano';
+                    subLabel = planCycle === 'MENSAL' ? 'Pagamento mensal' : 'Pagamento anual (12 meses)';
+                  } else {
+                    priceLabel = p.price ? `${Number(p.price).toLocaleString('pt-AO')} Kz` : 'Sob Consulta';
+                    subLabel = p.type || '';
+                  }
+
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => {
+                        const id = String(p.id);
+                        setSelectedPlan(id);
+                        sessionStorage.setItem('salya_selected_plan', id);
+                        if (!isDemo) sessionStorage.setItem('salya_selected_cycle', planCycle);
+                      }}
+                      className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${selectedPlan === String(p.id) ? 'border-primary bg-primary/5 shadow-soft' : 'border-slate-100 hover:border-slate-200 dark:border-slate-800'}`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="text-slate-800 dark:text-white font-black text-sm">{displayName}</span>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{subLabel}</p>
+                        </div>
+                        <span className={`font-black text-sm ${isDemo ? 'text-emerald-500' : 'text-primary'}`}>{priceLabel}</span>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-slate-400 tracking-widest uppercase">{p.type}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="flex flex-col gap-3">
-                <button 
-                  onClick={() => switchMode('register')} 
+                <button
+                  onClick={() => switchMode('register')}
                   disabled={!selectedPlan}
                   className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 hover:bg-primary/95 transition-all disabled:opacity-50"
                 >
