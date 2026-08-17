@@ -1531,7 +1531,7 @@ const Configurações: React.FC = () => {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3 relative">
                     <a 
-                      href="mailto:solucoes@ilungi.ao" 
+                      href="mailto:geral@ilungi.co.ao" 
                       className="px-6 py-3 bg-white text-slate-900 rounded-xl font-bold uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-2"
                     >
                       <span className="material-symbols-outlined text-base">email</span>

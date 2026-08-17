@@ -657,10 +657,10 @@ function SubscriptionBarrier() {
               </div>
               <p className="text-xs text-indigo-700 dark:text-indigo-300 mb-1">Para dúvidas sobre a activação:</p>
               <a
-                href="mailto:solucoes@ilungi.ao"
+                href="mailto:geral@ilungi.co.ao"
                 className="text-sm font-black text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 underline underline-offset-2 transition-colors"
               >
-                solucoes@ilungi.ao
+                geral@ilungi.co.ao
               </a>
             </div>
             
@@ -870,10 +870,10 @@ function SubscriptionBarrier() {
               </div>
               <p className="text-xs text-indigo-700 dark:text-indigo-300 mb-1">Para pagamentos, comprovativo e activação:</p>
               <a
-                href="mailto:solucoes@ilungi.ao"
+                href="mailto:geral@ilungi.co.ao"
                 className="text-sm font-black text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 underline underline-offset-2 transition-colors"
               >
-                solucoes@ilungi.ao
+                geral@ilungi.co.ao
               </a>
             </div>
 
@@ -960,8 +960,8 @@ function SubscriptionBarrier() {
                 <span className="material-symbols-outlined text-base">support_agent</span>
                 <span className="text-xs font-bold">Suporte Técnico:</span>
               </div>
-              <a href="mailto:solucoes@ilungi.ao" className="text-xs font-black text-indigo-600 dark:text-indigo-400 hover:underline">
-                solucoes@ilungi.ao
+              <a href="mailto:geral@ilungi.co.ao" className="text-xs font-black text-indigo-600 dark:text-indigo-400 hover:underline">
+                geral@ilungi.co.ao
               </a>
               <a href="https://wa.me/244935793270" target="_blank" rel="noopener noreferrer" className="text-xs font-black text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm">whatsapp</span>
