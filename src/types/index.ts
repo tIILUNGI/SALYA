@@ -121,6 +121,7 @@ export interface Colaborador {
   subsidioFerias?: number;
   subsidioNatal?: number;
   regimeSegurancaSocial?: string;
+  fotoUrl?: string;
   centroCusto?: string;
   duracaoMeses?: number;
 }

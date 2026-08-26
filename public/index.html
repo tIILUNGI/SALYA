@@ -7,21 +7,115 @@
     <meta name="description" content="SALYA - Sistema de Gestão de Folha de Pagamento" />
     <title>SALYA — Aplicação</title>
     <link rel="icon" href="/logo.png" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-  
+
+    <!-- Preload critical fonts to prevent FOUC -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" as="style" />
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0&display=block" as="style" />
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0&display=block" rel="stylesheet" />
+
+    <!-- Prevent FOUC: hide root until fonts are ready, show a minimal loading screen -->
+    <style>
+      html { background: #0f172a; }
+      #root {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      #root.fonts-ready {
+        opacity: 1;
+      }
+      /* Prevent Material Symbols from showing as text before font loads */
+      .material-symbols-outlined {
+        font-family: 'Material Symbols Outlined';
+        font-size: 24px;
+        font-weight: normal;
+        font-style: normal;
+        line-height: 1;
+        letter-spacing: normal;
+        text-transform: none;
+        display: inline-block;
+        white-space: nowrap;
+        word-wrap: normal;
+        direction: ltr;
+        -webkit-font-feature-settings: 'liga';
+        font-feature-settings: 'liga';
+        -webkit-font-smoothing: antialiased;
+        /* Hide icon text until font is loaded */
+        visibility: hidden;
+      }
+      .fonts-loaded .material-symbols-outlined {
+        visibility: visible;
+      }
+      /* Minimal loading splash */
+      #salya-splash {
+        position: fixed;
+        inset: 0;
+        background: #0f172a;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.3s ease;
+      }
+      #salya-splash.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #salya-splash svg {
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 0.6; transform: scale(0.97); }
+        50% { opacity: 1; transform: scale(1); }
+      }
+    </style>
+
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-5S4PN2FK3E"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-5S4PN2FK3E');
     </script>
   </head>
   <body>
+    <!-- Splash screen shown while app + fonts load -->
+    <div id="salya-splash">
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="56" height="56" rx="16" fill="#9333ea"/>
+        <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="26" fill="white">S</text>
+      </svg>
+    </div>
+
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+
+    <script>
+      // Show app and hide splash after fonts + first paint
+      function revealApp() {
+        document.documentElement.classList.add('fonts-loaded');
+        document.getElementById('root').classList.add('fonts-ready');
+        var splash = document.getElementById('salya-splash');
+        if (splash) {
+          splash.classList.add('hidden');
+          setTimeout(function() { splash.remove(); }, 350);
+        }
+      }
+
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(revealApp);
+      } else {
+        // Fallback: reveal after 800ms
+        setTimeout(revealApp, 800);
+      }
+      // Hard fallback: always reveal after 2s regardless
+      setTimeout(revealApp, 2000);
+    </script>
   </body>
 </html>
+

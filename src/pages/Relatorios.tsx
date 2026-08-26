@@ -6,7 +6,7 @@ import {
 import { Download, AlertCircle, FileText, FileSpreadsheet, Users, Building2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 
-import { api, API_BASE_URL } from '../services/api';
+import { api } from '../services/api';
 import { AppContext } from '../App';
 import { formatKz, formatKzAxis, formatNumberAngola } from '../utils/formatMoney';
 
@@ -54,7 +54,7 @@ const fmt = (v?: number | null) => formatKz(v, 2);
 
 const downloadCSV = (filename: string, rows: string[][], headers: string[]) => {
   const bom = '\uFEFF';
-  const csvContent = bom + [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const csvContent = bom + [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -145,7 +145,6 @@ const buildRelatoriosPDF = (
     y += 8;
   } else {
     // Table header
-    const colW = [55, 35, 30, 30, 32];
     const colX = [margin, margin + 55, margin + 90, margin + 120, margin + 150];
     doc.setFillColor(241, 245, 249);
     doc.rect(margin, y - 3, W - 2 * margin, 7, 'F');
@@ -193,7 +192,6 @@ const buildRelatoriosPDF = (
     doc.text('Sem processamentos registados.', margin, y);
     y += 8;
   } else {
-    const colW2 = [48, 24, 35, 35, 35];
     const colX2 = [margin, margin + 48, margin + 72, margin + 107, margin + 142];
     doc.setFillColor(241, 245, 249);
     doc.rect(margin, y - 3, W - 2 * margin, 7, 'F');
@@ -265,6 +263,8 @@ const Relatórios: React.FC = () => {
   const [processamentos, setProcessamentos] = useState<ProcessamentoReport[]>([]);
   const [generating, setGenerating] = useState<'pdf' | 'csv' | null>(null);
   const [message, setMessage] = useState('');
+  const [startDate, setStartDate] = useState<string>(''); // YYYY-MM
+  const [endDate, setEndDate] = useState<string>(''); // YYYY-MM
 
   // Colaboradores filtered for current empresa
   const colaboradores = colabCtx.filter(
@@ -275,6 +275,22 @@ const Relatórios: React.FC = () => {
   const empresa: EmpresaReport | null = empresaCtx
     ? { id: (empresaCtx as any).id || 0, nome: empresaCtx.nome || '', nif: empresaCtx.nif, endereco: (empresaCtx as any).endereco, municipio: (empresaCtx as any).municipio, email: empresaCtx.email, telefone: empresaCtx.telefone }
     : null;
+
+  const filteredProcessamentos = processamentos.filter(p => {
+    if (!startDate && !endDate) return true;
+    const pDate = new Date(p.ano, p.mes - 1);
+    if (startDate) {
+      const [sYear, sMonth] = startDate.split('-');
+      const sDate = new Date(parseInt(sYear), parseInt(sMonth) - 1);
+      if (pDate < sDate) return false;
+    }
+    if (endDate) {
+      const [eYear, eMonth] = endDate.split('-');
+      const eDate = new Date(parseInt(eYear), parseInt(eMonth) - 1);
+      if (pDate > eDate) return false;
+    }
+    return true;
+  });
 
   useEffect(() => {
     if (!empresaId) return;
@@ -306,7 +322,7 @@ const Relatórios: React.FC = () => {
     setGenerating('pdf');
     setMessage('');
     try {
-      const doc = buildRelatoriosPDF(empresa, colaboradores as ColaboradorReport[], processamentos);
+      const doc = buildRelatoriosPDF(empresa, colaboradores as ColaboradorReport[], filteredProcessamentos);
       const filename = `Relatorio_${empresa?.nome?.replace(/ /g, '_') || 'Empresa'}_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(filename);
       setMessage('✅ PDF gerado com sucesso!');
@@ -319,7 +335,7 @@ const Relatórios: React.FC = () => {
   };
 
   // ── CSV download ────────────────────────────────────────────────────────────
-  const handleDownloadCSV = (type: 'colaboradores' | 'processamentos') => {
+  const handleDownloadCSV = (type: 'colaboradores' | 'processamentos' | 'retencoes') => {
     setGenerating('csv');
     setMessage('');
     try {
@@ -330,15 +346,27 @@ const Relatórios: React.FC = () => {
         ]);
         downloadCSV(`Colaboradores_${new Date().toISOString().split('T')[0]}.csv`, rows, headers);
         setMessage('✅ CSV de colaboradores exportado!');
-      } else {
+      } else if (type === 'processamentos') {
         const headers = ['ID', 'Colaborador', 'Mês', 'Ano', 'Total Bruto (Kz)', 'Descontos (Kz)', 'Salário Líquido (Kz)', 'INSS (Kz)', 'IRT (Kz)'];
-        const rows = processamentos.map(p => [
+        const rows = filteredProcessamentos.map(p => [
           String(p.id), p.nomeColaborador || '', numToMonth(p.mes), String(p.ano),
           String(p.totalBruto || 0), String(p.descontos || 0), String(p.salarioLiquido || 0),
           String(p.valorINSS || 0), String(p.valorIRT || 0),
         ]);
         downloadCSV(`Processamentos_${new Date().toISOString().split('T')[0]}.csv`, rows, headers);
         setMessage('✅ CSV de processamentos exportado!');
+      } else if (type === 'retencoes') {
+        const headers = ['ID', 'Colaborador', 'Mês', 'Ano', 'Retenção INSS (Kz)', 'Retenção IRT (Kz)', 'Total Impostos (Kz)'];
+        const rows = filteredProcessamentos.map(p => {
+          const inss = p.valorINSS || 0;
+          const irt = p.valorIRT || 0;
+          return [
+            String(p.id), p.nomeColaborador || '', numToMonth(p.mes), String(p.ano),
+            String(inss), String(irt), String(inss + irt)
+          ];
+        });
+        downloadCSV(`Retencoes_${new Date().toISOString().split('T')[0]}.csv`, rows, headers);
+        setMessage('✅ CSV de retenções exportado!');
       }
     } catch (e: any) {
       setMessage('❌ Erro ao gerar CSV: ' + e.message);
@@ -367,12 +395,31 @@ const Relatórios: React.FC = () => {
 
       {/* Export panel */}
       <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-card">
-        <div className="flex items-center gap-3 mb-6">
-          <FileText className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">Exportar Relatórios</h3>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <FileText className="w-5 h-5 text-primary shrink-0" />
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Exportar Relatórios</h3>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-end gap-3 w-full sm:w-auto bg-slate-50 dark:bg-slate-800/50 p-2 sm:px-4 sm:py-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="w-full sm:w-auto">
+              <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Período Início</label>
+              <input type="month" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full sm:w-auto px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-700 text-xs font-semibold outline-none focus:border-primary transition-all" />
+            </div>
+            <div className="w-full sm:w-auto">
+              <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Período Fim</label>
+              <input type="month" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full sm:w-auto px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-700 text-xs font-semibold outline-none focus:border-primary transition-all" />
+            </div>
+            {(startDate || endDate) && (
+              <button onClick={() => { setStartDate(''); setEndDate(''); }} className="hidden sm:block px-2 text-[10px] pb-1.5 font-bold text-rose-500 hover:text-rose-600 transition-colors">Limpar</button>
+            )}
+            {(startDate || endDate) && (
+              <button onClick={() => { setStartDate(''); setEndDate(''); }} className="w-full sm:hidden px-3 py-1.5 bg-rose-50 text-rose-500 rounded-lg text-xs font-bold mt-1">Limpar Filtros</button>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* PDF Completo */}
           <div className="flex flex-col gap-3 p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-3">
@@ -418,18 +465,39 @@ const Relatórios: React.FC = () => {
           {/* CSV Processamentos */}
           <div className="flex flex-col gap-3 p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-violet-50 flex items-center justify-center">
+              <div className="size-10 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
                 <Building2 className="w-5 h-5 text-violet-600" />
               </div>
               <div>
-                <p className="font-semibold text-slate-900 dark:text-white text-sm">CSV Processamentos</p>
-                <p className="text-xs text-slate-500">{processamentos.length} registos de pagamentos</p>
+                <p className="font-semibold text-slate-900 dark:text-white text-sm">Pr. Salários</p>
+                <p className="text-[10px] font-medium text-slate-500 leading-tight">{filteredProcessamentos.length} registos</p>
               </div>
             </div>
             <button
               onClick={() => handleDownloadCSV('processamentos')}
-              disabled={generating !== null || processamentos.length === 0}
+              disabled={generating !== null || filteredProcessamentos.length === 0}
               className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition-all disabled:opacity-50"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              {generating === 'csv' ? 'A gerar...' : 'Exportar CSV'}
+            </button>
+          </div>
+
+          {/* CSV Retenções */}
+          <div className="flex flex-col gap-3 p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                <FileSpreadsheet className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900 dark:text-white text-sm leading-tight">Retenções</p>
+                <p className="text-[10px] font-medium text-slate-500">INSS / IRT ({filteredProcessamentos.length})</p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleDownloadCSV('retencoes')}
+              disabled={generating !== null || filteredProcessamentos.length === 0}
+              className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-semibold hover:bg-amber-600 transition-all disabled:opacity-50"
             >
               <FileSpreadsheet className="w-4 h-4" />
               {generating === 'csv' ? 'A gerar...' : 'Exportar CSV'}

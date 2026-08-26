@@ -116,21 +116,318 @@ const buildDeclaracaoExportNode = (sourceId: string) => {
     maxWidth: '210mm',
     padding: '15mm 20mm',
     fontSize: '11pt',
-    position: 'fixed',
-    left: '-10000px',
-    top: '0',
+    position: 'relative',
+    left: 'auto',
+    top: 'auto',
     transform: 'none',
     margin: '0',
+    zIndex: '1',
+    visibility: 'visible',
+    backgroundColor: '#ffffff',
   });
-  document.body.appendChild(clone);
+  // Wrap in offscreen container with overflow hidden
+  const wrapper = document.createElement('div');
+  Object.assign(wrapper.style, {
+    position: 'fixed',
+    top: '-9999px',
+    left: '-9999px',
+    width: '210mm',
+    overflow: 'hidden',
+    zIndex: '9999',
+  });
+  wrapper.appendChild(clone);
+  document.body.appendChild(wrapper);
+  // Return the clone with reference to wrapper so we can clean both up
+  (clone as any)._pdfWrapper = wrapper;
   return clone;
 };
+
 const formatText = (value?: string | null) => value && value.trim() ? value : 'Não definido';
 const formatDateDisplay = (value?: string | null) => {
   if (!value) return 'Não definido';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString('pt-AO');
+};
+
+
+const buildFichaColaboradorNode = (colab: Colaborador, empresa: any) => {
+  const container = document.createElement('div');
+  container.className = 'ficha-colaborador-export-doc';
+  Object.assign(container.style, {
+    width: '210mm',
+    height: '297mm',
+    minHeight: '297mm',
+    maxWidth: '210mm',
+    margin: '0 auto',
+    backgroundColor: '#ffffff',
+    padding: '12mm 14mm',
+    boxSizing: 'border-box',
+    fontFamily: '"Inter", sans-serif',
+    fontSize: '9pt',
+    color: '#1a1a1a',
+    lineHeight: '1.4',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    position: 'relative',
+    zIndex: '1',
+    visibility: 'visible',
+  });
+
+  // Offscreen wrapper — html2canvas needs the element to be in DOM and visible
+  const wrapper = document.createElement('div');
+  Object.assign(wrapper.style, {
+    position: 'fixed',
+    top: '-9999px',
+    left: '-9999px',
+    width: '210mm',
+    overflow: 'hidden',
+    zIndex: '9999',
+  });
+  wrapper.appendChild(container);
+  document.body.appendChild(wrapper);
+  (container as any)._pdfWrapper = wrapper;
+
+  const docIdentLabel = empresa?.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF';
+  const logoSrc = empresa?.logoUrl ? getLogoUrl(empresa.logoUrl) : '';
+
+  container.innerHTML = `
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap');
+      .ficha-section-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 9px 11px;
+        background-color: #ffffff;
+      }
+      .ficha-grid-label {
+        font-size: 6.5pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.05em;
+        margin-bottom: 2px;
+      }
+      .ficha-grid-val {
+        font-size: 8.5pt;
+        font-weight: 600;
+        color: #0f172a;
+        word-break: break-word;
+      }
+    </style>
+    <div style="display: flex; flex-direction: column; flex-grow: 1;">
+      <!-- Header Empresa -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          ${logoSrc ? `<img src="${logoSrc}" style="height: 16mm; max-width: 38mm; object-fit: contain; border-radius: 6px;" />` : ''}
+          <div>
+            <h2 style="font-family: 'Outfit', sans-serif; font-size: 13pt; font-weight: 800; color: #0f172a; margin: 0; text-transform: uppercase; letter-spacing: -0.02em;">${empresa?.nome || 'EMPRESA'}</h2>
+            <p style="font-size: 7.5pt; color: #475569; margin: 2px 0 0 0;">${docIdentLabel}: <strong>${empresa?.nif || '---'}</strong></p>
+            ${empresa?.endereco ? `<p style="font-size: 7pt; color: #64748b; margin: 1px 0 0 0;">${empresa.endereco}${empresa.municipio ? `, ${empresa.municipio}` : ''}</p>` : ''}
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <span style="font-family: 'Outfit', sans-serif; font-size: 10pt; font-weight: 800; color: #4f46e5; text-transform: uppercase; letter-spacing: 0.08em; background-color: #eef2ff; padding: 4px 10px; border-radius: 6px; display: inline-block;">
+            FICHA DO COLABORADOR
+          </span>
+          <p style="font-size: 7.5pt; color: #64748b; margin: 5px 0 0 0;">Emissão: ${new Date().toLocaleDateString('pt-AO')}</p>
+        </div>
+      </div>
+
+      <!-- Perfil Banner -->
+      <div style="display: flex; align-items: center; gap: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px;">
+        <div style="width: 20mm; height: 20mm; border-radius: 10px; overflow: hidden; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 800; font-size: 13pt; flex-shrink: 0; border: 2px solid #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
+          ${colab.fotoUrl ? `<img src="${colab.fotoUrl}" style="width: 100%; height: 100%; object-fit: cover;" />` : colab.nome.substring(0, 2).toUpperCase()}
+        </div>
+        <div style="flex-grow: 1;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 12pt; font-weight: 800; color: #0f172a; margin: 0;">${colab.nome}</h3>
+            <span style="font-size: 7.5pt; font-weight: 700; padding: 2px 8px; border-radius: 4px; ${colab.status === 'Ativo' ? 'background-color: #dcfce7; color: #166534;' : 'background-color: #ffe4e6; color: #9f1239;'}">
+              ${colab.status || 'Ativo'}
+            </span>
+          </div>
+          <p style="font-size: 8.5pt; font-weight: 600; color: #4f46e5; margin: 2px 0 4px 0;">${colab.cargo || 'Cargo não informado'}</p>
+          <div style="display: flex; gap: 10px; font-size: 7.5pt; color: #475569;">
+            <span>Nº Colaborador: <strong>${colab.numeroColaborador || colab.id}</strong></span>
+            <span>•</span>
+            <span>Departamento: <strong>${colab.departamento || 'Geral'}</strong></span>
+            <span>•</span>
+            <span>Contrato: <strong>${colab.tipoContrato || 'Indeterminado'}</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Grid Sections (2x2) -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+        <!-- Card 1: Dados Pessoais & Identificação -->
+        <div class="ficha-section-card">
+          <p style="font-size: 7.5pt; font-weight: 800; text-transform: uppercase; color: #4f46e5; letter-spacing: 0.05em; margin: 0 0 6px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 3px;">
+            1. Dados Pessoais & Identificação
+          </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <div>
+              <div class="ficha-grid-label">Nome Completo</div>
+              <div class="ficha-grid-val">${colab.nome}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Bilhete de Identidade (BI)</div>
+              <div class="ficha-grid-val">${colab.bi || '---'}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Género</div>
+              <div class="ficha-grid-val">${colab.genero || '---'}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Estado Civil</div>
+              <div class="ficha-grid-val">${colab.estadoCivil || '---'}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Data de Nascimento</div>
+              <div class="ficha-grid-val">${formatDateDisplay(colab.dataNascimento)}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Telefone</div>
+              <div class="ficha-grid-val">${colab.telefone || '---'}</div>
+            </div>
+            <div style="grid-column: span 2;">
+              <div class="ficha-grid-label">Email</div>
+              <div class="ficha-grid-val">${colab.email || '---'}</div>
+            </div>
+            <div style="grid-column: span 2;">
+              <div class="ficha-grid-label">Morada / Endereço</div>
+              <div class="ficha-grid-val">${[colab.endereco, colab.municipio, colab.provincia].filter(Boolean).join(', ') || '---'}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Dados Vínculo & Contrato -->
+        <div class="ficha-section-card">
+          <p style="font-size: 7.5pt; font-weight: 800; text-transform: uppercase; color: #4f46e5; letter-spacing: 0.05em; margin: 0 0 6px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 3px;">
+            2. Vínculo Profissional & Contrato
+          </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <div>
+              <div class="ficha-grid-label">Cargo / Função</div>
+              <div class="ficha-grid-val">${colab.cargo || '---'}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Departamento</div>
+              <div class="ficha-grid-val">${colab.departamento || '---'}</div>
+            </div>
+            <div style="grid-column: span 2;">
+              <div class="ficha-grid-label">Tipo de Contrato</div>
+              <div class="ficha-grid-val">${colab.tipoContrato || '---'}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Data de Admissão</div>
+              <div class="ficha-grid-val">${formatDateDisplay(colab.dataAdmissao)}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Fim de Contrato</div>
+              <div class="ficha-grid-val">${formatDateDisplay(colab.fimContrato)}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Duração (Meses)</div>
+              <div class="ficha-grid-val">${colab.duracaoMeses ? `${colab.duracaoMeses} Meses` : 'N/A'}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Status Atual</div>
+              <div class="ficha-grid-val">${colab.status || 'Ativo'}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Remuneração & Benefícios -->
+        <div class="ficha-section-card">
+          <p style="font-size: 7.5pt; font-weight: 800; text-transform: uppercase; color: #4f46e5; letter-spacing: 0.05em; margin: 0 0 6px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 3px;">
+            3. Remuneração & Benefícios
+          </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <div style="grid-column: span 2; background-color: #f8fafc; padding: 5px 8px; border-radius: 6px;">
+              <div class="ficha-grid-label">Salário Base Mensal</div>
+              <div style="font-size: 10.5pt; font-weight: 800; color: #059669;">${formatMoneyDisplay(colab.salarioBase)}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Ganho Alimentação</div>
+              <div class="ficha-grid-val">${formatMoneyDisplay(colab.subsidioAlimentacao)}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Ganho Transporte</div>
+              <div class="ficha-grid-val">${formatMoneyDisplay(colab.subsidioTransporte)}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Ganho de Férias</div>
+              <div class="ficha-grid-val">${formatMoneyDisplay(colab.subsidioFerias)}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Ganho de Natal</div>
+              <div class="ficha-grid-val">${formatMoneyDisplay(colab.subsidioNatal)}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Fiscalidade & Proteção Social -->
+        <div class="ficha-section-card">
+          <p style="font-size: 7.5pt; font-weight: 800; text-transform: uppercase; color: #4f46e5; letter-spacing: 0.05em; margin: 0 0 6px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 3px;">
+            4. Fiscalidade, INSS & Banco
+          </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <div>
+              <div class="ficha-grid-label">NIF (Contribuinte)</div>
+              <div class="ficha-grid-val">${colab.nif || '---'}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Regime Fiscal</div>
+              <div class="ficha-grid-val">${colab.regimeFiscal || 'Geral'}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Número INSS</div>
+              <div class="ficha-grid-val">${colab.inss || '---'}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Regime Seg. Social</div>
+              <div class="ficha-grid-val">${colab.regimeSegurancaSocial || 'Normal'}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Banco de Pagamento</div>
+              <div class="ficha-grid-val">${colab.banco || '---'}</div>
+            </div>
+            <div>
+              <div class="ficha-grid-label">Centro de Custo</div>
+              <div class="ficha-grid-val">${colab.centroCusto || '---'}</div>
+            </div>
+            <div style="grid-column: span 2;">
+              <div class="ficha-grid-label">IBAN</div>
+              <div class="ficha-grid-val" style="font-family: monospace;">${colab.iban || '---'}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assinaturas -->
+      <div style="margin-top: 6px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+        <div style="display: flex; justify-content: space-between; gap: 30px; margin-top: 15px;">
+          <div style="flex: 1; text-align: center; border-top: 1px solid #0f172a; padding-top: 3px;">
+            <p style="font-size: 7.5pt; font-weight: 700; color: #0f172a; margin: 0;">${colab.nome}</p>
+            <p style="font-size: 6.5pt; color: #64748b; margin: 0;">Assinatura do Colaborador</p>
+          </div>
+          <div style="flex: 1; text-align: center; border-top: 1px solid #0f172a; padding-top: 3px;">
+            <p style="font-size: 7.5pt; font-weight: 700; color: #0f172a; margin: 0;">${empresa?.nome || 'A Direcção'}</p>
+            <p style="font-size: 6.5pt; color: #64748b; margin: 0;">Carimbo / Assinatura do Responsável</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; font-size: 7pt; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 3px; margin-top: 6px;">
+      Documento gerado automaticamente via Salya Payroll System  •  ${empresa?.provincia || 'Luanda'}, ${new Date().toLocaleDateString('pt-AO')}
+    </div>
+  `;
+
+  document.body.appendChild(container);
+  return container;
 };
 
 const Colaboradores: React.FC = () => {
@@ -164,6 +461,56 @@ const Colaboradores: React.FC = () => {
   const normalizeList = (data: any, key?: string) => {
     if (Array.isArray(data)) return data;
     return key ? data?._embedded?.[key] || [] : [];
+  };
+
+  const handleExportFichaPDF = (colab: Colaborador) => {
+    const exportNode = buildFichaColaboradorNode(colab, empresa);
+    const cleanup = () => {
+      const wrapper = (exportNode as any)._pdfWrapper;
+      if (wrapper) wrapper.remove();
+      else exportNode.remove();
+    };
+    // Wait one frame for browser to lay out the element before capturing
+    setTimeout(() => {
+      (html2pdf() as any).from(exportNode).set({
+        margin: 0,
+        filename: `Ficha_Colaborador_${colab.nome.replace(/ /g, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 1.0 },
+        html2canvas: { scale: 3, useCORS: true, backgroundColor: '#ffffff', logging: false, allowTaint: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: 'avoid-all' }
+      }).save().finally(cleanup);
+    }, 300);
+  };
+
+  const handlePrintFicha = (colab: Colaborador) => {
+    const exportNode = buildFichaColaboradorNode(colab, empresa);
+    const w = window.open('', '_blank');
+    if (!w) {
+      exportNode.remove();
+      return;
+    }
+    w.document.write(`
+      <html><head>
+        <title>Ficha do Colaborador — ${colab.nome}</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap');
+          @page { size: A4; margin: 0; }
+          body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; background: #fff; }
+          .ficha-colaborador-export-doc {
+             position: relative !important;
+             left: 0 !important;
+             top: 0 !important;
+             z-index: 1 !important;
+             margin: 0 auto !important;
+          }
+        </style>
+      </head><body onload="setTimeout(() => { window.print(); window.onafterprint=()=>window.close(); }, 500);">
+        ${exportNode.outerHTML}
+      </body></html>
+    `);
+    w.document.close();
+    exportNode.remove();
   };
 
   const fetchDocumentos = useCallback(async (colabId: number) => {
@@ -568,6 +915,57 @@ const Colaboradores: React.FC = () => {
                 <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Identidade do Colaborador</p>
                 <h4 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">Dados Principais</h4>
               </div>
+
+              {/* Photo Upload Section */}
+              <div className="flex flex-col sm:flex-row items-center gap-5 p-4 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 mt-4 mb-2">
+                <div className="relative size-20 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 text-white flex items-center justify-center font-bold text-xl shadow-md overflow-hidden shrink-0 border-2 border-white dark:border-slate-800">
+                  {formData.fotoUrl ? (
+                    <img src={formData.fotoUrl} alt="Foto de perfil" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{(formData.nome || 'CO').substring(0, 2).toUpperCase()}</span>
+                  )}
+                </div>
+                <div className="space-y-1 text-center sm:text-left">
+                  <p className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Foto de Perfil</p>
+                  <p className="text-[11px] text-slate-500">Suporta imagens JPG, PNG ou WEBP (máx. 3MB). Resolução recomendada 400x400px.</p>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-2">
+                    <label className="cursor-pointer px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shadow-sm">
+                      <span className="material-symbols-outlined text-sm">photo_camera</span>
+                      {formData.fotoUrl ? 'Alterar Foto' : 'Carregar Foto'}
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 3 * 1024 * 1024) {
+                              Swal.fire('Aviso', 'A imagem deve ter no máximo 3MB.', 'warning');
+                              return;
+                            }
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              setFormData({ ...formData, fotoUrl: ev.target?.result as string });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                    {formData.fotoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, fotoUrl: undefined })}
+                        className="px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-400 text-xs font-semibold rounded-lg transition-all flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                        Remover
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
                 <div className="md:col-span-2">
                   <label className={labelClass}>Nome Completo</label>
@@ -1159,9 +1557,13 @@ const Colaboradores: React.FC = () => {
                           type="button"
                           onClick={() => handleOpenDetails(colaborador)}
                           title="Visualizar Ficha"
-                          className="size-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 text-white flex items-center justify-center font-bold text-xs shadow-sm shrink-0 hover:opacity-90 transition-opacity"
+                          className="size-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 text-white flex items-center justify-center font-bold text-xs shadow-sm shrink-0 hover:opacity-90 transition-opacity overflow-hidden"
                         >
-                          {colaborador.nome.substring(0, 2).toUpperCase()}
+                          {colaborador.fotoUrl ? (
+                            <img src={colaborador.fotoUrl} alt={colaborador.nome} className="w-full h-full object-cover" />
+                          ) : (
+                            colaborador.nome.substring(0, 2).toUpperCase()
+                          )}
                         </button>
                         <div>
                           <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{colaborador.nome}</p>
@@ -1216,6 +1618,14 @@ const Colaboradores: React.FC = () => {
                 <button type="button" onClick={() => { closeActionMenu(); handleOpenDetails(colaborador); }} className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 w-full text-left">
                   <span className="material-symbols-outlined text-sm text-slate-400">visibility</span>
                   Visualizar Ficha
+                </button>
+                <button type="button" onClick={() => { closeActionMenu(); handleExportFichaPDF(colaborador); }} className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 w-full text-left">
+                  <span className="material-symbols-outlined text-sm text-primary">picture_as_pdf</span>
+                  Exportar Ficha (PDF 1 Folha)
+                </button>
+                <button type="button" onClick={() => { closeActionMenu(); handlePrintFicha(colaborador); }} className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 w-full text-left">
+                  <span className="material-symbols-outlined text-sm text-slate-400">print</span>
+                  Imprimir Ficha
                 </button>
                 <button type="button" onClick={() => { closeActionMenu(); handleOpenModal(colaborador); }} className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 w-full text-left">
                   <span className="material-symbols-outlined text-sm text-slate-400">edit</span>
@@ -1368,17 +1778,21 @@ const Colaboradores: React.FC = () => {
         const handleExportPDFModal = () => {
           const exportNode = buildDeclaracaoExportNode('declaracao-modal-quick');
           if (!exportNode) return;
-
-          (html2pdf() as any).from(exportNode).set({
-            margin: 0,
-            filename: `Declaracao_Trabalho_${dc.nome.replace(/ /g, '_')}.pdf`,
-            image: { type: 'jpeg', quality: 1.0 },
-            html2canvas: { scale: 3.5, useCORS: true, backgroundColor: '#ffffff', logging: false },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: 'avoid-all' }
-          }).save().finally(() => {
-            exportNode.remove();
-          });
+          const cleanup = () => {
+            const wrapper = (exportNode as any)._pdfWrapper;
+            if (wrapper) wrapper.remove();
+            else exportNode.remove();
+          };
+          setTimeout(() => {
+            (html2pdf() as any).from(exportNode).set({
+              margin: 0,
+              filename: `Declaracao_Trabalho_${dc.nome.replace(/ /g, '_')}.pdf`,
+              image: { type: 'jpeg', quality: 1.0 },
+              html2canvas: { scale: 3, useCORS: true, backgroundColor: '#ffffff', logging: false, allowTaint: true },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+              pagebreak: { mode: 'avoid-all' }
+            }).save().finally(cleanup);
+          }, 300);
         };
 
         const handlePrintModal = () => {
@@ -1394,12 +1808,19 @@ const Colaboradores: React.FC = () => {
               <title>Declaração de Trabalho — ${dc.nome}</title>
               <style>
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@400;600;700&display=swap');
-                @page { margin: 20mm; }
-                body { font-family: 'Inter', sans-serif; font-size: 11pt; color: #1a1a1a; -webkit-print-color-adjust: exact; }
+                @page { size: A4; margin: 0; }
+                body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; font-size: 11pt; color: #1a1a1a; -webkit-print-color-adjust: exact; background: #fff; }
                 * { box-sizing: border-box; }
                 strong { font-weight: 600; color: #000; }
+                .declaracao-preview-doc {
+                   position: relative !important;
+                   left: 0 !important;
+                   top: 0 !important;
+                   z-index: 1 !important;
+                   margin: 0 auto !important;
+                }
               </style>
-            </head><body onload="window.print();window.onafterprint=()=>window.close();">
+            </head><body onload="setTimeout(() => { window.print(); window.onafterprint=()=>window.close(); }, 500);">
               ${exportNode.outerHTML}
             </body></html>
           `);
@@ -1579,15 +2000,42 @@ const Colaboradores: React.FC = () => {
       {detailsColab && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="w-full max-w-4xl max-h-[88vh] overflow-hidden rounded-xl bg-white dark:bg-slate-950 shadow-xl border border-slate-200 dark:border-slate-800 flex flex-col">
-            <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-5 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-medium uppercase tracking-wider text-corporate-500">Consulta Rapida</p>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">{detailsColab.nome}</h3>
-                <p className="text-sm text-slate-500 mt-1">{detailsColab.cargo || 'Funcao nao definida'}</p>
+            <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="size-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 text-white flex items-center justify-center font-bold text-lg shadow-md overflow-hidden shrink-0">
+                  {detailsColab.fotoUrl ? (
+                    <img src={detailsColab.fotoUrl} alt={detailsColab.nome} className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{detailsColab.nome.substring(0, 2).toUpperCase()}</span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Ficha do Colaborador</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">{detailsColab.nome}</h3>
+                  <p className="text-xs text-slate-500">{detailsColab.cargo || 'Função não definida'}</p>
+                </div>
               </div>
-              <button onClick={() => setDetailsColab(null)} className="size-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center">
-                <span className="material-symbols-outlined">close</span>
-              </button>
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => handlePrintFicha(detailsColab)}
+                  className="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-sm">print</span>
+                  Imprimir
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportFichaPDF(detailsColab)}
+                  className="px-3.5 py-2 bg-primary hover:bg-primary/90 text-white text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+                >
+                  <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+                  Exportar PDF (1 Folha)
+                </button>
+                <button onClick={() => setDetailsColab(null)} className="size-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar p-6 grid grid-cols-1 md:grid-cols-2 gap-4">

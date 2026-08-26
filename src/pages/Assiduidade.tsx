@@ -361,8 +361,12 @@ const Assiduidade: React.FC = () => {
                   <tr key={colab.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all align-middle">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="size-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 text-white flex items-center justify-center text-xs font-bold shrink-0">
-                          {colab.nome.substring(0, 2).toUpperCase()}
+                        <div className="size-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 text-white flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
+                          {colab.fotoUrl ? (
+                            <img src={colab.fotoUrl} alt={colab.nome} className="w-full h-full object-cover" />
+                          ) : (
+                            colab.nome.substring(0, 2).toUpperCase()
+                          )}
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-slate-700 dark:text-white capitalize">{colab.nome}</p>

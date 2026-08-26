@@ -627,8 +627,12 @@ const ProcessamentoAtraso: React.FC = () => {
                    className="w-full flex items-center gap-4 p-5 text-left hover:bg-slate-50 transition-colors"
                  >
                    {/* Avatar */}
-                   <div className="size-11 shrink-0 rounded-full bg-slate-900 text-white flex items-center justify-center text-sm font-bold">
-                     {colaborador.nome.substring(0, 2).toUpperCase()}
+                   <div className="size-11 shrink-0 rounded-full bg-slate-900 text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                     {colaborador.fotoUrl ? (
+                       <img src={colaborador.fotoUrl} alt={colaborador.nome} className="w-full h-full object-cover" />
+                     ) : (
+                       colaborador.nome.substring(0, 2).toUpperCase()
+                     )}
                    </div>
 
                    {/* Info */}

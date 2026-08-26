@@ -1049,8 +1049,9 @@ const Processamento: React.FC = () => {
           <p className="text-[10px] text-slate-400 mt-1">{ativos.length} colaboradores ativos</p>
         </div>
       </div>
-      <div className="glass-card overflow-visible">
-        <table className="min-w-full table-fixed text-left">
+      <div className="glass-card overflow-hidden">
+        <div className="overflow-x-auto w-full custom-scrollbar pb-2">
+          <table className="w-full min-w-[700px] table-auto sm:table-fixed text-left">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-100">
               <th className="px-3 sm:px-4 py-4 text-xs font-medium text-slate-400 whitespace-nowrap w-10">
@@ -1094,8 +1095,12 @@ const Processamento: React.FC = () => {
                 </td>
                 <td className="px-4 sm:px-6 py-4 align-middle">
                   <div className="flex items-center gap-3">
-                    <div className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
-                      {colaborador.nome.substring(0, 2).toUpperCase()}
+                    <div className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
+                      {colaborador.fotoUrl ? (
+                        <img src={colaborador.fotoUrl} alt={colaborador.nome} className="w-full h-full object-cover" />
+                      ) : (
+                        colaborador.nome.substring(0, 2).toUpperCase()
+                      )}
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-slate-700">{colaborador.nome}</p>
@@ -1136,7 +1141,8 @@ const Processamento: React.FC = () => {
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -1284,19 +1290,36 @@ const Processamento: React.FC = () => {
 
   return (
     <div className="p-4 md:p-6 w-full max-w-full font-app">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Processamento Salarial</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5 md:gap-6 mb-8 md:mb-10">
+        <div className="space-y-1 w-full md:w-auto">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Processamento Salarial</h1>
+          <span className="inline-flex md:hidden px-2.5 py-1 rounded-md bg-primary/5 text-[10px] text-primary font-bold uppercase tracking-wider">
+            {historicoDoPeriodo.length} recibos processados
+          </span>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2 px-3 text-sm font-medium outline-none text-slate-700 dark:text-slate-300">{MONTHS.map((month) => (<option key={month} value={month} disabled={isMonthOptionDisabled(month, selectedYear)}>{month}</option>))}</select>
-          <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2 px-3 text-sm font-medium outline-none text-slate-700 dark:text-slate-300">{['2025', '2026', '2027'].map((year) => (<option key={year} value={year} disabled={parseInt(year, 10) > CURRENT_YEAR}>{year}</option>))}</select>
-          <span className="px-3 py-1.5 rounded-lg bg-primary/5 text-xs text-primary font-semibold">{historicoDoPeriodo.length} processamento(s)</span>
+        
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
+          <div className="flex w-full sm:w-auto gap-2">
+            <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="flex-1 sm:w-[140px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 px-3 text-sm font-semibold outline-none focus:border-primary text-slate-700 dark:text-slate-300">
+              {MONTHS.map((month) => (<option key={month} value={month} disabled={isMonthOptionDisabled(month, selectedYear)}>{month}</option>))}
+            </select>
+            <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="w-[100px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 px-3 text-sm font-semibold outline-none focus:border-primary text-slate-700 dark:text-slate-300">
+              {['2025', '2026', '2027'].map((year) => (<option key={year} value={year} disabled={parseInt(year, 10) > CURRENT_YEAR}>{year}</option>))}
+            </select>
+          </div>
+          <span className="hidden md:inline-flex px-3 py-2 rounded-xl bg-primary/5 text-xs text-primary font-bold flex-shrink-0 items-center border border-primary/10">
+            {historicoDoPeriodo.length} processamento(s)
+          </span>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <button onClick={() => setShowHistóricoModal(true)} className="px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Histórico</button>
-          <button onClick={handleBulkProcess} disabled={isProcessingBulk || periodoLocked} className={`px-6 py-2.5 rounded-xl text-sm font-medium transition-all ${periodoLocked ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary/80'}`}>
-            {isProcessingBulk ? 'A Processar...' : selectedColabIds.size > 0 ? `Processar Selecionados (${selectedColabIds.size})` : 'Liquidação Mensal'}
+        
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <button onClick={() => setShowHistóricoModal(true)} className="w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex justify-center items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">history</span>
+            Histórico
+          </button>
+          <button onClick={handleBulkProcess} disabled={isProcessingBulk || periodoLocked} className={`w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex justify-center items-center gap-2 ${periodoLocked ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20'}`}>
+            <span className="material-symbols-outlined text-[18px]">{isProcessingBulk ? 'sync' : 'payments'}</span>
+            {isProcessingBulk ? 'A Processar...' : selectedColabIds.size > 0 ? `Lote (${selectedColabIds.size})` : 'Liquidação Mensal'}
           </button>
         </div>
       </div>
