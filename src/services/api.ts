@@ -133,11 +133,13 @@ const humanizeMessage = (error: any): string => {
     'Unauthorized': 'A sua sessão expirou por segurança. Por favor, entre novamente.',
     'Forbidden': 'Desculpe, não tem permissão para aceder a esta informação ou realizar esta acção.',
     'Internal Server Error': 'Ocorreu um problema técnico no nosso servidor. Estamos a trabalhar para resolver.',
-    'Bad Request': 'Os dados enviados são inválidos. Por favor, verifique o que preencheu.',
-    'Not Found': 'O que procura não foi encontrado ou já não existe.',
+    'Bad Request': 'Os dados enviados são inválidos. Por favor, verifique os campos preenchidos.',
+    'Not Found': 'O recurso solicitado não foi encontrado ou já não existe.',
     'Conflict': 'Esta informação já existe no sistema (ex: NIF duplicado).',
     'User already exists': 'Este utilizador já está registado.',
-    'Invalid credentials': 'O email ou a palavra-passe estão incorrectos.',
+    'Invalid credentials': 'Email ou palavra-passe incorretos. Por favor, verifique as suas credenciais.',
+    'Bad credentials': 'Email ou palavra-passe incorretos. Por favor, verifique as suas credenciais.',
+    'User not found': 'Utilizador não encontrado. Verifique o email introduzido.',
     'Email is already in use': 'Este email já está a ser utilizado por outra conta.',
     'quota exceeded': 'Atingiu o limite do seu plano actual.',
     'logo too large': 'A imagem é demasiado grande (máx. 2MB).',
@@ -267,6 +269,12 @@ const handleUnauthorized = async (endpoint: string, retry: () => Promise<any>): 
 
 const ensureAuthOrRedirect = async (response: Response, endpoint: string, retry: () => Promise<any>) => {
   if (response.status === 401) {
+    // Endpoints de autenticação não devem ser tratados como "sessão expirada",
+    // mas sim permitir a leitura da mensagem real do backend (ex: credenciais incorretas).
+    const isAuthEndpoint = endpoint.startsWith('/auth');
+    if (isAuthEndpoint) {
+      return;
+    }
     return handleUnauthorized(endpoint, retry);
   }
 

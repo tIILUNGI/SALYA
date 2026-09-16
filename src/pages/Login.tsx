@@ -135,7 +135,12 @@ const Login: React.FC = () => {
         setEmail(error.body.email || email);
         navigate('/registar/verificar');
       } else {
-        showError(getApiErrorMessage(error));
+        const msg = getApiErrorMessage(error);
+        if (msg.includes('sessão expirou') || msg.includes('Sessão expirada')) {
+          showError('Email ou palavra-passe incorretos. Por favor, verifique as suas credenciais.');
+        } else {
+          showError(msg);
+        }
       }
     } finally {
       setIsLoading(false);

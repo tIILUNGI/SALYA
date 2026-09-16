@@ -8,6 +8,14 @@
     <title>SALYA — Aplicação</title>
     <link rel="icon" href="/logo.png" />
 
+    <!-- PWA Settings -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SALYA" />
+    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+
     <!-- Preload critical fonts to prevent FOUC -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -115,6 +123,14 @@
       }
       // Hard fallback: always reveal after 2s regardless
       setTimeout(revealApp, 2000);
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').catch(function(err) {
+            console.log('ServiceWorker error:', err);
+          });
+        });
+      }
     </script>
   </body>
 </html>

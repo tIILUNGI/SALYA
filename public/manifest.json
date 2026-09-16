@@ -1,0 +1,26 @@
+{
+  "short_name": "SALYA App",
+  "name": "SALYA — Plataforma de Gestão de Folha de Pagamento",
+  "description": "Aplicação de Gestão de Folha de Pagamento, Colaboradores e Processamentos Salariais.",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f172a",
+  "theme_color": "#9333ea",
+  "display": "standalone",
+  "orientation": "portrait",
+  "categories": ["business", "finance", "productivity"],
+  "lang": "pt-AO"
+}

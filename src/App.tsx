@@ -17,6 +17,7 @@ import Profile from './pages/Profile';
 import ResetPassword from './pages/ResetPassword';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import PwaInstallPrompt from './components/PwaInstallPrompt';
 import { Colaborador, Empresa } from './types';
 import { api, getRefreshToken, setAuthToken, clearAuthStorage, API_BASE_URL } from './services/api';
 import { notify } from './utils/notifications';
@@ -433,6 +434,7 @@ function App() {
      }}>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <PageTitleSync />
+        <PwaInstallPrompt />
         <Routes>
           <Route
             path="/"
