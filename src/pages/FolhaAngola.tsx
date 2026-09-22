@@ -166,6 +166,7 @@ export function SimuladorDecimoTerceiro() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<D13Result | null>(null);
   const [erro, setErro] = useState('');
+  const [mostrarDetalhesNormal, setMostrarDetalhesNormal] = useState(false);
 
   const calcular = async () => {
     setErro(''); setResult(null);
@@ -257,7 +258,7 @@ export function SimuladorDecimoTerceiro() {
         totalBrutoReceber: roundMoney(brutoNormal + valBruto13),
         totalDescontosReceber: roundMoney(inssNorm + irtNorm + irt13),
         totalLiquidoReceber: roundMoney(liqNorm + valLiq13),
-        nota: "No mês de pagamento do 13.º Mês, o trabalhador recebe o seu Salário Normal Líquido mais o 13.º Mês Líquido. O 13.º é isento de INSS e tributado autonomamente em IRT.",
+        nota: "Cálculo em conformidade com a LGT 12/23 e tabela de IRT da AGT.",
       });
     } finally {
       setLoading(false);
@@ -266,7 +267,7 @@ export function SimuladorDecimoTerceiro() {
 
   return (
     <div className="space-y-5">
-      {/* Formulário de Parâmetros */}
+      {/* Parâmetros */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div>
           <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Salário Base (Kz) *</label>
@@ -314,159 +315,103 @@ export function SimuladorDecimoTerceiro() {
       {erro && <p className="text-xs font-bold text-rose-400 bg-rose-950/40 border border-rose-900/50 p-3 rounded-xl">{erro}</p>}
       <button onClick={calcular} disabled={loading}
         className="w-full sm:w-auto px-8 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-60 shadow-lg shadow-primary/20">
-        {loading ? 'A calcular...' : 'Calcular Processamento Completo'}
+        {loading ? 'A calcular...' : 'Calcular 13.º Mês'}
       </button>
 
       {result && (
-        <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-5 shadow-2xl">
-          {/* BANNER DE DESTAQUE DO TOTAL QUE LEVARÁ PARA CASA */}
-          <div className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="material-symbols-outlined text-white text-lg">account_balance_wallet</span>
-                <span className="text-xs font-black uppercase tracking-widest text-emerald-100">Total Global a Receber no Mês (O Que Levará)</span>
-              </div>
-              <h2 className="text-2xl sm:text-4xl font-black font-mono tracking-tight text-white">
-                {fmt(result.totalLiquidoReceber || (result.valorLiquido + (result.salarioLiquidoNormal || 0)))} <span className="text-sm sm:text-lg font-bold text-emerald-100">Kz</span>
-              </h2>
-              <p className="text-xs text-emerald-100 font-medium mt-1">
-                Soma do Salário Normal Líquido ({fmt(result.salarioLiquidoNormal || 0)} Kz) + 13.º Mês Líquido ({fmt(result.valorLiquido)} Kz)
-              </p>
-            </div>
-          </div>
-
-          {/* Cabeçalho do Recibo */}
-          <div className="border-b border-slate-800 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
-                Demonstrativo de Processamento de Vencimentos
-              </span>
-              <h3 className="text-base font-black text-white mt-1">Recibo do Mês do 13.º Salário</h3>
-            </div>
-            <span className="text-[11px] font-medium text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-              Salário Base: <strong>{fmt(result.salarioBase)} Kz</strong> | 13.º: <strong>{result.mesesTrabalhados}/12m ({result.percentagem}%)</strong>
-            </span>
-          </div>
-
-          {/* Tabelas Lado a Lado: Mês Normal vs 13.º Mês */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* VENCIMENTO MENSAL NORMAL */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 space-y-3">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-slate-400 inline-block"></span>
-                  1. Salário Mensal Normal
+        <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xl">
+          {/* CARDS PRINCIPAIS */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* 13.º MÊS LÍQUIDO */}
+            <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-xl p-4 text-white shadow-lg flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-100">13.º Mês Líquido</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/20 text-white">
+                  {result.mesesTrabalhados}/12m ({result.percentagem}%)
                 </span>
-                <span className="text-[10px] font-bold text-slate-400">Mensal</span>
               </div>
-
-              <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between text-slate-400 py-0.5">
-                  <span>Salário Base</span>
-                  <span className="font-mono text-slate-300 font-bold">{fmt(result.salarioBase)} Kz</span>
-                </div>
-                {(result.subsidioAlimentacao || 0) > 0 && (
-                  <div className="flex justify-between text-slate-400 py-0.5">
-                    <span>Sub. Alimentação</span>
-                    <span className="font-mono text-slate-300">+{fmt(result.subsidioAlimentacao || 0)} Kz</span>
-                  </div>
-                )}
-                {(result.subsidioTransporte || 0) > 0 && (
-                  <div className="flex justify-between text-slate-400 py-0.5">
-                    <span>Sub. Transporte</span>
-                    <span className="font-mono text-slate-300">+{fmt(result.subsidioTransporte || 0)} Kz</span>
-                  </div>
-                )}
-                {(result.outrosSubsidios || 0) > 0 && (
-                  <div className="flex justify-between text-slate-400 py-0.5">
-                    <span>Outros Subsídios</span>
-                    <span className="font-mono text-slate-300">+{fmt(result.outrosSubsidios || 0)} Kz</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between text-emerald-400 font-bold py-1 border-t border-slate-800/60">
-                  <span>Total Bruto Normal</span>
-                  <span className="font-mono">{fmt(result.salarioBrutoNormal || 0)} Kz</span>
-                </div>
-
-                <div className="flex justify-between text-rose-400 py-0.5">
-                  <span>INSS (3% Trabalhador)</span>
-                  <span className="font-mono">-{fmt(result.inssNormal || 0)} Kz</span>
-                </div>
-                <div className="flex justify-between text-rose-400 py-0.5">
-                  <span>IRT Mês Normal (AGT)</span>
-                  <span className="font-mono">-{fmt(result.irtNormal || 0)} Kz</span>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-slate-700 flex justify-between items-center font-bold text-xs">
-                <span className="text-slate-300 uppercase tracking-wider text-[11px]">Líquido Mês Normal</span>
-                <span className="font-mono text-sm text-emerald-400">{fmt(result.salarioLiquidoNormal || 0)} Kz</span>
+              <div>
+                <h3 className="text-2xl sm:text-3xl font-black font-mono tracking-tight">
+                  {fmt(result.valorLiquido)} <span className="text-xs font-bold text-emerald-100">Kz</span>
+                </h3>
               </div>
             </div>
 
-            {/* PROCESSAMENTO DO 13.º MÊS */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 space-y-3">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                <span className="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
-                  2. Processamento 13.º Mês
-                </span>
-                <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">Natal</span>
+            {/* IRT RETIDO */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">IRT Retido (13.º)</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">INSS: Isento</span>
               </div>
-
-              <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between text-slate-400 py-0.5">
-                  <span>Base de Cálculo (Salário Base)</span>
-                  <span className="font-mono text-slate-300 font-bold">{fmt(result.salarioBase)} Kz</span>
-                </div>
-                <div className="flex justify-between text-emerald-400 font-bold py-1 border-t border-slate-800/60">
-                  <span>13.º Mês Bruto ({result.percentagem}%)</span>
-                  <span className="font-mono">+{fmt(result.valorBruto)} Kz</span>
-                </div>
-
-                <div className="flex justify-between text-slate-400 py-0.5">
-                  <span>INSS (3%)</span>
-                  <span className="font-mono text-emerald-400 font-semibold">0,00 Kz (Isento)</span>
-                </div>
-                <div className="flex justify-between text-rose-400 py-0.5">
-                  <span>IRT 13.º Mês (AGT)</span>
-                  <span className="font-mono">-{fmt(result.irt)} Kz</span>
-                </div>
+              <div>
+                <h3 className="text-xl sm:text-2xl font-black font-mono text-rose-400">
+                  -{fmt(result.irt)} <span className="text-xs font-bold text-slate-400">Kz</span>
+                </h3>
               </div>
+            </div>
 
-              <div className="pt-2 border-t border-slate-700 flex justify-between items-center font-bold text-xs">
-                <span className="text-slate-300 uppercase tracking-wider text-[11px]">Líquido 13.º Mês</span>
-                <span className="font-mono text-sm text-emerald-400">{fmt(result.valorLiquido)} Kz</span>
+            {/* TOTAL DO MÊS */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total do Mês (Salário + 13.º)</span>
+                <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">Líquido</span>
+              </div>
+              <div>
+                <h3 className="text-xl sm:text-2xl font-black font-mono text-white">
+                  {fmt(result.totalLiquidoReceber || (result.valorLiquido + (result.salarioLiquidoNormal || 0)))} <span className="text-xs font-bold text-slate-400">Kz</span>
+                </h3>
               </div>
             </div>
           </div>
 
-          {/* RESUMO DE RETENÇÕES E IMPOSTOS */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Resumo de Totais Acumulados no Mês</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
-              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                <p className="text-[9px] text-slate-500 font-bold uppercase mb-1">Rendimento Bruto Acumulado</p>
-                <p className="text-sm font-black text-white">{fmt(result.totalBrutoReceber || (result.valorBruto + (result.salarioBrutoNormal || 0)))} Kz</p>
+          {/* DEMONSTRATIVO DIRETO DE CÁLCULO */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 space-y-2.5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-200">Detalhamento do 13.º Mês</span>
+              <span className="text-[10px] text-slate-400 font-mono">Base: {fmt(result.salarioBase)} Kz</span>
+            </div>
+
+            <div className="space-y-1.5 text-xs font-mono">
+              <div className="flex justify-between text-slate-400 py-0.5">
+                <span>13.º Mês Bruto ({result.percentagem}% em {result.mesesTrabalhados}m)</span>
+                <span className="text-slate-200 font-bold">+{fmt(result.valorBruto)} Kz</span>
               </div>
-              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                <p className="text-[9px] text-rose-400 font-bold uppercase mb-1">Total de Descontos (INSS + IRT)</p>
-                <p className="text-sm font-black text-rose-400">-{fmt(result.totalDescontosReceber || (result.irt + (result.inssNormal || 0) + (result.irtNormal || 0)))} Kz</p>
+              <div className="flex justify-between text-slate-400 py-0.5">
+                <span>INSS (3%)</span>
+                <span className="text-emerald-400 font-semibold">0,00 Kz (Isento)</span>
               </div>
-              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                <p className="text-[9px] text-emerald-400 font-bold uppercase mb-1">Total Líquido Creditado na Conta</p>
-                <p className="text-sm font-black text-emerald-400">{fmt(result.totalLiquidoReceber || (result.valorLiquido + (result.salarioLiquidoNormal || 0)))} Kz</p>
+              <div className="flex justify-between text-slate-400 py-0.5">
+                <span>IRT 13.º Mês (AGT)</span>
+                <span className="text-rose-400">-{fmt(result.irt)} Kz</span>
+              </div>
+              <div className="flex justify-between items-center text-emerald-400 font-bold text-xs sm:text-sm pt-2 border-t border-slate-800">
+                <span className="text-xs uppercase tracking-wider">13.º Mês Líquido</span>
+                <span>{fmt(result.valorLiquido)} Kz</span>
               </div>
             </div>
           </div>
 
-          {/* Nota Informativa */}
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3 flex items-start gap-2.5">
-            <span className="material-symbols-outlined text-primary text-lg shrink-0 mt-0.5">info</span>
-            <p className="text-xs text-slate-400 font-medium leading-relaxed">
-              {result.nota} Em conformidade com a <strong>Lei Geral do Trabalho n.º 12/23</strong> e o Código do IRT da República de Angola.
-            </p>
+          {/* OPCIONAL: VER SALÁRIO MENSAL NORMAL */}
+          <div className="pt-1">
+            <button
+              onClick={() => setMostrarDetalhesNormal(!mostrarDetalhesNormal)}
+              className="text-[11px] font-bold text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">{mostrarDetalhesNormal ? 'expand_less' : 'expand_more'}</span>
+              {mostrarDetalhesNormal ? 'Ocultar detalhes do Salário Normal' : 'Ver detalhe do Salário Normal do mês'}
+            </button>
+
+            {mostrarDetalhesNormal && (
+              <div className="mt-3 bg-slate-900/50 border border-slate-800 rounded-xl p-3 text-xs font-mono space-y-1.5">
+                <div className="flex justify-between text-slate-400"><span>Salário Bruto Normal:</span><span className="text-slate-200">{fmt(result.salarioBrutoNormal || 0)} Kz</span></div>
+                <div className="flex justify-between text-slate-400"><span>INSS Normal (3%):</span><span className="text-rose-400">-{fmt(result.inssNormal || 0)} Kz</span></div>
+                <div className="flex justify-between text-slate-400"><span>IRT Normal (AGT):</span><span className="text-rose-400">-{fmt(result.irtNormal || 0)} Kz</span></div>
+                <div className="flex justify-between text-emerald-400 font-bold pt-1.5 border-t border-slate-800">
+                  <span>Salário Líquido Normal:</span>
+                  <span>{fmt(result.salarioLiquidoNormal || 0)} Kz</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
