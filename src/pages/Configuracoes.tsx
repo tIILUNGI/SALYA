@@ -298,45 +298,133 @@ const Configurações: React.FC = () => {
 
   const [subBillingCycle, setSubBillingCycle] = useState<'MENSAL' | 'ANUAL'>('MENSAL');
 
+  // Modal do Plano Corporativo
+  const [corporativoModal, setCorporativoModal] = useState<{ open: boolean; planId: number; planName: string } | null>(null);
+  const [addUtilizadores, setAddUtilizadores] = useState(0); // +2 Utilizadores = 24.000 Kz/ano
+  const [addEntidades, setAddEntidades] = useState(0); // +1 Entidade = 65.000 Kz/ano
+  const [addColaboradores, setAddColaboradores] = useState(0); // +50 Colaboradores = 30.000 Kz/ano
+
+  const BASE_CORPORATIVO_PRICE = 175514.40;
+  const PRICE_UTILIZADORES = 24000;
+  const PRICE_ENTIDADES = 65000;
+  const PRICE_COLABORADORES = 30000;
+
+  const totalCorporativoPrice = BASE_CORPORATIVO_PRICE + 
+    (addUtilizadores * PRICE_UTILIZADORES) + 
+    (addEntidades * PRICE_ENTIDADES) + 
+    (addColaboradores * PRICE_COLABORADORES);
+
+  const openCorporativoModal = (planId: number, planName: string) => {
+    setAddUtilizadores(0);
+    setAddEntidades(0);
+    setAddColaboradores(0);
+    setModalPaymentType('AUTOMATICO');
+    setCorporativoModal({ open: true, planId, planName });
+  };
+  const closeCorporativoModal = () => setCorporativoModal(null);
+
   // Modal de seleção de modalidade de pagamento
   const [billingModal, setBillingModal] = useState<{ open: boolean; planId: number; planName: string; isMicro: boolean; isProfissional: boolean } | null>(null);
   const [modalCycle, setModalCycle] = useState<'MENSAL' | 'ANUAL'>('MENSAL');
+  const [modalPaymentType, setModalPaymentType] = useState<'AUTOMATICO' | 'MANUAL'>('AUTOMATICO');
+
+  // Modal ProxyPay
+  const [proxyPayModal, setProxyPayModal] = useState<{ open: boolean; referencia: string; entidade: string; valor: number; expira?: string; planId: number } | null>(null);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [verifyMsg, setVerifyMsg] = useState('');
 
   const openBillingModal = (planId: number, planName: string, isMicro: boolean, isProfissional: boolean) => {
     setModalCycle('MENSAL');
+    setModalPaymentType('AUTOMATICO');
     setBillingModal({ open: true, planId, planName, isMicro, isProfissional });
   };
   const closeBillingModal = () => setBillingModal(null);
 
-  const handleUpgradePlan = async (planId: number, planName: string, cycle: 'MENSAL' | 'ANUAL' = subBillingCycle) => {
-    const cycleText = cycle === 'ANUAL' ? 'Anual (12 Meses)' : 'Mensal (30 Dias)';
-    const result = await Swal.fire({
-      title: `Confirmar Plano ${planName}`,
-      text: `Deseja assinar o plano ${planName} na modalidade ${cycleText}? Se for um plano pago, será necessário aprovação após o pagamento.`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#9333ea',
-      confirmButtonText: 'Sim, assinar!',
-      cancelButtonText: 'Cancelar'
-    });
-
-    if (result.isConfirmed) {
+  const handleUpgradePlan = async (
+    planId: number, 
+    planName: string, 
+    cycle: 'MENSAL' | 'ANUAL' = subBillingCycle, 
+    paymentType: 'AUTOMATICO' | 'MANUAL' = modalPaymentType,
+    customPrice?: number
+  ) => {
+    if (paymentType === 'AUTOMATICO') {
       try {
-        await api.post(`/plans/${planId}/subscribe?billingCycle=${cycle}`, { billingCycle: cycle });
-        
-        await Swal.fire({
-          title: 'Subscrição Solicitada!',
-          text: 'O seu pedido foi enviado. O sistema irá reiniciar para aplicar as alterações. Por favor, faça login novamente.',
-          icon: 'success',
-          confirmButtonText: 'Entendido'
-        });
+        const payload: any = {};
+        if (customPrice) payload.customPrice = customPrice;
 
-        // Logout e refresh automático para garantir novo contexto de segurança
-        localStorage.clear();
-        window.location.href = '/login';
-      } catch (error) {
-        Swal.fire('Erro!', 'Não foi possível processar o pedido.', 'error');
+        const data = await api.post(`/plans/${planId}/checkout`, payload, true);
+        if (data?.referencia) {
+          setProxyPayModal({
+            open: true,
+            referencia: data.referencia,
+            entidade: data.entidade || '01068',
+            valor: data.valor || customPrice || 175514.40,
+            expira: data.expira,
+            planId
+          });
+          setVerifyMsg('');
+          return;
+        }
+      } catch (err: any) {
+        console.error('Checkout error:', err);
+        Swal.fire('Erro no Checkout', 'Não foi possível gerar a referência de pagamento ProxyPay. Tente novamente ou utilize Transferência Bancária.', 'error');
+        return;
       }
+    }
+
+    // Fluxo manual (Transferência bancária com aprovação do admin)
+    try {
+      await api.post(`/plans/${planId}/subscribe?billingCycle=${cycle}`, { billingCycle: cycle, customPrice });
+      const finalValText = customPrice ? `${customPrice.toLocaleString('pt-AO')} Kz` : '';
+      await Swal.fire({
+        title: 'Coordenadas para Transferência Bancária',
+        html: `
+          <div style="text-align: left; font-size: 13px; line-height: 1.6; color: #334155;">
+            ${finalValText ? `<p style="margin-bottom: 8px; font-weight: bold; color: #4f46e5; font-size: 15px;">Valor a Transferir: ${finalValText}</p>` : ''}
+            <p style="margin-bottom: 12px; font-weight: bold;">Efectue a transferência para a seguinte conta:</p>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 14px;">
+              <p style="margin: 4px 0;"><strong>Banco:</strong> BAI / BFA</p>
+              <p style="margin: 4px 0;"><strong>Titular:</strong> ILUNGI, LDA</p>
+              <p style="margin: 4px 0;"><strong>IBAN:</strong> AO06 0040 0000 1234 5678 9012 3</p>
+              <p style="margin: 4px 0;"><strong>NIF:</strong> 5417000000</p>
+            </div>
+            <p style="margin-bottom: 8px;">Após efectuar a transferência, envie o comprovativo para:</p>
+            <p style="margin: 4px 0; color: #4f46e5; font-weight: bold;">Email: geral@ilungi.co.ao</p>
+            <p style="margin: 4px 0; color: #059669; font-weight: bold;">WhatsApp: +244 935 793 270</p>
+            <p style="margin-top: 10px; font-size: 11px; color: #64748b;">O Administrador irá validar o comprovativo e activar a sua conta.</p>
+          </div>
+        `,
+        icon: 'info',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#6366f1'
+      });
+    } catch (error) {
+      Swal.fire('Erro!', 'Não foi possível processar o pedido de assinatura.', 'error');
+    }
+  };
+
+  const handleConfirmProxyPayPayment = async () => {
+    if (!proxyPayModal || verifyingPayment) return;
+    setVerifyingPayment(true);
+    setVerifyMsg('A verificar pagamento...');
+    try {
+      const data = await api.post('/plans/verify-payment', { referencia: proxyPayModal.referencia }, true);
+      if (data?.activated) {
+        await Swal.fire({
+          title: 'Pagamento Confirmado!',
+          text: 'O seu plano foi activado com sucesso.',
+          icon: 'success',
+          confirmButtonColor: '#9333ea'
+        });
+        setProxyPayModal(null);
+        await refreshData();
+      } else {
+        setVerifyMsg('Pagamento ainda não detectado. Aguarde alguns minutos e tente novamente.');
+      }
+    } catch {
+      setVerifyMsg('Não foi possível verificar. Tente novamente ou contacte o suporte.');
+    } finally {
+      setVerifyingPayment(false);
     }
   };
 
@@ -1506,7 +1594,7 @@ const Configurações: React.FC = () => {
                             if (!isCurrent && !isDemo && !isCorporativo) {
                               openBillingModal(p.id, displayName, isMicro, isRecommended);
                             } else if (isCorporativo) {
-                              handleUpgradePlan(p.id, displayName, 'ANUAL');
+                              openCorporativoModal(p.id, displayName);
                             }
                           }}
                           disabled={isCurrent || (isDemo && user?.planType !== 'DEMO')}
@@ -1516,7 +1604,7 @@ const Configurações: React.FC = () => {
                               : 'bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20'
                           }`}
                         >
-                          {isCurrent ? 'Plano Actual' : isDemo ? 'Indisponível' : isCorporativo ? 'Solicitar' : 'Escolher Plano'}
+                          {isCurrent ? 'Plano Actual' : isDemo ? 'Indisponível' : isCorporativo ? 'Solicitar / Personalizar' : 'Escolher Plano'}
                         </button>
                       </div>
                     );
@@ -1555,15 +1643,15 @@ const Configurações: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Modalidade de Pagamento */}
+      {/* Modal de Seleção de Plano e Método de Pagamento */}
       {billingModal?.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-fadeIn border border-slate-200 dark:border-slate-800 my-4">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
               <div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">Modalidade de Pagamento</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Escolha como pretende pagar o plano <strong>{billingModal.planName}</strong></p>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">Opções de Assinatura</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Plano <strong>{billingModal.planName}</strong></p>
               </div>
               <button
                 onClick={closeBillingModal}
@@ -1573,70 +1661,398 @@ const Configurações: React.FC = () => {
               </button>
             </div>
 
-            {/* Opções */}
-            <div className="p-6 space-y-3">
-              {/* Mensal */}
-              <button
-                onClick={() => setModalCycle('MENSAL')}
-                className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all ${modalCycle === 'MENSAL' ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-700 hover:border-slate-200'}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${modalCycle === 'MENSAL' ? 'border-primary bg-primary' : 'border-slate-300'}`}>
-                    {modalCycle === 'MENSAL' && <div className="w-2 h-2 rounded-full bg-white" />}
-                  </div>
-                  <div className="text-left">
-                    <p className="font-black text-slate-900 dark:text-white text-sm">Pagamento Mensal</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Cobrado mensalmente, cancele quando quiser</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-black text-slate-900 dark:text-white text-base">
-                    {billingModal.isMicro ? '5.700 Kz' : billingModal.isProfissional ? '10.830 Kz' : '-'}
-                  </p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">/mês</p>
-                </div>
-              </button>
+            <div className="p-6 space-y-6">
+              {/* Secção 1: Frequência */}
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">1. Frequência de Pagamento</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setModalCycle('MENSAL')}
+                    className={`p-4 rounded-2xl border-2 text-left transition-all ${modalCycle === 'MENSAL' ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-800'}`}
+                  >
+                    <p className="font-black text-xs text-slate-900 dark:text-white uppercase">Mensal</p>
+                    <p className="text-sm font-black text-primary mt-1">
+                      {billingModal.isMicro ? '5.700 Kz' : billingModal.isProfissional ? '10.830 Kz' : '-'}
+                    </p>
+                  </button>
 
-              {/* Anual */}
-              <button
-                onClick={() => setModalCycle('ANUAL')}
-                className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all ${modalCycle === 'ANUAL' ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-700 hover:border-slate-200'}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${modalCycle === 'ANUAL' ? 'border-primary bg-primary' : 'border-slate-300'}`}>
-                    {modalCycle === 'ANUAL' && <div className="w-2 h-2 rounded-full bg-white" />}
+                  <button
+                    onClick={() => setModalCycle('ANUAL')}
+                    className={`p-4 rounded-2xl border-2 text-left transition-all ${modalCycle === 'ANUAL' ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-800'}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-black text-xs text-slate-900 dark:text-white uppercase">Anual</p>
+                      <span className="text-[8px] font-black uppercase bg-primary/10 text-primary px-1.5 py-0.5 rounded">12 Meses</span>
+                    </div>
+                    <p className="text-sm font-black text-primary mt-1">
+                      {billingModal.isMicro ? '68.400 Kz' : billingModal.isProfissional ? '129.960 Kz' : '-'}
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Secção 2: Método de Pagamento */}
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">2. Método de Pagamento</p>
+                <div className="space-y-3">
+                  {/* Opção 1: Automático ProxyPay */}
+                  <button
+                    onClick={() => setModalPaymentType('AUTOMATICO')}
+                    className={`w-full flex items-start gap-3 p-4 rounded-2xl border-2 text-left transition-all ${modalPaymentType === 'AUTOMATICO' ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-800'}`}
+                  >
+                    <div className={`size-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${modalPaymentType === 'AUTOMATICO' ? 'border-primary bg-primary' : 'border-slate-300'}`}>
+                      {modalPaymentType === 'AUTOMATICO' && <div className="size-2 rounded-full bg-white" />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <p className="font-black text-slate-900 dark:text-white text-xs">Referência Multicaixa (Automático)</p>
+                        <span className="text-[8px] font-black uppercase bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Automático</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-normal">
+                        Gera entidade e referência no instante. Ativação automática em menos de 5 min após o pagamento.
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Opção 2: Manual (Transferência) */}
+                  <button
+                    onClick={() => setModalPaymentType('MANUAL')}
+                    className={`w-full flex items-start gap-3 p-4 rounded-2xl border-2 text-left transition-all ${modalPaymentType === 'MANUAL' ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-800'}`}
+                  >
+                    <div className={`size-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${modalPaymentType === 'MANUAL' ? 'border-primary bg-primary' : 'border-slate-300'}`}>
+                      {modalPaymentType === 'MANUAL' && <div className="size-2 rounded-full bg-white" />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <p className="font-black text-slate-900 dark:text-white text-xs">Transferência Bancária (Manual)</p>
+                        <span className="text-[8px] font-black uppercase bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Aprovação Admin</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-normal">
+                        Efectue transferência bancária e envie o comprovativo ao suporte para o administrador aprovar o pedido.
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Acções */}
+              <div className="pt-2 flex flex-col gap-2">
+                <button
+                  onClick={async () => {
+                    closeBillingModal();
+                    await handleUpgradePlan(billingModal.planId, billingModal.planName, modalCycle, modalPaymentType);
+                  }}
+                  className="w-full py-4 bg-primary text-white font-black rounded-2xl uppercase text-xs tracking-widest hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all"
+                >
+                  Confirmar e Continuar
+                </button>
+                <button
+                  onClick={closeBillingModal}
+                  className="w-full py-3 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal do Plano Corporativo com Mensagem e Adicionais Customizáveis */}
+      {corporativoModal?.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-md overflow-y-auto">
+          <div className="relative bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden border border-slate-200 dark:border-slate-800 my-auto animate-fadeIn max-h-[92vh] flex flex-col">
+            {/* Mensagem da Equipa Salya */}
+            <div className="bg-gradient-to-r from-slate-900 via-primary to-indigo-900 p-5 sm:p-6 text-white relative overflow-hidden shrink-0">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-2xl -mr-20 -mt-20"></div>
+              <div className="flex items-center justify-between mb-3 relative z-10">
+                <div className="flex items-center gap-2.5">
+                  <div className="size-9 sm:size-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-lg sm:text-xl text-amber-300">corporate_fare</span>
                   </div>
-                  <div className="text-left">
-                    <p className="font-black text-slate-900 dark:text-white text-sm">Pagamento Anual</p>
-                    <p className="text-xs text-slate-500 mt-0.5">12 meses de uma só vez</p>
+                  <div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-primary-200 block">Equipa SALYA</span>
+                    <h3 className="text-base sm:text-lg font-black leading-tight">Plano Corporativo</h3>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-black text-primary text-base">
-                    {billingModal.isMicro ? '68.400 Kz' : billingModal.isProfissional ? '129.960 Kz' : '-'}
-                  </p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">/ano</p>
-                </div>
-              </button>
+                <button
+                  onClick={closeCorporativoModal}
+                  className="size-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 text-white transition-all shrink-0"
+                >
+                  <span className="material-symbols-outlined text-base">close</span>
+                </button>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/10 text-xs sm:text-sm text-slate-100 leading-relaxed space-y-1.5 relative z-10">
+                <p className="font-bold text-amber-300 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm">waving_hand</span> Saudações!
+                </p>
+                <p>
+                  Daqui é a equipa do <strong>Salya</strong>. Poderia nos dizer quais as necessidades específicas busca?
+                </p>
+                <p className="text-[10px] sm:text-[11px] text-slate-300 pt-0.5">
+                  Ideal para médias, grandes empresas e consultores que precisam de escalabilidade.
+                </p>
+              </div>
             </div>
 
-            {/* Acções */}
-            <div className="p-6 pt-0 flex flex-col gap-3">
+            {/* Conteúdo com scroll interno responsivo */}
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
+              {/* O que está incluído no Plano Base */}
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-3.5 sm:p-4 border border-slate-100 dark:border-slate-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3 pb-2 border-b border-slate-200 dark:border-slate-700/60">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Incluído no Plano Base (SOB CONSULTA / 12 meses)</span>
+                  <span className="text-xs font-black text-primary font-mono">{BASE_CORPORATIVO_PRICE.toLocaleString('pt-AO')} Kz / ano</span>
+                </div>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                  <li className="flex items-center gap-2"><span className="material-symbols-outlined text-emerald-500 text-sm shrink-0">check_circle</span> +1 entidade (empresa ou particular)</li>
+                  <li className="flex items-center gap-2"><span className="material-symbols-outlined text-emerald-500 text-sm shrink-0">check_circle</span> +2 utilizadores</li>
+                  <li className="flex items-center gap-2"><span className="material-symbols-outlined text-emerald-500 text-sm shrink-0">check_circle</span> +100 colaboradores</li>
+                  <li className="flex items-center gap-2"><span className="material-symbols-outlined text-emerald-500 text-sm shrink-0">check_circle</span> Emissão ilimitada de recibos</li>
+                  <li className="flex items-center gap-2"><span className="material-symbols-outlined text-emerald-500 text-sm shrink-0">check_circle</span> IRT & INSS Automatizados</li>
+                  <li className="flex items-center gap-2"><span className="material-symbols-outlined text-emerald-500 text-sm shrink-0">check_circle</span> Declaração de trabalho</li>
+                  <li className="flex items-center gap-2"><span className="material-symbols-outlined text-emerald-500 text-sm shrink-0">check_circle</span> Gestão de férias & Relatórios</li>
+                  <li className="flex items-center gap-2"><span className="material-symbols-outlined text-emerald-500 text-sm shrink-0">check_circle</span> Simulador 13º & Rescisão</li>
+                </ul>
+              </div>
+
+              {/* Personalizar Adicionais */}
+              <div>
+                <div className="flex items-center justify-between mb-2.5">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Personalizar Adicionais (Opcional)</p>
+                  <span className="text-[10px] text-slate-400">Acrescente o que precisa</span>
+                </div>
+                <div className="space-y-2.5">
+                  {/* +2 Utilizadores */}
+                  <div className="flex items-center justify-between p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 gap-2">
+                    <div className="min-w-0">
+                      <p className="font-bold text-xs text-slate-900 dark:text-white truncate">+2 Utilizadores Adicionais</p>
+                      <p className="text-[10px] sm:text-[11px] text-slate-500 font-mono">+24.000 Kz / ano cada</p>
+                    </div>
+                    <div className="flex items-center gap-2 sm:gap-3 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shrink-0">
+                      <button
+                        onClick={() => setAddUtilizadores(Math.max(0, addUtilizadores - 1))}
+                        className="size-7 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-white flex items-center justify-center font-black hover:bg-slate-200 transition-all text-xs"
+                      >
+                        -
+                      </button>
+                      <span className="w-4 sm:w-5 text-center font-black text-xs font-mono">{addUtilizadores}</span>
+                      <button
+                        onClick={() => setAddUtilizadores(addUtilizadores + 1)}
+                        className="size-7 rounded-lg bg-primary text-white flex items-center justify-center font-black hover:bg-primary/90 transition-all text-xs"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* +1 Entidade */}
+                  <div className="flex items-center justify-between p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 gap-2">
+                    <div className="min-w-0">
+                      <p className="font-bold text-xs text-slate-900 dark:text-white truncate">+1 Entidade Adicional</p>
+                      <p className="text-[10px] sm:text-[11px] text-slate-500 font-mono">+65.000 Kz / ano cada</p>
+                    </div>
+                    <div className="flex items-center gap-2 sm:gap-3 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shrink-0">
+                      <button
+                        onClick={() => setAddEntidades(Math.max(0, addEntidades - 1))}
+                        className="size-7 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-white flex items-center justify-center font-black hover:bg-slate-200 transition-all text-xs"
+                      >
+                        -
+                      </button>
+                      <span className="w-4 sm:w-5 text-center font-black text-xs font-mono">{addEntidades}</span>
+                      <button
+                        onClick={() => setAddEntidades(addEntidades + 1)}
+                        className="size-7 rounded-lg bg-primary text-white flex items-center justify-center font-black hover:bg-primary/90 transition-all text-xs"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* +50 Colaboradores */}
+                  <div className="flex items-center justify-between p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 gap-2">
+                    <div className="min-w-0">
+                      <p className="font-bold text-xs text-slate-900 dark:text-white truncate">+50 Colaboradores Adicionais</p>
+                      <p className="text-[10px] sm:text-[11px] text-slate-500 font-mono">+30.000 Kz / ano cada</p>
+                    </div>
+                    <div className="flex items-center gap-2 sm:gap-3 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shrink-0">
+                      <button
+                        onClick={() => setAddColaboradores(Math.max(0, addColaboradores - 1))}
+                        className="size-7 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-white flex items-center justify-center font-black hover:bg-slate-200 transition-all text-xs"
+                      >
+                        -
+                      </button>
+                      <span className="w-4 sm:w-5 text-center font-black text-xs font-mono">{addColaboradores}</span>
+                      <button
+                        onClick={() => setAddColaboradores(addColaboradores + 1)}
+                        className="size-7 rounded-lg bg-primary text-white flex items-center justify-center font-black hover:bg-primary/90 transition-all text-xs"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Escolha do Método de Pagamento */}
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5">Método de Pagamento</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <button
+                    onClick={() => setModalPaymentType('AUTOMATICO')}
+                    className={`p-3 rounded-2xl border-2 text-left transition-all ${modalPaymentType === 'AUTOMATICO' ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-800'}`}
+                  >
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs font-black text-slate-900 dark:text-white">ProxyPay</span>
+                      <span className="text-[8px] font-black uppercase bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">Automático</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500">Referência Multicaixa</p>
+                  </button>
+
+                  <button
+                    onClick={() => setModalPaymentType('MANUAL')}
+                    className={`p-3 rounded-2xl border-2 text-left transition-all ${modalPaymentType === 'MANUAL' ? 'border-primary bg-primary/5' : 'border-slate-100 dark:border-slate-800'}`}
+                  >
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs font-black text-slate-900 dark:text-white">Transferência</span>
+                      <span className="text-[8px] font-black uppercase bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Manual</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500">Aprovação Admin</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Resumo do Valor Total */}
+              <div className="bg-slate-900 text-white p-4 sm:p-5 rounded-2xl flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Valor Total Calculado (12 Meses)</p>
+                  <p className="text-xl sm:text-2xl font-black text-emerald-400 font-mono mt-0.5">
+                    {totalCorporativoPrice.toLocaleString('pt-AO', { minimumFractionDigits: 2 })} Kz
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Ação */}
+            <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2 shrink-0">
               <button
                 onClick={async () => {
-                  closeBillingModal();
-                  await handleUpgradePlan(billingModal.planId, billingModal.planName, modalCycle);
+                  const planId = corporativoModal.planId;
+                  closeCorporativoModal();
+                  await handleUpgradePlan(planId, 'Corporativo', 'ANUAL', modalPaymentType, totalCorporativoPrice);
                 }}
-                className="w-full py-4 bg-primary text-white font-black rounded-2xl uppercase tracking-widest hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all"
+                className="w-full py-3.5 bg-primary text-white font-black rounded-2xl uppercase text-xs tracking-widest hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2"
               >
-                Confirmar e Assinar
+                <span>Assinar Plano Corporativo</span>
+                <span className="material-symbols-outlined text-base">arrow_forward</span>
               </button>
               <button
-                onClick={closeBillingModal}
-                className="w-full py-3 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+                onClick={closeCorporativoModal}
+                className="w-full py-2 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
               >
                 Cancelar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Pagamento por Referência ProxyPay */}
+      {proxyPayModal?.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md overflow-y-auto">
+          <div className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 my-4 animate-fadeIn">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-primary to-indigo-600 p-8 text-white">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="size-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-2xl">credit_card</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/70">SALYA PAYROLL</p>
+                    <h2 className="text-xl font-black">Pagamento por Referência</h2>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setProxyPayModal(null)}
+                  className="size-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-white"
+                >
+                  <span className="material-symbols-outlined text-lg">close</span>
+                </button>
+              </div>
+              <p className="text-xs text-white/80 leading-relaxed">
+                Clique em <strong>"Finalizar (já paguei)"</strong> após ter efectuado o pagamento num ATM, Multicaixa Express ou Internet Banking.
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Dados de pagamento */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slate-700">
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Entidade</span>
+                  <span className="text-2xl font-black text-slate-900 dark:text-white tracking-widest font-mono">{proxyPayModal.entidade}</span>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slate-700">
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Referência</span>
+                  <span className="text-2xl font-black text-primary tracking-widest font-mono">
+                    {proxyPayModal.referencia.replace(/(\d{3})(?=\d)/g, '$1 ').trim()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Valor</span>
+                  <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                    KZ {proxyPayModal.valor.toLocaleString('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Aviso 5 min */}
+              <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl p-3">
+                <span className="material-symbols-outlined text-amber-500 text-lg shrink-0 mt-0.5">schedule</span>
+                <p className="text-xs text-amber-700 dark:text-amber-300 font-medium leading-relaxed">
+                  Espere <strong>5 minutos</strong> antes de pagar, para que a referência fique pronta no sistema da EMIS.
+                </p>
+              </div>
+
+              {verifyMsg && (
+                <p className={`text-xs font-medium text-center px-2 ${
+                  verifyMsg.includes('Erro') || verifyMsg.includes('não detectado') ? 'text-rose-500' : 'text-primary'
+                }`}>{verifyMsg}</p>
+              )}
+
+              {/* Botão de Validação */}
+              <button
+                onClick={handleConfirmProxyPayPayment}
+                disabled={verifyingPayment}
+                className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {verifyingPayment
+                  ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> A verificar...</>
+                  : <><span className="material-symbols-outlined">check_circle</span> Finalizar (já paguei)</>}
+              </button>
+              <button
+                onClick={() => setProxyPayModal(null)}
+                disabled={verifyingPayment}
+                className="w-full py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+              >
+                Fechar
+              </button>
+
+              {/* Instruções */}
+              <div className="space-y-2 pt-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Instruções de Pagamento</p>
+                {[
+                  'Abra o Multicaixa Express, o aplicativo do seu banco ou dirija-se a um ATM.',
+                  'Procure pela opção "Pagamentos por referência".',
+                  'Introduza a entidade, a referência, e confirme o valor.',
+                  'Clique em "Finalizar (já paguei)" quando terminar.',
+                  'Desfrute do SALYA! 🎉',
+                ].map((step, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <span className="size-5 rounded-full bg-primary/10 text-primary text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{step}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

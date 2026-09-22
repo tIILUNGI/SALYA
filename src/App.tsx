@@ -579,7 +579,7 @@ function MainLayout() {
 
 function SubscriptionBarrier() {
   const { user, effectivePlan, refreshSubscriptionStatus, setMessage } = React.useContext(AppContext);
-  const [view, setView] = React.useState<'message' | 'renew' | 'confirm'>('message');
+  const [view, setView] = React.useState<'message' | 'renew' | 'confirm' | 'payment'>('message');
   const [plans, setPlans] = React.useState<any[]>([]);
   const [loadingPlans, setLoadingPlans] = React.useState(false);
   const [checking, setChecking] = React.useState(false);
@@ -587,6 +587,9 @@ function SubscriptionBarrier() {
   const [pendingPlan, setPendingPlan] = React.useState<any>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [requestSent, setRequestSent] = React.useState(false);
+  const [paymentRef, setPaymentRef] = React.useState<{ referencia: string; entidade: string; valor: number; expira?: string } | null>(null);
+  const [verifyingPayment, setVerifyingPayment] = React.useState(false);
+  const [verifyMsg, setVerifyMsg] = React.useState('');
   
   // Ref para controlar tentativas de verificação
   const checkAttemptsRef = React.useRef(0);
@@ -748,6 +751,8 @@ function SubscriptionBarrier() {
     }
   };
 
+  const fmtKz = (val: number | undefined) => (val || 0).toLocaleString('pt-AO');
+
   const handleSelectPlan = (plan: any) => {
     if (requestSent) {
       setMessage?.({
@@ -761,43 +766,86 @@ function SubscriptionBarrier() {
     setView('confirm');
   };
 
-  const confirmSubscribe = async () => {
-    if (!pendingPlan) return;
-    if (submitting) return;
-    if (requestSent) return;
-    
+  const confirmSubscribeProxyPay = async () => {
+    if (!pendingPlan || submitting || requestSent) return;
+    setSubmitting(true);
+    try {
+      const data = await api.post(`/plans/${pendingPlan.id}/checkout`, {}, true);
+      if (data?.referencia) {
+        setPaymentRef({
+          referencia: data.referencia,
+          entidade: data.entidade || '1068',
+          valor: data.valor || pendingPlan.price,
+          expira: data.expira,
+        });
+        setVerifyMsg('');
+        setView('payment');
+      } else {
+        await confirmSubscribeManual();
+      }
+    } catch {
+      await confirmSubscribeManual();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const confirmSubscribeManual = async () => {
+    if (!pendingPlan || submitting || requestSent) return;
     setSubmitting(true);
     try {
       await api.post(`/plans/${pendingPlan.id}/subscribe`, {}, true);
-      
-      // Marca que a solicitação foi enviada
       setRequestSent(true);
-      
-      // Salva no localStorage para persistir após refresh
       localStorage.setItem('salya_request_sent', 'true');
       localStorage.setItem('salya_requested_plan', JSON.stringify(pendingPlan));
-      
-      await Swal.fire({
-        title: 'Solicitação Enviada!',
-        text: 'O seu pedido foi enviado com sucesso. O administrador irá validar e activar o acesso.',
-        icon: 'success',
-        confirmButtonColor: '#6366f1',
-        timer: 3000,
-        showConfirmButton: true,
-      });
-      
-      // Atualiza o status do usuário localmente
-      // Não redireciona, apenas volta para a tela principal
       setView('message');
-      
-    } catch (e: any) {
-      if (!e?.isSubscriptionBlock) {
+    } catch (e2: any) {
+      if (!e2?.isSubscriptionBlock) {
         await Swal.fire('Erro', 'Não foi possível processar o pedido. Tente novamente.', 'error');
       }
-      setRequestSent(false);
-      localStorage.removeItem('salya_request_sent');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    if (verifyingPayment || !paymentRef) return;
+    setVerifyingPayment(true);
+    setVerifyMsg('A verificar pagamento...');
+    try {
+      const data = await api.post(`/plans/verify-payment`, { referencia: paymentRef.referencia }, true);
+      if (data?.activated) {
+        await Swal.fire({ title: 'Pagamento Confirmado!', text: 'O seu plano foi activado com sucesso.', icon: 'success', confirmButtonColor: '#6366f1', timer: 3000, showConfirmButton: true });
+        localStorage.removeItem('salya_request_sent');
+        localStorage.removeItem('salya_requested_plan');
+        setPaymentRef(null);
+        setView('message');
+        await refreshSubscriptionStatus();
+      } else if (data?.pending) {
+        setVerifyMsg('Pagamento ainda não detectado. Aguarde alguns minutos e tente novamente.');
+      } else {
+        // Fallback: regista o pedido manualmente para o admin validar
+        await api.post(`/plans/${pendingPlan?.id}/subscribe`, {}, true);
+        setRequestSent(true);
+        localStorage.setItem('salya_request_sent', 'true');
+        localStorage.setItem('salya_requested_plan', JSON.stringify(pendingPlan));
+        setView('message');
+      }
+    } catch {
+      // Endpoint de verificação não existe ainda — regista o pedido manualmente
+      try {
+        await api.post(`/plans/${pendingPlan?.id}/subscribe`, {}, true);
+        setRequestSent(true);
+        localStorage.setItem('salya_request_sent', 'true');
+        localStorage.setItem('salya_requested_plan', JSON.stringify(pendingPlan));
+        setView('message');
+      } catch (e2: any) {
+        if (!e2?.isSubscriptionBlock) {
+          setVerifyMsg('Erro ao verificar. Tente novamente ou contacte o suporte.');
+        }
+      }
+    } finally {
+      setVerifyingPayment(false);
     }
   };
 
@@ -814,14 +862,118 @@ function SubscriptionBarrier() {
   };
 
   // Restante do componente permanece igual...
+  // --- ECRÃ DE PAGAMENTO POR REFERÊNCIA PROXYPAY ---
+  if (view === 'payment' && paymentRef) {
+    const fmtKz = (v: number) => v.toLocaleString('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-xl overflow-y-auto">
+        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 dark:border-slate-800 my-4">
+          {/* Cabeçalho */}
+          <div className="bg-gradient-to-r from-primary to-indigo-600 p-8 text-white">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="size-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                <span className="material-symbols-outlined text-2xl">credit_card</span>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/70">SALYA PAYROLL</p>
+                <h2 className="text-xl font-black">Pagamento por Referência</h2>
+              </div>
+            </div>
+            <p className="text-xs text-white/80 leading-relaxed">
+              Clique em <strong>"Finalizar (já paguei)"</strong> após ter efectuado o pagamento num ATM, Multicaixa Express ou Internet Banking.
+            </p>
+          </div>
+
+          <div className="p-6 space-y-4">
+            {/* Dados de pagamento */}
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slate-700">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Entidade</span>
+                <span className="text-2xl font-black text-slate-900 dark:text-white tracking-widest font-mono">{paymentRef.entidade}</span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slate-700">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Referência</span>
+                <span className="text-2xl font-black text-primary tracking-widest font-mono">
+                  {paymentRef.referencia.replace(/(\d{3})(?=\d)/g, '$1 ').trim()}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Valor</span>
+                <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">KZ {fmtKz(paymentRef.valor)}</span>
+              </div>
+            </div>
+
+            {/* Aviso dos 5 minutos */}
+            <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl p-3">
+              <span className="material-symbols-outlined text-amber-500 text-lg shrink-0 mt-0.5">schedule</span>
+              <p className="text-xs text-amber-700 dark:text-amber-300 font-medium leading-relaxed">
+                Espere <strong>5 minutos</strong> antes de pagar, para que a referência fique pronta no sistema da EMIS.
+              </p>
+            </div>
+
+            {/* Botão principal */}
+            {verifyMsg && (
+              <p className={`text-xs font-medium text-center px-2 ${
+                verifyMsg.includes('Erro') || verifyMsg.includes('não detectado') ? 'text-rose-500' : 'text-primary'
+              }`}>{verifyMsg}</p>
+            )}
+            <button
+              onClick={handleConfirmPayment}
+              disabled={verifyingPayment}
+              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {verifyingPayment
+                ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> A verificar...</>
+                : <><span className="material-symbols-outlined">check_circle</span> Finalizar (já paguei)</>}
+            </button>
+            <button
+              onClick={() => setView('confirm')}
+              disabled={verifyingPayment}
+              className="w-full py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+            >
+              Voltar
+            </button>
+
+            {/* Instruções */}
+            <div className="space-y-2 pt-2">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Instruções de Pagamento</p>
+              {[
+                'Abra o Multicaixa Express, o aplicativo do seu banco ou dirija-se a um ATM.',
+                'Procure pela opção "Pagamentos por referência".',
+                'Introduza a entidade, a referência, e confirme o valor.',
+                'Clique em "Finalizar (já paguei)" quando terminar.',
+                'Desfrute do SALYA! 🎉',
+              ].map((step, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <span className="size-5 rounded-full bg-primary/10 text-primary text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{step}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Suporte */}
+            <div className="rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 p-4 flex items-center gap-3">
+              <span className="material-symbols-outlined text-indigo-500">support_agent</span>
+              <div>
+                <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-0.5">Suporte</p>
+                <a href="mailto:geral@ilungi.co.ao" className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">geral@ilungi.co.ao</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- ECRÃ DE CONFIRMAÇÃO DO PLANO E SELECÇÃO DE MÉTODO DE PAGAMENTO ---
   if (view === 'confirm' && pendingPlan) {
     return (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-xl">
-        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 dark:border-slate-800">
+        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800">
           <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Confirmar Plano</h2>
-              <p className="text-sm text-slate-500 mt-1">Reveja os detalhes antes de solicitar.</p>
+              <h2 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Confirmar Assinatura</h2>
+              <p className="text-sm text-slate-500 mt-1">Escolha como pretende efectuar o pagamento.</p>
             </div>
             <button 
               onClick={() => setView('renew')} 
@@ -833,71 +985,69 @@ function SubscriptionBarrier() {
           </div>
 
           <div className="p-8 space-y-6">
-            <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-6">
-              <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3">Plano Selecionado</p>
-              <div className="flex items-center justify-between mb-4">
+            {/* Detalhes do Plano */}
+            <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-5 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black text-primary uppercase tracking-widest">Plano Seleccionado</p>
                 <h3 className="text-xl font-black text-slate-900 dark:text-white">{pendingPlan.name}</h3>
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
-                  {pendingPlan.durationDays} dias
-                </span>
               </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-black text-primary">{pendingPlan.price?.toLocaleString()}</span>
-                <span className="text-xs font-bold text-slate-400 uppercase">Kz</span>
+              <div className="text-right">
+                <span className="text-2xl font-black text-primary">{fmtKz(pendingPlan.price)}</span>
+                <span className="text-xs font-bold text-slate-400 uppercase block">Kz</span>
               </div>
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 space-y-3">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Próximos Passos</p>
-              <div className="space-y-2">
-                <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-primary text-base mt-0.5">counter_1</span>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">Clique em <strong>"Solicitar Plano"</strong> para registar o seu pedido.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-primary text-base mt-0.5">counter_2</span>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">Efectue o pagamento e envie o comprovativo ao suporte.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-primary text-base mt-0.5">counter_3</span>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">O administrador irá validar e activar o seu acesso.</p>
-                </div>
-              </div>
-            </div>
+            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Método de Pagamento</p>
 
-            <div className="rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <span className="material-symbols-outlined text-indigo-500 text-xl">support_agent</span>
-                <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Suporte Técnico</p>
-              </div>
-              <p className="text-xs text-indigo-700 dark:text-indigo-300 mb-1">Para pagamentos, comprovativo e activação:</p>
-              <a
-                href="mailto:geral@ilungi.co.ao"
-                className="text-sm font-black text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 underline underline-offset-2 transition-colors"
-              >
-                geral@ilungi.co.ao
-              </a>
-            </div>
-
-            <div className="flex gap-3 pt-2">
+            <div className="space-y-3">
+              {/* Opção 1: Automático via ProxyPay */}
               <button
-                onClick={() => setView('renew')}
+                onClick={confirmSubscribeProxyPay}
                 disabled={submitting}
-                className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all disabled:opacity-50"
+                className="w-full text-left p-5 rounded-2xl border-2 border-primary bg-primary/5 hover:bg-primary/10 transition-all group flex items-start gap-4"
               >
-                Voltar
+                <div className="size-12 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-lg shadow-primary/30">
+                  <span className="material-symbols-outlined text-2xl">qr_code_2</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="font-black text-slate-900 dark:text-white text-sm">Pagamento por Referência (Automático)</h4>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 text-[9px] font-black uppercase">Recomendado</span>
+                  </div>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Gera referência para pagar no ATM, Multicaixa Express ou banco online. O acesso é libertado <strong>automaticamente</strong> após o pagamento.
+                  </p>
+                </div>
               </button>
+
+              {/* Opção 2: Manual via Transferência Bancária */}
               <button
-                onClick={confirmSubscribe}
+                onClick={confirmSubscribeManual}
                 disabled={submitting}
-                className="flex-1 py-4 bg-primary text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                className="w-full text-left p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 transition-all group flex items-start gap-4"
               >
-                {submitting
-                  ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> A enviar...</>
-                  : <><span className="material-symbols-outlined text-sm">send</span> Solicitar Plano</>
-                }
+                <div className="size-12 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-2xl">account_balance</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="font-black text-slate-900 dark:text-white text-sm">Transferência / Comprovativo (Manual)</h4>
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 text-[9px] font-black uppercase">Validação Admin</span>
+                  </div>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Efectue transferência bancária e envie o comprovativo para o administrador aprovar o pedido manualmente.
+                  </p>
+                </div>
               </button>
             </div>
+
+            <button
+              onClick={() => setView('renew')}
+              disabled={submitting}
+              className="w-full py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all disabled:opacity-50"
+            >
+              Voltar aos Planos
+            </button>
           </div>
         </div>
       </div>
