@@ -1024,30 +1024,45 @@ const Processamento: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-card p-6 border border-slate-100">
-          <p className="text-xs text-slate-500 font-semibold">Total Bruto</p>
-          <p className="text-2xl font-bold text-slate-800 mt-2">{formatMoney(totaisPeriodo.bruto)}</p>
-          <div className="flex items-center gap-1 mt-1 text-emerald-500"><span className="material-symbols-outlined text-sm">trending_up</span><span className="text-[10px] font-medium">{historicoDoPeriodo.length} recibos</span></div>
+        <div className="p-6 border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-2xs hover:shadow-md transition-all">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Bruto</p>
+            <span className="material-symbols-outlined text-emerald-500 text-xl">payments</span>
+          </div>
+          <p className="text-2xl font-black text-slate-900 dark:text-white mt-3 tracking-tight">{formatMoney(totaisPeriodo.bruto)}</p>
+          <div className="flex items-center gap-1.5 mt-2 text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
+            <span className="material-symbols-outlined text-sm">trending_up</span>
+            <span>{historicoDoPeriodo.length} recibo(s) gerado(s)</span>
+          </div>
         </div>
-        <div className="glass-card p-6 border border-slate-100">
-          <p className="text-xs text-rose-500 font-semibold">Total Descontos</p>
-          <p className="text-2xl font-bold text-slate-800 mt-2">{formatMoney(totaisPeriodo.descontos)}</p>
-          <p className="text-[10px] text-slate-400 mt-1">Inclui INSS e IRT</p>
+
+        <div className="p-6 border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-2xs hover:shadow-md transition-all">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-rose-500 font-bold uppercase tracking-wider">Total Descontos</p>
+            <span className="material-symbols-outlined text-rose-500 text-xl">output</span>
+          </div>
+          <p className="text-2xl font-black text-slate-900 dark:text-white mt-3 tracking-tight">{formatMoney(totaisPeriodo.descontos)}</p>
+          <p className="text-[10px] font-semibold text-slate-400 mt-2">Deduções acumuladas (INSS & IRT)</p>
         </div>
-        <div className="glass-card p-6 border border-primary/10 bg-primary/5">
-          <p className="text-xs text-primary font-semibold">Total Líquido</p>
-          <p className="text-2xl font-bold text-primary mt-2">{formatMoney(totaisPeriodo.liquido)}</p>
-          <p className="text-[10px] text-primary/60 mt-1">Valor a transferir</p>
+
+        <div className="p-6 border border-primary/20 bg-primary/5 dark:bg-primary/10 rounded-2xl shadow-2xs hover:shadow-md transition-all">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-primary font-bold uppercase tracking-wider">Total Líquido</p>
+            <span className="material-symbols-outlined text-primary text-xl">account_balance_wallet</span>
+          </div>
+          <p className="text-2xl font-black text-primary dark:text-white mt-3 tracking-tight">{formatMoney(totaisPeriodo.liquido)}</p>
+          <p className="text-[10px] font-semibold text-primary/70 dark:text-slate-300 mt-2">Montante líquido a transferir</p>
         </div>
-        <div className={`glass-card p-6 border transition-all ${isPeriodoAtivo ? 'border-primary bg-primary/5 ring-2 ring-primary/20 shadow-lg shadow-primary/10' : 'border-slate-100 bg-slate-50'}`}>
+
+        <div className={`p-6 border rounded-2xl shadow-2xs transition-all ${isPeriodoAtivo ? 'border-primary bg-primary/5 dark:bg-slate-900 ring-2 ring-primary/20 shadow-md' : 'border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60'}`}>
           <div className="flex items-center justify-between gap-2">
-            <p className={`text-xs font-semibold ${isPeriodoAtivo ? 'text-primary' : 'text-slate-500'}`}>Período</p>
+            <p className={`text-xs font-bold uppercase tracking-wider ${isPeriodoAtivo ? 'text-primary' : 'text-slate-500'}`}>Período Activo</p>
             {isPeriodoAtivo && (
-              <span className="text-[9px] font-bold bg-primary text-white px-2 py-0.5 rounded-full">Mês actual</span>
+              <span className="text-[9px] font-extrabold bg-primary text-white px-2 py-0.5 rounded-full uppercase tracking-wider">Mês Actual</span>
             )}
           </div>
-          <p className={`text-xl font-bold mt-2 ${isPeriodoAtivo ? 'text-primary' : 'text-slate-700'}`}>{selectedMonth} {selectedYear}</p>
-          <p className="text-[10px] text-slate-400 mt-1">{ativos.length} colaboradores ativos</p>
+          <p className={`text-xl font-black mt-3 tracking-tight ${isPeriodoAtivo ? 'text-primary dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>{selectedMonth} {selectedYear}</p>
+          <p className="text-[10px] font-semibold text-slate-400 mt-2">{ativos.length} colaboradores activos</p>
         </div>
       </div>
       <div className="glass-card overflow-hidden">
