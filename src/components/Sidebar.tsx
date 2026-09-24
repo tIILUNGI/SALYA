@@ -76,17 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { id: 'alertas', label: 'Alertas', icon: 'notifications_active' },
-    { id: 'colaboradores', label: 'Colaboradores', icon: 'group' },
-    { id: 'ferias', label: 'Gestão de Férias', icon: 'date_range' },
-    { id: 'assiduidade', label: 'Assiduidade & Faltas', icon: 'fingerprint' },
-    { id: 'processamento', label: 'Processamento', icon: 'account_balance_wallet' },
-    { id: 'processamento-atraso', label: 'Salários em Atraso', icon: 'history' },
-    { id: 'relatorios', label: 'Relatórios', icon: 'assessment' },
-    { id: 'configuracoes', label: 'Configurações', icon: 'settings' },
-  ];
+
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
@@ -236,70 +226,136 @@ const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
           ) : (
-            // Estado: empresa configurada - menu de navegação
-            <nav className="space-y-1">
-              {menuItems.map((item) => (
+            // Estado: empresa configurada - menu de navegação corporativo por categorias
+            <nav className="space-y-5 py-2">
+              {/* Categoria 1: Visão Geral */}
+              <div>
+                {!isCollapsed && (
+                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-3 mb-2">
+                    Visão geral
+                  </h4>
+                )}
                 <button
-                  key={item.id}
-                  onClick={() => handleNavigate(item.id)}
-                  title={isCollapsed ? item.label : ''}
-                  className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-lg text-sm font-medium transition-all relative group ${
-                    currentPage === item.id
-                      ? 'bg-slate-100 dark:bg-slate-800 text-primary'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                  onClick={() => handleNavigate('dashboard')}
+                  title={isCollapsed ? 'Visão geral' : ''}
+                  className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-xl text-xs font-bold transition-all relative group ${
+                    currentPage === 'dashboard'
+                      ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-l-4 border-purple-600 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <span className={`material-symbols-outlined transition-colors ${currentPage === item.id ? 'text-primary' : 'text-slate-400 group-hover:text-slate-600'}`}>
-                    {item.icon}
+                  <span className={`material-symbols-outlined text-lg transition-colors ${currentPage === 'dashboard' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                    grid_view
                   </span>
-                  {!isCollapsed && <span>{item.label}</span>}
-                  {currentPage === item.id && (
-                    <div className={`absolute ${isCollapsed ? 'right-0' : 'right-0'} top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-l-full`} />
-                  )}
+                  {!isCollapsed && <span>Visão geral</span>}
                 </button>
-              ))}
+              </div>
 
+              {/* Categoria 2: Gestão Operacional & RH */}
+              <div>
+                {!isCollapsed && (
+                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-3 mb-2">
+                    Gestão de Pessoal &amp; Folha
+                  </h4>
+                )}
+                <div className="space-y-1">
+                  {[
+                    { id: 'colaboradores', label: 'Colaboradores', icon: 'group' },
+                    { id: 'processamento', label: 'Processamento', icon: 'payments' },
+                    { id: 'ferias', label: 'Gestão de Férias', icon: 'date_range' },
+                    { id: 'assiduidade', label: 'Assiduidade & Faltas', icon: 'fingerprint' }
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => handleNavigate(item.id)}
+                      title={isCollapsed ? item.label : ''}
+                      className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-xl text-xs font-bold transition-all relative group ${
+                        currentPage === item.id
+                          ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-l-4 border-purple-600 shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <span className={`material-symbols-outlined text-lg transition-colors ${currentPage === item.id ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                        {item.icon}
+                      </span>
+                      {!isCollapsed && <span>{item.label}</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
+              {/* Categoria 3: Operação & Relatórios */}
+              <div>
+                {!isCollapsed && (
+                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-3 mb-2">
+                    Operação &amp; Relatórios
+                  </h4>
+                )}
+                <div className="space-y-1">
+                  {[
+                    { id: 'alertas', label: 'Alertas & Compliance', icon: 'notifications_active' },
+                    { id: 'processamento-atraso', label: 'Salários em Atraso', icon: 'history' },
+                    { id: 'relatorios', label: 'Relatórios & Exportação', icon: 'assessment' },
+                    { id: 'configuracoes', label: 'Configurações', icon: 'settings' }
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => handleNavigate(item.id)}
+                      title={isCollapsed ? item.label : ''}
+                      className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-xl text-xs font-bold transition-all relative group ${
+                        currentPage === item.id
+                          ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-l-4 border-purple-600 shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <span className={`material-symbols-outlined text-lg transition-colors ${currentPage === item.id ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                        {item.icon}
+                      </span>
+                      {!isCollapsed && <span>{item.label}</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </nav>
           )}
         </div>
 
         {/* User section */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} p-2`}>
-            <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold uppercase flex-shrink-0">
+        <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} p-1.5`}>
+            <div className="size-9 rounded-full bg-blue-100 text-blue-600 font-bold uppercase flex items-center justify-center shrink-0 text-xs border border-blue-200">
               {user?.name?.substring(0, 2) || 'US'}
             </div>
             {!isCollapsed && (
-              <div className="overflow-hidden flex-1">
-                <p className="text-sm font-semibold truncate">{user?.name || 'Administrador'}</p>
-                <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@salya.com'}</p>
+              <div className="overflow-hidden flex-1 min-w-0">
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{user?.name || 'Administrador'}</p>
+                <p className="text-[10px] text-slate-400 truncate">{user?.email || 'admin@salya.com'}</p>
               </div>
             )}
           </div>
-          <div className={`mt-2 space-y-1 ${isCollapsed ? 'hidden' : ''}`}>
+          <div className={`mt-2 space-y-0.5 ${isCollapsed ? 'hidden' : ''}`}>
             <button
               onClick={() => handleNavigate('profile')}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-500 hover:text-primary transition-colors rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800"
+              className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-white dark:hover:bg-slate-800"
             >
-              <span className="material-symbols-outlined text-lg">person</span>
+              <span className="material-symbols-outlined text-base">person</span>
               Meu Perfil
             </button>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-500 hover:text-rose-500 transition-colors rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800"
+              className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs font-medium text-rose-500 hover:text-rose-600 transition-colors rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40"
             >
-              <span className="material-symbols-outlined text-lg">logout</span>
-              Terminar Sessão
+              <span className="material-symbols-outlined text-base">logout</span>
+              Terminar sessão
             </button>
           </div>
           {isCollapsed && (
              <button
               onClick={handleLogout}
-              title="Sair"
-              className="w-full flex items-center justify-center p-2 text-slate-500 hover:text-rose-500 transition-colors rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 mt-2"
+              title="Terminar sessão"
+              className="w-full flex items-center justify-center p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors rounded-lg mt-2"
             >
-              <span className="material-symbols-outlined text-lg">logout</span>
+              <span className="material-symbols-outlined text-base">logout</span>
             </button>
           )}
         </div>

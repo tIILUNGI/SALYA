@@ -36,6 +36,11 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
+  // Skip non-http(s) requests such as chrome-extension:// schemes
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
   if (url.pathname.startsWith('/api') || url.hostname.includes('googletagmanager.com')) {
     return;
   }
@@ -44,8 +49,12 @@ self.addEventListener('fetch', (event) => {
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
         fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            caches.open(CACHE_NAME).then((cache) => {
+              if (url.protocol.startsWith('http')) {
+                cache.put(event.request, networkResponse).catch(() => {});
+              }
+            });
           }
         }).catch(() => {});
         return cachedResponse;
@@ -55,7 +64,11 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         }
         const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+        caches.open(CACHE_NAME).then((cache) => {
+          if (url.protocol.startsWith('http')) {
+            cache.put(event.request, responseToCache).catch(() => {});
+          }
+        });
         return networkResponse;
       }).catch(() => {
         return caches.match('/');

@@ -39,7 +39,78 @@ const formatarAtrasosEmHoras = (minutosTotal: number): string => {
 const Assiduidade: React.FC = () => {
   const { empresaId, colaboradores } = useContext(AppContext);
   const colaboradoresAtivos = colaboradores.filter(c => c.status !== 'Afastado' && c.status !== 'Desligado');
-  const [activeTab, setActiveTab] = useState<'mapa' | 'faltas' | 'registos'>('mapa');
+  const [activeTab, setActiveTab] = useState<'mapa' | 'faltas' | 'registos' | 'biometria'>('mapa');
+
+  // --- Configuração de Dispositivos Biométricos ---
+  interface DispositivoBiometrico {
+    id: string;
+    nome: string;
+    idFisico: string;
+    localizacao: string;
+    horarioEntrada: string;
+  }
+  interface MapeamentoBio {
+    idBiometrico: string;
+    colaboradorId: number;
+  }
+
+  const storageKeyDevices = `salya_bio_devices_${empresaId}`;
+  const storageKeyMappings = `salya_bio_mappings_${empresaId}`;
+
+  const [dispositivos, setDispositivos] = React.useState<DispositivoBiometrico[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`salya_bio_devices_${empresaId}`) || '[]'); } catch { return []; }
+  });
+  const [mapeamentos, setMapeamentos] = React.useState<MapeamentoBio[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`salya_bio_mappings_${empresaId}`) || '[]'); } catch { return []; }
+  });
+
+  const [bioNome, setBioNome] = React.useState('');
+  const [bioIdFisico, setBioIdFisico] = React.useState('');
+  const [bioLocal, setBioLocal] = React.useState('');
+  const [bioHorario, setBioHorario] = React.useState('08:00');
+  const [mapBioId, setMapBioId] = React.useState('');
+  const [mapColabId, setMapColabId] = React.useState<number | ''>('');
+
+  const salvarDispositivo = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bioNome.trim() || !bioIdFisico.trim()) return;
+    const novo: DispositivoBiometrico = {
+      id: Date.now().toString(),
+      nome: bioNome.trim(),
+      idFisico: bioIdFisico.trim().toUpperCase(),
+      localizacao: bioLocal.trim(),
+      horarioEntrada: bioHorario,
+    };
+    const updated = [...dispositivos, novo];
+    setDispositivos(updated);
+    localStorage.setItem(storageKeyDevices, JSON.stringify(updated));
+    setBioNome(''); setBioIdFisico(''); setBioLocal(''); setBioHorario('08:00');
+    Swal.fire({ title: 'Dispositivo registado!', icon: 'success', timer: 1500, showConfirmButton: false });
+  };
+
+  const removerDispositivo = (id: string) => {
+    const updated = dispositivos.filter(d => d.id !== id);
+    setDispositivos(updated);
+    localStorage.setItem(storageKeyDevices, JSON.stringify(updated));
+  };
+
+  const salvarMapeamento = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mapBioId.trim() || !mapColabId) return;
+    const existing = mapeamentos.filter(m => m.idBiometrico !== mapBioId.trim().toUpperCase());
+    const updated = [...existing, { idBiometrico: mapBioId.trim().toUpperCase(), colaboradorId: Number(mapColabId) }];
+    setMapeamentos(updated);
+    localStorage.setItem(storageKeyMappings, JSON.stringify(updated));
+    setMapBioId(''); setMapColabId('');
+    Swal.fire({ title: 'Mapeamento guardado!', icon: 'success', timer: 1500, showConfirmButton: false });
+  };
+
+  const removerMapeamento = (bioId: string) => {
+    const updated = mapeamentos.filter(m => m.idBiometrico !== bioId);
+    setMapeamentos(updated);
+    localStorage.setItem(storageKeyMappings, JSON.stringify(updated));
+  };
+
 
   const [faltas, setFaltas] = useState<Falta[]>([]);
   const [registos, setRegistos] = useState<RegistoPonto[]>([]);
@@ -324,6 +395,17 @@ const Assiduidade: React.FC = () => {
         >
           Registos Biométricos ({registos.length})
         </button>
+        <button
+          onClick={() => setActiveTab('biometria')}
+          className={`pb-4 text-sm font-bold transition-all relative flex items-center gap-1.5 ${
+            activeTab === 'biometria'
+              ? 'text-primary border-b-2 border-primary'
+              : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+          }`}
+        >
+          <span className="material-symbols-outlined text-base">settings_input_component</span>
+          Configuração Biométrica
+        </button>
       </div>
 
       {loading ? (
@@ -541,6 +623,166 @@ const Assiduidade: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Tab 4: Configuração de Dispositivos Biométricos */}
+      {activeTab === 'biometria' && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+          {/* Coluna 1: Registo de Dispositivos */}
+          <div className="space-y-6">
+            <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
+              <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
+                <div className="size-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                  <span className="material-symbols-outlined text-xl">settings_input_component</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 dark:text-white text-sm">Registar Dispositivo Biométrico</h3>
+                  <p className="text-xs text-slate-400">ZKTeco, Control iD, Nitgen, DigitalPersona, etc.</p>
+                </div>
+              </div>
+              <form onSubmit={salvarDispositivo} className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Nome do Terminal *</label>
+                    <input type="text" required value={bioNome} onChange={e => setBioNome(e.target.value)}
+                      placeholder="Ex: Portaria Principal"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-medium text-slate-800 dark:text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">ID Físico do Dispositivo *</label>
+                    <input type="text" required value={bioIdFisico} onChange={e => setBioIdFisico(e.target.value)}
+                      placeholder="Ex: ZK-001"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold font-mono text-slate-800 dark:text-white uppercase" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Localização</label>
+                    <input type="text" value={bioLocal} onChange={e => setBioLocal(e.target.value)}
+                      placeholder="Ex: Piso 1, Ala B"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-medium text-slate-800 dark:text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Horário de Referência</label>
+                    <input type="time" value={bioHorario} onChange={e => setBioHorario(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold font-mono text-slate-800 dark:text-white" />
+                  </div>
+                </div>
+                <button type="submit" className="w-full py-3 bg-primary text-white rounded-xl font-bold text-xs hover:bg-primary/90 shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                  <span className="material-symbols-outlined text-base">add_circle</span>
+                  Registar Dispositivo
+                </button>
+              </form>
+            </div>
+
+            {/* Lista de dispositivos */}
+            <div className="glass-card border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold text-slate-700 dark:text-white">Dispositivos Registados ({dispositivos.length})</p>
+              </div>
+              {dispositivos.length === 0 ? (
+                <div className="py-10 text-center text-slate-400">
+                  <span className="material-symbols-outlined text-3xl block mb-2">device_hub</span>
+                  <p className="text-xs font-medium">Nenhum dispositivo registado ainda.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {dispositivos.map(d => (
+                    <div key={d.id} className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                      <div className="flex items-center gap-3">
+                        <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-base">router</span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-800 dark:text-white">{d.nome}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">{d.idFisico} · {d.localizacao || 'Sem localização'} · Ref. {d.horarioEntrada}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => removerDispositivo(d.id)}
+                        className="size-7 rounded text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all flex items-center justify-center">
+                        <span className="material-symbols-outlined text-base">delete</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Coluna 2: Mapeamento ID Biométrico → Colaborador */}
+          <div className="space-y-6">
+            <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
+              <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
+                <div className="size-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-xl">link</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 dark:text-white text-sm">Mapear ID Biométrico → Colaborador</h3>
+                  <p className="text-xs text-slate-400">Associe o ID gravado no relógio ao funcionário correto.</p>
+                </div>
+              </div>
+              <form onSubmit={salvarMapeamento} className="space-y-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">ID Biométrico (do relógio) *</label>
+                  <input type="text" required value={mapBioId} onChange={e => setMapBioId(e.target.value)}
+                    placeholder="Ex: 00123456 ou NIF-789"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold font-mono text-slate-800 dark:text-white uppercase" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Colaborador *</label>
+                  <select required value={mapColabId} onChange={e => setMapColabId(Number(e.target.value))}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-medium text-slate-800 dark:text-white">
+                    <option value="">Selecione...</option>
+                    {colaboradoresAtivos.map(c => (
+                      <option key={c.id} value={c.id}>{c.nome} {c.bi ? `(${c.bi})` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+                <button type="submit" className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-500 shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
+                  <span className="material-symbols-outlined text-base">save</span>
+                  Guardar Mapeamento
+                </button>
+              </form>
+            </div>
+
+            {/* Tabela de mapeamentos */}
+            <div className="glass-card border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold text-slate-700 dark:text-white">Mapeamentos Activos ({mapeamentos.length})</p>
+              </div>
+              {mapeamentos.length === 0 ? (
+                <div className="py-10 text-center text-slate-400">
+                  <span className="material-symbols-outlined text-3xl block mb-2">account_tree</span>
+                  <p className="text-xs font-medium">Nenhum mapeamento configurado.</p>
+                  <p className="text-[10px] mt-1">Sem mapeamentos, o importador CSV usa o BI/NIF do ficheiro.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {mapeamentos.map(m => {
+                    const colab = colaboradores.find(c => c.id === m.colaboradorId);
+                    return (
+                      <div key={m.idBiometrico} className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                        <div className="flex items-center gap-3">
+                          <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded font-mono text-[10px] font-bold">{m.idBiometrico}</span>
+                          <span className="material-symbols-outlined text-slate-400 text-base">arrow_forward</span>
+                          <div>
+                            <p className="text-xs font-bold text-slate-800 dark:text-white">{colab?.nome || `ID ${m.colaboradorId}`}</p>
+                            <p className="text-[10px] text-slate-400">{colab?.cargo || ''}</p>
+                          </div>
+                        </div>
+                        <button onClick={() => removerMapeamento(m.idBiometrico)}
+                          className="size-7 rounded text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all flex items-center justify-center">
+                          <span className="material-symbols-outlined text-base">delete</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
         </>

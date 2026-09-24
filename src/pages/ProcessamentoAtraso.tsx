@@ -59,6 +59,8 @@ const ProcessamentoAtraso: React.FC = () => {
   const [grupos, setGrupos] = useState<ColaboradorComPendencias[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filtroAno, setFiltroAno] = useState('TODOS');
 
   // Selected months: map from colaboradorId → Set of "ano-mes" keys
   const [selecoes, setSelecoes] = useState<Record<number, Set<string>>>({});
@@ -407,13 +409,15 @@ const ProcessamentoAtraso: React.FC = () => {
     const monthName = snap.mes;
     const periodText = `${monthName} / ${snap.ano}`;
 
+    const isPrestador = snap.colaborador.tipoContrato === 'Prestador';
+
     const linhas = [
       { label: `Salário Base`, valorRemun: snap.salarioBase, valorDesc: 0, qtd: `${snap.diasTrabalhados} Dias` },
       ...(snap.ganhoAlimentacao > 0 ? [{ label: 'Subsídio de Alimentação', valorRemun: snap.ganhoAlimentacao, valorDesc: 0, qtd: '1' }] : []),
       ...(snap.ganhoTransporte > 0 ? [{ label: 'Subsídio de Transporte', valorRemun: snap.ganhoTransporte, valorDesc: 0, qtd: '1' }] : []),
-      { label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: snap.valorINSS, qtd: snap.valorINSS > 0 ? '3%' : '0%' },
-      { label: snap.colaborador.tipoContrato === 'Prestador' ? 'IRT Grupo B/C (Independente)' : 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: snap.valorIRT, qtd: snap.percentualIRT ? (snap.percentualIRT % 1 === 0 ? `${snap.percentualIRT}%` : `${snap.percentualIRT.toFixed(1)}%`) : '-' },
-      ...(empresa?.categoria === 'Particular' ? [{ label: 'Segurança Social Patronal (8% pago por empregador)', valorRemun: 0, valorDesc: 0, qtd: '8%' }] : []),
+      ...(!isPrestador && snap.valorINSS > 0 ? [{ label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: snap.valorINSS, qtd: '3%' }] : []),
+      { label: isPrestador ? 'IRT Grupo B/C (Independente)' : 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: snap.valorIRT, qtd: snap.percentualIRT ? (snap.percentualIRT % 1 === 0 ? `${snap.percentualIRT}%` : `${snap.percentualIRT.toFixed(1)}%`) : '-' },
+      ...(empresa?.categoria === 'Particular' && !isPrestador ? [{ label: 'Segurança Social Patronal (8% pago por empregador)', valorRemun: 0, valorDesc: 0, qtd: '8%' }] : []),
     ];
 
     // Salvar o HTML do recibo quando o modal é aberto
@@ -594,8 +598,41 @@ const ProcessamentoAtraso: React.FC = () => {
   // ── Main Render ──────────────────────────────────────────────────────────────
   return (
     <div className="p-4 md:p-8 w-full max-w-full font-app">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Processamento em Atraso</h1>
+      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Processamento em Atraso</h1>
+          <p className="text-xs text-slate-400 font-medium mt-0.5">Gestão e liquidação acelerada de remunerações pendentes</p>
+        </div>
+
+        {/* Barra de Filtros Avançados */}
+        {!loading && grupos.length > 0 && (
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm">
+              <span className="text-xs font-bold text-slate-400 uppercase">Exercício:</span>
+              <select
+                value={filtroAno}
+                onChange={e => setFiltroAno(e.target.value)}
+                className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer"
+              >
+                <option value="TODOS">Todos os Anos</option>
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+              </select>
+            </div>
+
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
+              <input
+                type="text"
+                placeholder="Pesquisar por nome, NIF ou cargo..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-slate-900 transition-all w-full sm:w-64 shadow-sm"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -603,14 +640,32 @@ const ProcessamentoAtraso: React.FC = () => {
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-900 border-t-transparent" />
         </div>
       ) : grupos.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-3xl p-16 text-center">
+        <div className="bg-white border border-slate-200 rounded-3xl p-16 text-center shadow-sm">
           <span className="material-symbols-outlined text-5xl text-slate-900 block mb-4">check_circle</span>
           <h2 className="text-xl font-bold text-slate-900">Tudo em dia!</h2>
           <p className="text-slate-500 mt-1.5 text-sm font-medium">Não existem processamentos pendentes de meses anteriores.</p>
         </div>
       ) : (
         <div className="space-y-4">
-           {grupos.map(({ colaborador, pendencias }) => {
+           {grupos
+             .map(g => {
+               const pendenciasFiltradas = g.pendencias.filter(p => {
+                 if (filtroAno !== 'TODOS' && String(p.ano) !== filtroAno) return false;
+                 return true;
+               });
+               return { ...g, pendencias: pendenciasFiltradas };
+             })
+             .filter(g => {
+               if (g.pendencias.length === 0) return false;
+               if (!searchTerm) return true;
+               const term = searchTerm.toLowerCase();
+               return (
+                 g.colaborador.nome.toLowerCase().includes(term) ||
+                 (g.colaborador.nif && g.colaborador.nif.toLowerCase().includes(term)) ||
+                 (g.colaborador.cargo && g.colaborador.cargo.toLowerCase().includes(term))
+               );
+             })
+             .map(({ colaborador, pendencias }) => {
              const isExpanded = expandedId === colaborador.id;
              const numSelected = countSelected(colaborador.id);
              const allSelected = numSelected === pendencias.length;

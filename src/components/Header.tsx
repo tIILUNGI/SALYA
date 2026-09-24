@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api } from '../services/api';
 import GlobalSearch from './GlobalSearch';
+import { OnboardingTourModal } from './OnboardingTourModal';
 
 interface LocalNotification {
   id: string;
@@ -131,8 +132,15 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
 
   const dismissBanner = () => setShowBanner(false);
 
+  const [showTour, setShowTour] = useState(false);
+
   return (
     <>
+      <OnboardingTourModal
+        isOpen={showTour}
+        onClose={() => setShowTour(false)}
+        onNavigate={(path) => navigate(path)}
+      />
       {showBanner && (
         <div className="bg-primary px-4 py-2 flex items-center justify-between gap-4 z-20 relative">
           <div className="flex items-center gap-2">
@@ -207,6 +215,14 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
         <div className="flex items-center gap-2">
           {/* Action Icons from model */}
           <div className="flex items-center gap-1 mr-2 px-2 border-r border-slate-100 dark:border-slate-800">
+            <button 
+              onClick={() => setShowTour(true)}
+              className="p-2 text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
+              title="Iniciar Tour Guiado"
+            >
+              <span className="material-symbols-outlined text-xl">explore</span>
+            </button>
+
             <button 
               onClick={() => setIsDark(!isDark)}
               className="p-2 text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"

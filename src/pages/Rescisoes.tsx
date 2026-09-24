@@ -12,6 +12,7 @@ const Rescisoes: React.FC = () => {
   const [dataSaida, setDataSaida] = useState('');
   const [motivo, setMotivo] = useState('Mútuo Acordo');
   const [diasFerias, setDiasFerias] = useState(22);
+  const [retroativos, setRetroativos] = useState<number>(0);
   const [result, setResult] = useState<any | null>(null);
 
   const selectedColab = ativos.find(c => c.id === Number(selectedId)) || null;
@@ -37,12 +38,30 @@ const Rescisoes: React.FC = () => {
     // Férias
     const subsFerias = (salario / 30) * diasFerias;
 
-    // Indenização LGT: para Mútuo Acordo e Despedimento = 1 mês por ano de serviço
+    // Indemnização LGT: para Mútuo Acordo e Despedimento = 1 mês por ano de serviço
     const indenizacao = motivo !== 'Término de Contrato' ? salario * anos : 0;
 
-    const total = proporcional + subsidioNatal + subsFerias + indenizacao;
+    const totalBruto = proporcional + subsidioNatal + subsFerias + indenizacao + Number(retroativos || 0);
 
-    setResult({ proporcional, subsidioNatal, subsFerias, indenizacao, total, meses });
+    // INSS Trabalhador (3% sobre salário proporcional + retroativos)
+    const baseINSS = proporcional + Number(retroativos || 0);
+    const inss = baseINSS * 0.03;
+
+    // IRT Simplificado (Aproximação progressiva Angola sobre matéria coletável)
+    const materiaIrt = Math.max(0, baseINSS - inss);
+    let irt = 0;
+    if (materiaIrt > 100000 && materiaIrt <= 150000) {
+      irt = (materiaIrt - 100000) * 0.13;
+    } else if (materiaIrt > 150000 && materiaIrt <= 200000) {
+      irt = 6500 + (materiaIrt - 150000) * 0.16;
+    } else if (materiaIrt > 200000) {
+      irt = 14500 + (materiaIrt - 200000) * 0.18;
+    }
+
+    const descontos = inss + irt;
+    const totalLiquido = Math.max(0, totalBruto - descontos);
+
+    setResult({ proporcional, subsidioNatal, subsFerias, indenizacao, retroativos: Number(retroativos || 0), inss, irt, descontos, totalBruto, totalLiquido, meses });
   };
 
   return (
@@ -99,16 +118,28 @@ const Rescisoes: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-500 mb-2">Dias de Férias não Gozadas</label>
-              <input
-                type="number"
-                value={diasFerias}
-                onChange={e => { setDiasFerias(Number(e.target.value)); setResult(null); }}
-                min={0}
-                max={44}
-                className="w-full px-3 sm:px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold outline-none focus:ring-2 focus:ring-primary text-xs sm:text-sm"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-2">Dias de Férias não Gozadas</label>
+                <input
+                  type="number"
+                  value={diasFerias}
+                  onChange={e => { setDiasFerias(Number(e.target.value)); setResult(null); }}
+                  min={0}
+                  max={44}
+                  className="w-full px-3 sm:px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold outline-none focus:ring-2 focus:ring-primary text-xs sm:text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-2">Ajustes Retroativos (Kz)</label>
+                <input
+                  type="number"
+                  value={retroativos}
+                  onChange={e => { setRetroativos(Number(e.target.value)); setResult(null); }}
+                  placeholder="0.00"
+                  className="w-full px-3 sm:px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold outline-none focus:ring-2 focus:ring-primary text-xs sm:text-sm"
+                />
+              </div>
             </div>
 
             <button
@@ -133,24 +164,35 @@ const Rescisoes: React.FC = () => {
           ) : (
             <>
               <h3 className="text-xs font-bold text-red-500 mb-1">Fecho de Contas — LGT Angola</h3>
-              <p className="text-xs sm:text-sm text-slate-500 mb-4">{selectedColab?.nome} · {result.meses} meses de serviço</p>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-800 dark:text-white tracking-tight mb-6 sm:mb-8 break-all">
-                {fmt(result.total)} <span className="text-lg sm:text-xl text-slate-400">Kz</span>
-              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 mb-2">{selectedColab?.nome} · {result.meses} meses de serviço</p>
+              <div className="mb-6">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Líquido a Receber</span>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight break-all">
+                  {fmt(result.totalLiquido)} <span className="text-lg sm:text-xl text-slate-400">Kz</span>
+                </h1>
+                <p className="text-xs text-slate-400 font-semibold mt-1">Bruto: {fmt(result.totalBruto)} Kz · Impostos: -{fmt(result.descontos)} Kz</p>
+              </div>
 
-              <div className="space-y-3 mb-6 sm:mb-8">
+              <div className="space-y-2 mb-6 sm:mb-8 max-h-[280px] overflow-y-auto pr-1">
                 {[
-                  { label: 'Salário Proporcional', valor: result.proporcional },
-                  { label: 'Subsídio de Natal Proporcional', valor: result.subsidioNatal },
-                  { label: `Subsídio de Férias (${diasFerias} dias)`, valor: result.subsFerias },
-                  { label: 'Indemnização LGT', valor: result.indenizacao },
+                  { label: 'Salário Proporcional', valor: result.proporcional, isDeduction: false },
+                  { label: 'Ajustes Retroativos Salariais', valor: result.retroativos, isDeduction: false },
+                  { label: 'Subsídio de Natal Proporcional', valor: result.subsidioNatal, isDeduction: false },
+                  { label: `Subsídio de Férias (${diasFerias} dias)`, valor: result.subsFerias, isDeduction: false },
+                  { label: 'Indemnização LGT', valor: result.indenizacao, isDeduction: false },
+                  { label: 'Dedução INSS (3%)', valor: result.inss, isDeduction: true },
+                  { label: 'Dedução IRT', valor: result.irt, isDeduction: true },
                 ].map((item, i) => (
-                  <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl gap-1 sm:gap-4">
+                  <div key={i} className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl gap-1 sm:gap-4 ${item.isDeduction ? 'bg-rose-50 dark:bg-rose-950/20' : 'bg-slate-50 dark:bg-slate-800/50'}`}>
                     <div className="flex items-center gap-2.5">
-                      <span className="material-symbols-outlined text-emerald-500 text-sm shrink-0">check_circle</span>
-                      <p className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">{item.label}</p>
+                      <span className={`material-symbols-outlined text-sm shrink-0 ${item.isDeduction ? 'text-rose-500' : 'text-emerald-500'}`}>
+                        {item.isDeduction ? 'remove_circle' : 'check_circle'}
+                      </span>
+                      <p className={`text-xs sm:text-sm font-bold ${item.isDeduction ? 'text-rose-700 dark:text-rose-300' : 'text-slate-700 dark:text-slate-300'}`}>{item.label}</p>
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-white shrink-0 sm:text-right">{fmt(item.valor)} Kz</span>
+                    <span className={`text-xs sm:text-sm font-black shrink-0 sm:text-right ${item.isDeduction ? 'text-rose-600' : 'text-slate-800 dark:text-white'}`}>
+                      {item.isDeduction ? '-' : ''}{fmt(item.valor)} Kz
+                    </span>
                   </div>
                 ))}
               </div>

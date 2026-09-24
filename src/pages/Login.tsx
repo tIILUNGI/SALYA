@@ -204,7 +204,7 @@ const Login: React.FC = () => {
       if (token) {
         sessionStorage.removeItem('salya_selected_plan');
         startCleanSession(token, user, refreshToken);
-        navigate('/configuracoes/empresa');
+        navigate('/dashboard');
       }
     } catch (error: any) {
       showError(getApiErrorMessage(error));
@@ -414,12 +414,17 @@ const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 hover:bg-primary/95 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50"
+                className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 hover:bg-primary/95 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 group"
               >
                 {isLoading ? (
                   <div className="size-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
                 ) : (
-                  <>Entrar <span className="material-symbols-outlined text-lg">east</span></>
+                  <>
+                    <span>Entrar</span>
+                    <svg className="w-5 h-5 transition-transform group-hover:translate-x-1 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                  </>
                 )}
               </button>
 

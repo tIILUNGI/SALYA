@@ -122,6 +122,7 @@ const Processamento: React.FC = () => {
   const [historicoLoading, setHistóricoLoading] = useState(false);
   const [historicoError, setHistóricoError] = useState('');
   const [selectedHistoryPeriod, setSelectedHistoryPeriod] = useState('');
+  const [historicoSearch, setHistoricoSearch] = useState('');
   const [holidays, setHolidays] = useState<any[]>([]);
 
   const [formSalario, setFormSalario] = useState(0);
@@ -692,7 +693,7 @@ const Processamento: React.FC = () => {
       ...(receiptSnapshot.horasExtra > 0 ? [{ label: 'Horas Extras', valorRemun: receiptSnapshot.horasExtra, valorDesc: 0, qtd: '1' }] : []),
       ...(receiptSnapshot.bonus > 0 ? [{ label: 'Bónus / Prémio', valorRemun: receiptSnapshot.bonus, valorDesc: 0, qtd: '1' }] : []),
       ...receiptSnapshot.outrosGanhos.map((ganho) => ({ label: ganho.descricao, valorRemun: ganho.valor, valorDesc: 0, qtd: '1' })),
-      { label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: receiptSnapshot.valorINSS > 0 ? '3%' : '0%' },
+      ...(receiptSnapshot.valorINSS > 0 ? [{ label: 'Segurança Social (INSS 3% s/ sal. base)', valorRemun: 0, valorDesc: receiptSnapshot.valorINSS, qtd: '3%' }] : []),
       ...(inssPatronal > 0 ? [{ label: 'Seg. Social Patronal (INSS 8% s/ sal. base)', valorRemun: 0, valorDesc: inssPatronal, qtd: '8%' }] : []),
       { label: receiptSnapshot.colaborador.tipoContrato === 'Prestador' ? 'IRT Grupo B/C (Independente)' : 'Imposto sobre Rendimento (IRT)', valorRemun: 0, valorDesc: receiptSnapshot.valorIRT, qtd: receiptSnapshot.percentualIRT ? (receiptSnapshot.percentualIRT % 1 === 0 ? `${receiptSnapshot.percentualIRT}%` : `${receiptSnapshot.percentualIRT.toFixed(1)}%`) : '-' },
       ...(receiptSnapshot.faltas > 0 ? [{ label: 'Faltas', valorRemun: 0, valorDesc: receiptSnapshot.faltas, qtd: receiptSnapshot.faltasDias ? `${receiptSnapshot.faltasDias} dias` : '-' }] : []),
@@ -1255,15 +1256,121 @@ const Processamento: React.FC = () => {
 
   const renderHistóricoModal = () => {
     if (!showHistóricoModal) return null;
+
+    const filteredHist = historicoPorPeriodo.filter((item) => {
+      if (!historicoSearch.trim()) return true;
+      const term = historicoSearch.toLowerCase().trim();
+      return (
+        item.nomeColaborador.toLowerCase().includes(term) ||
+        (item.cargo && item.cargo.toLowerCase().includes(term)) ||
+        (item.nifColaborador && item.nifColaborador.toLowerCase().includes(term))
+      );
+    });
+
     return (
       <div className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-[105] p-4 backdrop-blur-sm">
         <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[85vh] overflow-hidden shadow-xl flex flex-col">
-          <div className="p-5 border-b bg-slate-50 flex items-center justify-between gap-4"><div><h3 className="text-base font-medium text-slate-700">Histórico de Processamentos</h3><p className="text-sm text-slate-400">{empresa?.nome || '-'}</p></div><button onClick={() => setShowHistóricoModal(false)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button></div>
-          <div className="flex-1 overflow-y-auto p-5">
-            {historicoLoading ? <div className="py-12 text-center text-sm text-slate-400">A carregar...</div> : historicoError ? <div className="py-12 text-center text-sm text-rose-500">{historicoError}</div> : historico.length === 0 ? <div className="py-12 text-center text-sm text-slate-400">Sem processamentos registados</div> : <>
-              <div className="mb-4 flex flex-wrap gap-2">{historyPeriods.map((period) => (<button key={period} type="button" onClick={() => setSelectedHistoryPeriod(period)} className={`px-3 py-2 text-xs font-semibold rounded-full transition-all ${selectedHistoryPeriod === period ? 'bg-primary text-white border border-primary' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>{`${numToMonth(Number(period.split('-')[1]))} ${period.split('-')[0]}`}</button>))}</div>
-              {historicoPorPeriodo.length === 0 ? <div className="py-12 text-center text-sm text-slate-400">Nenhum processamento registado para o periodo selecionado.</div> : <div className="rounded-xl border border-slate-100 overflow-x-auto"><table className="min-w-full text-left"><thead><tr className="bg-slate-50 border-b border-slate-100"><th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Colaborador</th><th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Período</th><th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right whitespace-nowrap">Bruto</th><th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right whitespace-nowrap">Desc.</th><th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase text-right whitespace-nowrap">Líquido</th><th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase whitespace-nowrap">Data</th><th className="px-2 sm:px-4 py-3 text-xs font-medium text-slate-400 uppercase text-center whitespace-nowrap">Ações</th></tr></thead><tbody className="divide-y divide-slate-100">{historicoPorPeriodo.map((item) => (<tr key={item.id} className="hover:bg-slate-50 transition-all"><td className="px-2 sm:px-4 py-3"><p className="text-sm font-medium text-slate-700">{item.nomeColaborador}</p><p className="text-xs text-slate-400">{item.cargo || '-'}</p></td><td className="px-2 sm:px-4 py-3"><span className="px-2 py-1 rounded text-xs bg-slate-100 text-slate-500 whitespace-nowrap">{numToMonth(item.mes)}/{item.ano}</span></td><td className="px-2 sm:px-4 py-3 text-right text-sm font-medium text-slate-600 whitespace-nowrap">{formatMoney(item.totalBruto)}</td><td className="px-2 sm:px-4 py-3 text-right text-sm font-medium text-slate-500 whitespace-nowrap"><div>{formatMoney(item.descontos)}</div><div className="text-[10px] text-slate-400 mt-1 space-y-0.5 hidden sm:block"><div>INSS: {formatMoney(item.valorINSS)}</div><div>IRT: {formatMoney(item.valorIRT)}</div><div>Faltas: {formatMoney(item.valorFaltas)}</div></div></td><td className="px-2 sm:px-4 py-3 text-right text-sm font-medium text-primary whitespace-nowrap">{formatMoney(item.salarioLiquido)}</td><td className="px-2 sm:px-4 py-3 text-xs text-slate-400 whitespace-nowrap">{item.createdAt ? new Date(item.createdAt).toLocaleString('pt-AO') : '-'}</td><td className="px-2 sm:px-4 py-3 text-center"><button onClick={() => handleDownloadHistoricalReceipt(item)} className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center" title="Baixar Recibo"><span className="material-symbols-outlined">download</span></button></td></tr>))}</tbody></table></div>}
-            </>}
+          <div className="p-5 border-b bg-slate-50 flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-base font-bold text-slate-800">Histórico de Processamentos</h3>
+              <p className="text-xs text-slate-400 mt-0.5">{empresa?.nome || '-'}</p>
+            </div>
+            <button onClick={() => setShowHistóricoModal(false)} className="text-slate-400 hover:text-slate-600">
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {historicoLoading ? (
+              <div className="py-12 text-center text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">A carregar histórico...</div>
+            ) : historicoError ? (
+              <div className="py-12 text-center text-sm text-rose-500">{historicoError}</div>
+            ) : historico.length === 0 ? (
+              <div className="py-12 text-center text-sm text-slate-400">Sem processamentos registados.</div>
+            ) : (
+              <>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-bold text-slate-500 whitespace-nowrap">Filtrar Período:</label>
+                    <select
+                      value={selectedHistoryPeriod}
+                      onChange={(e) => setSelectedHistoryPeriod(e.target.value)}
+                      className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-primary cursor-pointer transition-all shadow-xs"
+                    >
+                      {historyPeriods.map((period) => (
+                        <option key={period} value={period}>
+                          {`${numToMonth(Number(period.split('-')[1]))} de ${period.split('-')[0]}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="relative w-full sm:w-64">
+                    <input
+                      type="text"
+                      placeholder="Buscar por colaborador..."
+                      value={historicoSearch}
+                      onChange={(e) => setHistoricoSearch(e.target.value)}
+                      className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-primary transition-all"
+                    />
+                    {historicoSearch && (
+                      <button onClick={() => setHistoricoSearch('')} className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
+                        <span className="material-symbols-outlined text-xs">close</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {filteredHist.length === 0 ? (
+                  <div className="py-12 text-center text-sm text-slate-400">Nenhum registo encontrado para os filtros selecionados.</div>
+                ) : (
+                  <div className="rounded-xl border border-slate-100 overflow-x-auto">
+                    <table className="min-w-full text-left text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                          <th className="px-4 py-3">Colaborador</th>
+                          <th className="px-4 py-3">Período</th>
+                          <th className="px-4 py-3 text-right">Total Bruto</th>
+                          <th className="px-4 py-3 text-right">Descontos (IRT/INSS)</th>
+                          <th className="px-4 py-3 text-right">Salário Líquido</th>
+                          <th className="px-4 py-3">Data Processamento</th>
+                          <th className="px-4 py-3 text-center">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                        {filteredHist.map((item) => (
+                          <tr key={item.id} className="hover:bg-slate-50/60 transition-all">
+                            <td className="px-4 py-3 font-bold text-slate-900">
+                              {item.nomeColaborador}
+                              <span className="block text-[10px] font-normal text-slate-400">{item.cargo || '---'}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                                {numToMonth(item.mes)}/{item.ano}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatMoney(item.totalBruto)}</td>
+                            <td className="px-4 py-3 text-right font-semibold text-rose-500">
+                              <div>-{formatMoney(item.descontos)}</div>
+                              <div className="text-[9px] text-slate-400 space-x-1.5 hidden sm:block">
+                                <span>INSS: {formatMoney(item.valorINSS)}</span>
+                                <span>IRT: {formatMoney(item.valorIRT)}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-right font-black text-emerald-600 text-sm">{formatMoney(item.salarioLiquido)}</td>
+                            <td className="px-4 py-3 text-[11px] text-slate-400">{item.createdAt ? new Date(item.createdAt).toLocaleString('pt-AO') : '-'}</td>
+                            <td className="px-4 py-3 text-center">
+                              <button onClick={() => handleDownloadHistoricalReceipt(item)} className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all" title="Baixar Recibo PDF">
+                                <span className="material-symbols-outlined text-lg">download</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1299,15 +1406,25 @@ const Processamento: React.FC = () => {
         </div>
         
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
-          <div className="flex w-full sm:w-auto gap-2">
-            <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="flex-1 sm:w-[140px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 px-3 text-sm font-semibold outline-none focus:border-primary text-slate-700 dark:text-slate-300">
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1.5 rounded-2xl shadow-xs">
+            <span className="material-symbols-outlined text-slate-400 pl-2 text-lg">calendar_month</span>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="bg-transparent text-sm font-bold outline-none cursor-pointer text-slate-800 dark:text-slate-200 py-1 pr-1"
+            >
               {MONTHS.map((month) => (<option key={month} value={month} disabled={isMonthOptionDisabled(month, selectedYear)}>{month}</option>))}
             </select>
-            <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="w-[100px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 px-3 text-sm font-semibold outline-none focus:border-primary text-slate-700 dark:text-slate-300">
+            <span className="text-slate-300 font-light">/</span>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="bg-transparent text-sm font-bold outline-none cursor-pointer text-slate-800 dark:text-slate-200 py-1 pr-2"
+            >
               {['2025', '2026', '2027'].map((year) => (<option key={year} value={year} disabled={parseInt(year, 10) > CURRENT_YEAR}>{year}</option>))}
             </select>
           </div>
-          <span className="hidden md:inline-flex px-3 py-2 rounded-xl bg-primary/5 text-xs text-primary font-bold flex-shrink-0 items-center border border-primary/10">
+          <span className="inline-flex px-3 py-2 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-xs text-[#8e34eb] font-bold items-center border border-purple-100 dark:border-purple-900 shrink-0">
             {historicoDoPeriodo.length} processamento(s)
           </span>
         </div>

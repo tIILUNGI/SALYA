@@ -261,10 +261,12 @@ const Relatórios: React.FC = () => {
   const [chartAbsentismo, setChartAbsentismo] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processamentos, setProcessamentos] = useState<ProcessamentoReport[]>([]);
-  const [generating, setGenerating] = useState<'pdf' | 'csv' | null>(null);
+  const [generating, setGenerating] = useState<'pdf' | 'csv' | 'primavera' | null>(null);
   const [message, setMessage] = useState('');
   const [startDate, setStartDate] = useState<string>(''); // YYYY-MM
   const [endDate, setEndDate] = useState<string>(''); // YYYY-MM
+  const [anoFiltroAcumulado, setAnoFiltroAcumulado] = useState<string>(String(new Date().getFullYear()));
+  const [buscaColaborador, setBuscaColaborador] = useState<string>('');
 
   // Colaboradores filtered for current empresa
   const colaboradores = colabCtx.filter(
@@ -370,6 +372,33 @@ const Relatórios: React.FC = () => {
       }
     } catch (e: any) {
       setMessage('❌ Erro ao gerar CSV: ' + e.message);
+    } finally {
+      setGenerating(null);
+      setTimeout(() => setMessage(''), 4000);
+    }
+  };
+
+  // ── Primavera ERP download ──────────────────────────────────────────────────
+  const handleDownloadPrimaveraERP = async () => {
+    setGenerating('primavera');
+    setMessage('');
+    try {
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = Number(anoFiltroAcumulado) || new Date().getFullYear();
+      const response = await api.get(`/erp/primavera/exportar?empresaId=${empresaId}&mes=${currentMonth}&ano=${currentYear}`);
+      
+      const csvText = typeof response === 'string' ? response : JSON.stringify(response);
+      const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `primavera_payroll_${currentMonth}_${currentYear}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setMessage('✅ Ficheiro Primavera ERP exportado com sucesso!');
+    } catch (e: any) {
+      setMessage('❌ Erro ao exportar para Primavera ERP: ' + (e.message || 'Verifique se há processamentos no período selecionado.'));
     } finally {
       setGenerating(null);
       setTimeout(() => setMessage(''), 4000);
@@ -503,6 +532,27 @@ const Relatórios: React.FC = () => {
               {generating === 'csv' ? 'A gerar...' : 'Exportar CSV'}
             </button>
           </div>
+
+          {/* Integration Primavera ERP */}
+          <div className="flex flex-col gap-3 p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900 dark:text-white text-sm leading-tight">Primavera ERP</p>
+                <p className="text-[10px] font-medium text-slate-500">Formato Vencimentos CSV</p>
+              </div>
+            </div>
+            <button
+              onClick={handleDownloadPrimaveraERP}
+              disabled={generating !== null}
+              className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all disabled:opacity-50"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              {generating === 'primavera' ? 'A gerar...' : 'Exportar Primavera'}
+            </button>
+          </div>
         </div>
 
         {/* Info box */}
@@ -516,6 +566,108 @@ const Relatórios: React.FC = () => {
               <li>Histórico detalhado de processamentos com totalizações</li>
             </ul>
           </div>
+        </div>
+      </div>
+
+      {/* Tabela Consolidada de Acumulados Anuais por Colaborador */}
+      <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-card space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Acumulado Anual por Colaborador</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Resumo financeiro acumulado (Bruto, Descontos, INSS, IRT e Líquido) por ano de exercício</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+              <span className="text-xs font-bold text-slate-500 uppercase">Ano:</span>
+              <select
+                value={anoFiltroAcumulado}
+                onChange={e => setAnoFiltroAcumulado(e.target.value)}
+                className="bg-transparent text-xs font-bold text-slate-900 dark:text-white outline-none cursor-pointer"
+              >
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+              </select>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Buscar colaborador ou NIF..."
+              value={buscaColaborador}
+              onChange={e => setBuscaColaborador(e.target.value)}
+              className="px-3.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium outline-none focus:border-primary transition-all w-full sm:w-60"
+            />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] uppercase tracking-wider font-bold text-slate-400">
+                <th className="py-3 px-4">Colaborador</th>
+                <th className="py-3 px-4">NIF</th>
+                <th className="py-3 px-4 text-center">Meses Proc.</th>
+                <th className="py-3 px-4 text-right">Acumulado Bruto</th>
+                <th className="py-3 px-4 text-right">Retenção INSS</th>
+                <th className="py-3 px-4 text-right">Retenção IRT</th>
+                <th className="py-3 px-4 text-right">Total Descontos</th>
+                <th className="py-3 px-4 text-right">Acumulado Líquido</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
+              {colaboradores
+                .filter(c => {
+                  if (!buscaColaborador) return true;
+                  const term = buscaColaborador.toLowerCase();
+                  return (
+                    (c.nome && c.nome.toLowerCase().includes(term)) ||
+                    (c.nif && c.nif.toLowerCase().includes(term)) ||
+                    (c.cargo && c.cargo.toLowerCase().includes(term))
+                  );
+                })
+                .map(c => {
+                  const procs = processamentos.filter(p => {
+                    const matchColab = (p as any).colaboradorId === c.id || p.nomeColaborador === c.nome;
+                    const matchAno = String(p.ano) === anoFiltroAcumulado;
+                    return matchColab && matchAno;
+                  });
+
+                  const brutoAcum = procs.reduce((acc, p) => acc + (p.totalBruto || 0), 0);
+                  const inssAcum = procs.reduce((acc, p) => acc + (p.valorINSS || 0), 0);
+                  const irtAcum = procs.reduce((acc, p) => acc + (p.valorIRT || 0), 0);
+                  const descAcum = procs.reduce((acc, p) => acc + (p.descontos || 0), 0);
+                  const liqAcum = procs.reduce((acc, p) => acc + (p.salarioLiquido || 0), 0);
+
+                  return (
+                    <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                        {c.nome}
+                        <span className="block text-[10px] font-medium text-slate-400">{c.cargo || 'Cargo não especificado'}</span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500 font-mono text-[11px]">{c.nif || '---'}</td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${procs.length > 0 ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'}`}>
+                          {procs.length} / 12 meses
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-semibold text-slate-900 dark:text-white">{fmt(brutoAcum)}</td>
+                      <td className="py-3.5 px-4 text-right text-rose-500 font-semibold">{fmt(inssAcum)}</td>
+                      <td className="py-3.5 px-4 text-right text-amber-600 dark:text-amber-400 font-semibold">{fmt(irtAcum)}</td>
+                      <td className="py-3.5 px-4 text-right text-red-600 dark:text-red-400 font-bold">{fmt(descAcum)}</td>
+                      <td className="py-3.5 px-4 text-right font-black text-emerald-600 dark:text-emerald-400 text-sm">{fmt(liqAcum)}</td>
+                    </tr>
+                  );
+                })}
+              {colaboradores.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-slate-400 font-medium">
+                    Nenhum colaborador encontrado para este ano.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

@@ -4,23 +4,26 @@ import Swal from 'sweetalert2';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate, Outlet } from 'react-router-dom';
 import PageTitleSync from './components/PageTitleSync';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Alertas from './pages/Alertas';
-import Relatorios from './pages/Relatorios';
-import Ferias from './pages/Ferias';
-import Assiduidade from './pages/Assiduidade';
-import Colaboradores from './pages/Colaboradores';
-import Processamento from './pages/Processamento';
-import ProcessamentoAtraso from './pages/ProcessamentoAtraso';
-import Configuracoes from './pages/Configuracoes';
-import Profile from './pages/Profile';
 import ResetPassword from './pages/ResetPassword';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
+import { SalyaCopilotModal } from './components/SalyaCopilotModal';
 import { Colaborador, Empresa } from './types';
 import { api, getRefreshToken, setAuthToken, clearAuthStorage, API_BASE_URL } from './services/api';
 import { notify } from './utils/notifications';
+
+// Carregamento dinâmico por rota (Code-Splitting) para máxima velocidade
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Alertas = React.lazy(() => import('./pages/Alertas'));
+const Relatorios = React.lazy(() => import('./pages/Relatorios'));
+const Ferias = React.lazy(() => import('./pages/Ferias'));
+const Assiduidade = React.lazy(() => import('./pages/Assiduidade'));
+const Colaboradores = React.lazy(() => import('./pages/Colaboradores'));
+const Processamento = React.lazy(() => import('./pages/Processamento'));
+const ProcessamentoAtraso = React.lazy(() => import('./pages/ProcessamentoAtraso'));
+const Configuracoes = React.lazy(() => import('./pages/Configuracoes'));
+const Profile = React.lazy(() => import('./pages/Profile'));
 
 
 interface User {
@@ -475,12 +478,14 @@ function App() {
 }
 
 function useRequiresEmpresa() {
-  const { empresa, isConfigured } = React.useContext(AppContext);
+  const { empresa, isConfigured, isLoadingData, empresas } = React.useContext(AppContext);
+  if (isLoadingData) return true;
+  if (empresas && empresas.length > 0) return true;
   return Boolean(isConfigured && empresa && empresa.id);
 }
 
 function DashboardRoute() {
-  return useRequiresEmpresa() ? <Dashboard /> : <Navigate to="/configuracoes/empresa" replace />;
+  return <Dashboard />;
 }
 function AlertasRoute() {
   return useRequiresEmpresa() ? <Alertas /> : <Navigate to="/configuracoes/empresa" replace />;
@@ -523,18 +528,7 @@ function MainLayout() {
     setCurrentPage(segment);
   }, [location.pathname]);
 
-  // Enquanto os dados carregam, não redireccionamos para evitar flash de /configuracoes
-  if (isLoadingData) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background-light dark:bg-background-dark">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
-          <p className="text-slate-500 dark:text-slate-400 font-medium">A carregar dados...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Enquanto os dados carregam em segundo plano, não bloqueia a tela nem exibe splash escuro
   // Função para atualizar após criar empresa
   const handleCompanyCreated = async () => {
     await refreshData();
@@ -546,7 +540,12 @@ function MainLayout() {
   };
 
    return (
-     <div className="flex min-h-screen min-w-0 overflow-x-hidden bg-background-light dark:bg-background-dark admin-professional">
+     <div className="flex min-h-screen min-w-0 overflow-x-hidden bg-background-light dark:bg-background-dark admin-professional relative">
+       {isLoadingData && (
+         <div className="fixed top-0 left-0 right-0 h-1 bg-primary/20 z-[999] overflow-hidden">
+           <div className="h-full bg-primary animate-pulse w-full" />
+         </div>
+       )}
        {/* Sidebar - passa as props de controle */}
        <Sidebar 
          currentPage={currentPage} 
@@ -564,16 +563,26 @@ function MainLayout() {
          
          <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
          <main className="flex-1 p-0 min-w-0 overflow-x-hidden">
-          <Outlet />
-        </main>
-        <footer className="py-8 text-center opacity-[0.05] pointer-events-none">
-        <p className="text-xs text-slate-400 font-medium tracking-widest">
-          © {new Date().getFullYear()} SALYA PAYROLL • TODOS OS DIREITOS RESERVADOS
-        </p>
-      </footer>
+            <React.Suspense fallback={
+              <div className="flex min-h-[400px] w-full items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                  <p className="text-xs font-semibold text-slate-400">A carregar módulo...</p>
+                </div>
+              </div>
+            }>
+              <Outlet />
+            </React.Suspense>
+          </main>
+          <SalyaCopilotModal />
+          <footer className="py-8 text-center opacity-[0.05] pointer-events-none">
+          <p className="text-xs text-slate-400 font-medium tracking-widest">
+            © {new Date().getFullYear()} SALYA PAYROLL • TODOS OS DIREITOS RESERVADOS
+          </p>
+        </footer>
+        </div>
       </div>
-    </div>
-  );
+    );
 }
 
 

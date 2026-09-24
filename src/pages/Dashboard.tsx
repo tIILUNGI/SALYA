@@ -188,9 +188,20 @@ const Dashboard: React.FC = () => {
   }, [empresaId, ctxColaboradores, ctxEmpresas]);
 
   return (
-    <div className="p-4 md:p-8 w-full max-w-full">
-      <div className="mb-10">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Painel Executivo</h1>
+    <div className="p-4 md:p-8 w-full max-w-full font-app">
+      {/* Cabeçalho Corporativo de Visão Geral */}
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-200/80 dark:border-slate-800">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Visão geral</h1>
+          <p className="text-xs text-slate-400 mt-1 font-medium">Painel executivo de monitorização salarial e gestão de equipa</p>
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="size-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 shadow-xs transition-all"
+          title="Atualizar dados"
+        >
+          <span className="material-symbols-outlined text-lg">refresh</span>
+        </button>
       </div>
 
       {loading ? (
@@ -198,55 +209,61 @@ const Dashboard: React.FC = () => {
           <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent"></div>
         </div>
       ) : (
-        <div className="space-y-12">
-          {/* Executive Cards Section */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        <div className="space-y-10">
+          {/* Grelha de Cartões Executivos com Ícones Originais Salya */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
             {[
-              { title: "Entidades Geridas", value: stats.totalEmpresas, sub: "Empresas registadas no sistema", icon: "/entidades.png" },
-              { title: "Total Colaboradores", value: stats.totalColaboradores, sub: "Funcionários ativos monitorados", icon: "/total de colaboradores.png" },
-              { title: "Processamentos", value: stats.totalProcessamentos, sub: "Folhas de pagamento geradas", icon: "/processamento.png" },
-              { title: "Valor da Folha", value: formatKz(stats.valorFolhaMensal), sub: "Estimativa líquida base", icon: "/valor em folha.png" },
-              { title: "Custo Total Empresa", value: formatKz(stats.custoTotalEmpresa), sub: "Inclui INSS Patronal (8%)", icon: "/custo.png" },
-              { title: "Acumulado Histórico", value: formatKz(stats.acumuladoTotal), sub: "Total bruto processado", icon: "/valor em folha.png" },
+              { title: "Entidades Geridas", value: stats.totalEmpresas, sub: "Empresas no sistema", icon: "/entidades.png", link: '/configuracoes' },
+              { title: "Total Colaboradores", value: stats.totalColaboradores, sub: "Funcionários activos", icon: "/total de colaboradores.png", link: '/colaboradores' },
+              { title: "Processamentos", value: stats.totalProcessamentos, sub: "Folhas geradas", icon: "/processamento.png", link: '/processamento' },
+              { title: "Valor da Folha", value: formatKz(stats.valorFolhaMensal), sub: "Estimativa líquida base", icon: "/valor em folha.png", link: '/processamento' },
+              { title: "Custo Total Empresa", value: formatKz(stats.custoTotalEmpresa), sub: "Com INSS Patronal (8%)", icon: "/custo.png", link: '/processamento' },
+              { title: "Acumulado Histórico", value: formatKz(stats.acumuladoTotal), sub: "Total bruto processado", icon: "/valor em folha.png", link: '/relatorios' },
             ].map((card, idx) => (
-              <div key={idx} className="bg-white p-5 rounded-2xl h-[140px] flex flex-col justify-between shadow-sm border border-slate-100 hover:shadow-md transition-all dark:bg-slate-900/90 dark:border-slate-800">
+              <div 
+                key={idx} 
+                onClick={() => navigate(card.link)}
+                className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer flex flex-col justify-between h-[135px]"
+              >
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 mb-2 leading-tight truncate">{card.title}</p>
-                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white truncate">{card.value}</h3>
+                    <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 truncate">{card.title}</p>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white truncate">{card.value}</h3>
                   </div>
                   <div className="shrink-0 flex items-center justify-center size-10 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
-                     <img src={card.icon} alt={card.title} className="w-6 h-6 object-contain" />
+                    <img src={card.icon} alt={card.title} className="w-5 h-5 object-contain" />
                   </div>
                 </div>
-                <p className="text-xs text-slate-400 mt-2 truncate">{card.sub}</p>
+                <p className="text-[11px] text-slate-400 truncate">{card.sub}</p>
               </div>
             ))}
           </div>
 
-          {/* Alertas de Compliance Section */}
+          {/* Secção de Módulos & Alertas */}
           <div>
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Módulos de Sistema & Alertas</h2>
+            <h2 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-4">
+              Módulos Operacionais &amp; Compliance
+            </h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
 
               {/* Processamento do Mês */}
-              <div className="bg-white p-5 rounded-2xl flex flex-col justify-between shadow-sm border border-slate-100 dark:bg-slate-900/90 dark:border-slate-800">
+              <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center gap-3 mb-6">
+                  <div className="flex items-center gap-3 mb-4">
                     <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
                       <img src="/processamento.png" alt="Processamento" className="w-5 h-5 object-contain" />
                     </div>
-                    <h4 className="font-bold text-slate-900 dark:text-white">Processamento</h4>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">Processamento</h4>
                   </div>
-                  <div className="flex items-baseline gap-2 mb-6">
+                  <div className="flex items-baseline gap-2 mb-4">
                     <span className="text-3xl font-black text-primary">{processamentosMes}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">de {stats.totalColaboradores} activos</span>
+                    <span className="text-xs text-slate-400 font-medium">de {stats.totalColaboradores} activos</span>
                   </div>
                 </div>
                 <button
                   onClick={() => navigate('/processamento')}
-                  className="flex items-center justify-between w-full py-2 px-4 border border-slate-100 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group"
+                  className="flex items-center justify-between w-full py-2 px-3 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group"
                 >
                   Ir ao Processamento
                   <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -254,25 +271,25 @@ const Dashboard: React.FC = () => {
               </div>
               
               {/* Alerta Contratos */}
-              <div className={`bg-white p-5 rounded-2xl flex flex-col justify-between shadow-sm dark:bg-slate-900/90 dark:border-slate-800 ${alertas.contratosExpirando === 0 ? 'border border-emerald-100 dark:border-emerald-900/30' : 'border border-rose-200 dark:border-rose-900/50'}`}>
+              <div className={`bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-xs border flex flex-col justify-between ${alertas.contratosExpirando === 0 ? 'border-slate-200/80 dark:border-slate-800' : 'border-rose-200 dark:border-rose-900/50'}`}>
                 <div>
-                  <div className="flex items-center gap-3 mb-6">
+                  <div className="flex items-center gap-3 mb-4">
                     <div className="size-10 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
                       <img src="/contratos.png" alt="Contratos" className="w-5 h-5 object-contain" />
                     </div>
-                    <h4 className="font-bold text-slate-900 dark:text-white">Contratos</h4>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">Contratos</h4>
                   </div>
                   
-                  <div className="flex items-center gap-4 mb-6">
+                  <div className="flex items-center gap-4 mb-4">
                     <div>
                       <span className={`block text-3xl font-black ${alertas.contratosExpirando === 0 ? 'text-emerald-600' : 'text-red-600'}`}>{alertas.contratosExpirando}</span>
-                      <span className="text-[10px] text-slate-400 font-medium">{alertas.contratosExpirando === 0 ? 'Sem Pendências' : 'A expirar'}</span>
+                      <span className="text-xs text-slate-400 font-medium">{alertas.contratosExpirando === 0 ? 'Sem Pendências' : 'A expirar'}</span>
                     </div>
                   </div>
                 </div>
                 <button 
                   onClick={() => navigate(alertas.contratosExpirando > 0 ? '/alertas' : '/colaboradores')}
-                  className="flex items-center justify-between w-full py-2 px-4 border border-slate-100 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group"
+                  className="flex items-center justify-between w-full py-2 px-3 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group"
                 >
                   {alertas.contratosExpirando > 0 ? 'Ver Alertas' : 'Gerir Colaboradores'}
                   <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -280,25 +297,25 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Alerta Documentos */}
-              <div className={`bg-white p-5 rounded-2xl flex flex-col justify-between shadow-sm dark:bg-slate-900/90 dark:border-slate-800 ${alertas.documentosExpirando === 0 ? 'border border-emerald-100 dark:border-emerald-900/30' : 'border border-rose-200 dark:border-rose-900/50'}`}>
+              <div className={`bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-xs border flex flex-col justify-between ${alertas.documentosExpirando === 0 ? 'border-slate-200/80 dark:border-slate-800' : 'border-rose-200 dark:border-rose-900/50'}`}>
                 <div>
-                   <div className="flex items-center gap-3 mb-6">
+                   <div className="flex items-center gap-3 mb-4">
                     <div className="size-10 rounded-xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
                       <img src="/Documentos.png" alt="Documentos" className="w-5 h-5 object-contain" />
                     </div>
-                    <h4 className="font-bold text-slate-900 dark:text-white">Documentos</h4>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">Documentos</h4>
                   </div>
                   
-                  <div className="flex items-center gap-4 mb-6">
+                  <div className="flex items-center gap-4 mb-4">
                     <div>
                       <span className={`block text-3xl font-black ${alertas.documentosExpirando === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{alertas.documentosExpirando}</span>
-                      <span className="text-[10px] text-slate-400 font-medium">{alertas.documentosExpirando === 0 ? 'Todos Válidos' : 'A vencer'}</span>
+                      <span className="text-xs text-slate-400 font-medium">{alertas.documentosExpirando === 0 ? 'Todos Válidos' : 'A vencer'}</span>
                     </div>
                   </div>
                 </div>
                 <button 
                   onClick={() => navigate(alertas.documentosExpirando > 0 ? '/alertas' : '/colaboradores')}
-                  className="flex items-center justify-between w-full py-2 px-4 border border-slate-100 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group"
+                  className="flex items-center justify-between w-full py-2 px-3 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group"
                 >
                   {alertas.documentosExpirando > 0 ? 'Ver Alertas' : 'Gerir Arquivo'}
                   <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -306,22 +323,22 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Colaboradores Activos */}
-              <div className="bg-white p-5 rounded-2xl flex flex-col justify-between shadow-sm border border-slate-100 dark:bg-slate-900/90 dark:border-slate-800">
+              <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
                 <div>
-                   <div className="flex items-center gap-3 mb-6">
+                   <div className="flex items-center gap-3 mb-4">
                     <div className="size-10 rounded-xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center">
                       <img src="/total de colaboradores.png" alt="Colaboradores" className="w-5 h-5 object-contain" />
                     </div>
-                    <h4 className="font-bold text-slate-900 dark:text-white">Colaboradores</h4>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">Colaboradores</h4>
                   </div>
-                  <div className="flex items-baseline gap-2 mb-6">
+                  <div className="flex items-baseline gap-2 mb-4">
                     <span className="text-3xl font-black text-violet-600">{stats.totalColaboradores}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">activos</span>
+                    <span className="text-xs text-slate-400 font-medium">activos</span>
                   </div>
                 </div>
                 <button
                   onClick={() => navigate('/colaboradores')}
-                  className="flex items-center justify-between w-full py-2 px-4 border border-slate-100 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group"
+                  className="flex items-center justify-between w-full py-2 px-3 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group"
                 >
                   Gerir Equipa
                   <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
