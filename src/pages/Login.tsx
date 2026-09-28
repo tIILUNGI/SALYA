@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 import { api, clearAuthStorage, getApiErrorMessage, setAuthToken } from '../services/api';
-import { APP_URL } from '../config/urls';
+import { APP_URL, ADMIN_URL } from '../config/urls';
 
 type ViewMode = 'login' | 'register' | 'select-plan' | 'confirm' | 'forgot';
 
@@ -121,6 +121,10 @@ const Login: React.FC = () => {
       const { token, user, refreshToken } = response;
 
       if (token) {
+        if (user?.planType === 'ADMIN') {
+          window.location.href = `${ADMIN_URL}?token=${encodeURIComponent(token)}`;
+          return;
+        }
         startCleanSession(token, user, refreshToken);
         navigate('/dashboard');
       }

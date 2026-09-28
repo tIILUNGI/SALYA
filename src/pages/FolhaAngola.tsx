@@ -642,9 +642,6 @@ const FolhaAngola: React.FC = () => {
     <section id="folha-angola" className="py-16 bg-slate-950 border-y border-slate-800/80 text-white relative overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 relative z-10">
         <div className="text-center mb-10">
-          <span className="inline-block px-3 py-1 bg-slate-900 border border-slate-800 text-primary text-[11px] font-bold uppercase tracking-widest rounded-full mb-3">
-            Módulo Folha Angola
-          </span>
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
             Folha <span className="text-primary italic">Angola</span>
           </h2>
