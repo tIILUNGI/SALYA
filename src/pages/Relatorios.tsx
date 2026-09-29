@@ -3,7 +3,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Legend,
 } from 'recharts';
-import { Download, AlertCircle, FileText, FileSpreadsheet, Users, Building2 } from 'lucide-react';
+import { Download, FileText, FileSpreadsheet, Users, Building2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 
 import { api } from '../services/api';
@@ -417,7 +417,7 @@ const Relatórios: React.FC = () => {
 
       {/* Message feedback */}
       {message && (
-        <div className={`p-3 rounded-xl text-sm font-medium transition-all ${message.startsWith('✅') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+        <div className={`p-3 rounded-xl text-sm font-medium transition-all ${message.startsWith('✅') ? 'bg-purple-50 text-purple-900 border border-purple-200' : 'bg-slate-100 text-slate-800 border border-slate-300'}`}>
           {message}
         </div>
       )}
@@ -448,22 +448,22 @@ const Relatórios: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* PDF Completo */}
-          <div className="flex flex-col gap-3 p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <div className="flex flex-col gap-3 p-5 bg-purple-50/60 rounded-2xl border border-purple-200/80 hover:bg-purple-50 transition-all shadow-xs">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-primary" />
+              <div className="size-10 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5 text-purple-700" />
               </div>
               <div>
-                <p className="font-semibold text-slate-900 dark:text-white text-sm">PDF Completo</p>
-                <p className="text-xs text-slate-500">Empresa + Colaboradores + Processamentos</p>
+                <p className="font-semibold text-slate-900 text-sm">PDF Completo</p>
+                <p className="text-[10px] font-medium text-slate-500 leading-tight">Empresa + Colaboradores</p>
               </div>
             </div>
             <button
               onClick={handleDownloadPDF}
               disabled={generating !== null}
-              className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all disabled:opacity-50"
+              className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-700 text-white rounded-xl text-sm font-semibold hover:bg-purple-800 transition-all disabled:opacity-50 shadow-xs"
             >
               <Download className="w-4 h-4" />
               {generating === 'pdf' ? 'A gerar...' : 'Baixar PDF'}
@@ -471,20 +471,20 @@ const Relatórios: React.FC = () => {
           </div>
 
           {/* CSV Colaboradores */}
-          <div className="flex flex-col gap-3 p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <div className="flex flex-col gap-3 p-5 bg-purple-50/60 rounded-2xl border border-purple-200/80 hover:bg-purple-50 transition-all shadow-xs">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                <Users className="w-5 h-5 text-emerald-600" />
+              <div className="size-10 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+                <Users className="w-5 h-5 text-purple-700" />
               </div>
               <div>
-                <p className="font-semibold text-slate-900 dark:text-white text-sm">CSV Colaboradores</p>
-                <p className="text-xs text-slate-500">{colaboradores.length} colaboradores activos</p>
+                <p className="font-semibold text-slate-900 text-sm">CSV Colaboradores</p>
+                <p className="text-[10px] font-medium text-slate-500">{colaboradores.length} activos</p>
               </div>
             </div>
             <button
               onClick={() => handleDownloadCSV('colaboradores')}
               disabled={generating !== null || colaboradores.length === 0}
-              className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all disabled:opacity-50"
+              className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-700 text-white rounded-xl text-sm font-semibold hover:bg-purple-800 transition-all disabled:opacity-50 shadow-xs"
             >
               <FileSpreadsheet className="w-4 h-4" />
               {generating === 'csv' ? 'A gerar...' : 'Exportar CSV'}
@@ -492,20 +492,20 @@ const Relatórios: React.FC = () => {
           </div>
 
           {/* CSV Processamentos */}
-          <div className="flex flex-col gap-3 p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <div className="flex flex-col gap-3 p-5 bg-purple-50/60 rounded-2xl border border-purple-200/80 hover:bg-purple-50 transition-all shadow-xs">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
-                <Building2 className="w-5 h-5 text-violet-600" />
+              <div className="size-10 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+                <Building2 className="w-5 h-5 text-purple-700" />
               </div>
               <div>
-                <p className="font-semibold text-slate-900 dark:text-white text-sm">Pr. Salários</p>
+                <p className="font-semibold text-slate-900 text-sm">Pr. Salários</p>
                 <p className="text-[10px] font-medium text-slate-500 leading-tight">{filteredProcessamentos.length} registos</p>
               </div>
             </div>
             <button
               onClick={() => handleDownloadCSV('processamentos')}
               disabled={generating !== null || filteredProcessamentos.length === 0}
-              className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition-all disabled:opacity-50"
+              className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-700 text-white rounded-xl text-sm font-semibold hover:bg-purple-800 transition-all disabled:opacity-50 shadow-xs"
             >
               <FileSpreadsheet className="w-4 h-4" />
               {generating === 'csv' ? 'A gerar...' : 'Exportar CSV'}
@@ -513,20 +513,20 @@ const Relatórios: React.FC = () => {
           </div>
 
           {/* CSV Retenções */}
-          <div className="flex flex-col gap-3 p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <div className="flex flex-col gap-3 p-5 bg-purple-50/60 rounded-2xl border border-purple-200/80 hover:bg-purple-50 transition-all shadow-xs">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-                <FileSpreadsheet className="w-5 h-5 text-amber-500" />
+              <div className="size-10 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+                <FileSpreadsheet className="w-5 h-5 text-purple-700" />
               </div>
               <div>
-                <p className="font-semibold text-slate-900 dark:text-white text-sm leading-tight">Retenções</p>
+                <p className="font-semibold text-slate-900 text-sm leading-tight">Retenções</p>
                 <p className="text-[10px] font-medium text-slate-500">INSS / IRT ({filteredProcessamentos.length})</p>
               </div>
             </div>
             <button
               onClick={() => handleDownloadCSV('retencoes')}
               disabled={generating !== null || filteredProcessamentos.length === 0}
-              className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-semibold hover:bg-amber-600 transition-all disabled:opacity-50"
+              className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-700 text-white rounded-xl text-sm font-semibold hover:bg-purple-800 transition-all disabled:opacity-50 shadow-xs"
             >
               <FileSpreadsheet className="w-4 h-4" />
               {generating === 'csv' ? 'A gerar...' : 'Exportar CSV'}
@@ -534,37 +534,24 @@ const Relatórios: React.FC = () => {
           </div>
 
           {/* Integration Primavera ERP */}
-          <div className="flex flex-col gap-3 p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <div className="flex flex-col gap-3 p-5 bg-purple-50/60 rounded-2xl border border-purple-200/80 hover:bg-purple-50 transition-all shadow-xs">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
+              <div className="size-10 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+                <FileSpreadsheet className="w-5 h-5 text-purple-700" />
               </div>
               <div>
-                <p className="font-semibold text-slate-900 dark:text-white text-sm leading-tight">Primavera ERP</p>
-                <p className="text-[10px] font-medium text-slate-500">Formato Vencimentos CSV</p>
+                <p className="font-semibold text-slate-900 text-sm leading-tight">Primavera ERP</p>
+                <p className="text-[10px] font-medium text-slate-500">Formato CSV</p>
               </div>
             </div>
             <button
               onClick={handleDownloadPrimaveraERP}
               disabled={generating !== null}
-              className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all disabled:opacity-50"
+              className="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-700 text-white rounded-xl text-sm font-semibold hover:bg-purple-800 transition-all disabled:opacity-50 shadow-xs"
             >
               <FileSpreadsheet className="w-4 h-4" />
-              {generating === 'primavera' ? 'A gerar...' : 'Exportar Primavera'}
+              {generating === 'primavera' ? 'A gerar...' : 'Exportar'}
             </button>
-          </div>
-        </div>
-
-        {/* Info box */}
-        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl flex gap-3">
-          <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-800 dark:text-blue-200">
-            <p className="font-medium mb-1">O PDF completo inclui:</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Dados da empresa (NIF, endereço, contactos)</li>
-              <li>Lista completa de colaboradores activos com salários</li>
-              <li>Histórico detalhado de processamentos com totalizações</li>
-            </ul>
           </div>
         </div>
       </div>
@@ -574,7 +561,6 @@ const Relatórios: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Acumulado Anual por Colaborador</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Resumo financeiro acumulado (Bruto, Descontos, INSS, IRT e Líquido) por ano de exercício</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -647,15 +633,15 @@ const Relatórios: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-4 text-slate-500 font-mono text-[11px]">{c.nif || '---'}</td>
                       <td className="py-3.5 px-4 text-center">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${procs.length > 0 ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'}`}>
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${procs.length > 0 ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'}`}>
                           {procs.length} / 12 meses
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right font-semibold text-slate-900 dark:text-white">{fmt(brutoAcum)}</td>
-                      <td className="py-3.5 px-4 text-right text-rose-500 font-semibold">{fmt(inssAcum)}</td>
-                      <td className="py-3.5 px-4 text-right text-amber-600 dark:text-amber-400 font-semibold">{fmt(irtAcum)}</td>
-                      <td className="py-3.5 px-4 text-right text-red-600 dark:text-red-400 font-bold">{fmt(descAcum)}</td>
-                      <td className="py-3.5 px-4 text-right font-black text-emerald-600 dark:text-emerald-400 text-sm">{fmt(liqAcum)}</td>
+                      <td className="py-3.5 px-4 text-right text-slate-700 dark:text-slate-300 font-semibold">{fmt(inssAcum)}</td>
+                      <td className="py-3.5 px-4 text-right text-slate-700 dark:text-slate-300 font-semibold">{fmt(irtAcum)}</td>
+                      <td className="py-3.5 px-4 text-right text-slate-900 dark:text-white font-bold">{fmt(descAcum)}</td>
+                      <td className="py-3.5 px-4 text-right font-black text-purple-700 dark:text-purple-300 text-sm">{fmt(liqAcum)}</td>
                     </tr>
                   );
                 })}
@@ -679,7 +665,6 @@ const Relatórios: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-sm font-bold text-slate-800 dark:text-white tracking-tight">Folha de Pagamento Anual</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Bruto, INSS e IRT por mês</p>
             </div>
             <div className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-[10px] font-bold">Mensal</div>
           </div>
@@ -694,12 +679,12 @@ const Relatórios: React.FC = () => {
                     <stop offset="95%" stopColor="#9333ea" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="gradINSS" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.14}/>
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#7e22ce" stopOpacity={0.14}/>
+                    <stop offset="95%" stopColor="#7e22ce" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="gradIRT" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.14}/>
-                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#334155" stopOpacity={0.14}/>
+                    <stop offset="95%" stopColor="#334155" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
@@ -717,9 +702,9 @@ const Relatórios: React.FC = () => {
                     name === 'total' ? 'Bruto' : name === 'inss' ? 'INSS' : 'IRT'
                   ]}
                 />
-                <Area type="monotone" dataKey="total" stroke="#9333ea" strokeWidth={2.5} fillOpacity={1} fill="url(#gradTotal)" dot={{ r: 3, fill: '#9333ea', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#9333ea' }} />
-                <Area type="monotone" dataKey="inss" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#gradINSS)" dot={{ r: 3, fill: '#ef4444', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#ef4444' }} />
-                <Area type="monotone" dataKey="irt" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#gradIRT)" dot={{ r: 3, fill: '#f59e0b', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#f59e0b' }} />
+                <Area isAnimationActive={false} type="monotone" dataKey="total" stroke="#9333ea" strokeWidth={2.5} fillOpacity={1} fill="url(#gradTotal)" dot={{ r: 3, fill: '#9333ea', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#9333ea' }} />
+                <Area isAnimationActive={false} type="monotone" dataKey="inss" stroke="#7e22ce" strokeWidth={2} fillOpacity={1} fill="url(#gradINSS)" dot={{ r: 3, fill: '#7e22ce', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#7e22ce' }} />
+                <Area isAnimationActive={false} type="monotone" dataKey="irt" stroke="#334155" strokeWidth={2} fillOpacity={1} fill="url(#gradIRT)" dot={{ r: 3, fill: '#334155', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#334155' }} />
                 <Legend
                   wrapperStyle={{ fontSize: '10px', fontWeight: 700, paddingTop: '16px', color: '#64748b' }}
                   iconType="circle" iconSize={8}
@@ -735,11 +720,10 @@ const Relatórios: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-sm font-bold text-slate-800 dark:text-white tracking-tight">Absentismo por Departamento</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Faltas justificadas vs. não justificadas</p>
             </div>
             <div className="flex items-center gap-3 text-[10px] font-bold">
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400 inline-block"/>Faltas</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"/>Justificadas</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-purple-700 inline-block"/>Dias Perdidos</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-600 inline-block"/>Desconto Faltas (Kz)</span>
             </div>
           </div>
           {loading ? (
@@ -749,18 +733,20 @@ const Relatórios: React.FC = () => {
               <BarChart data={chartAbsentismo} margin={{ top: 10, right: 10, left: -10, bottom: 0 }} barGap={4}>
                 <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9"/>
                 <XAxis dataKey="name" stroke="#cbd5e1" fontSize={10} fontWeight={700} tickLine={false} axisLine={false} tickMargin={10} />
-                <YAxis stroke="#cbd5e1" fontSize={10} fontWeight={700} tickLine={false} axisLine={false} tickMargin={8}
-                  tickFormatter={formatNumberAngola}
-                />
+                <YAxis yAxisId="left" stroke="#cbd5e1" fontSize={10} fontWeight={700} tickLine={false} axisLine={false} tickMargin={8} tickFormatter={formatNumberAngola} width={36} />
+                <YAxis yAxisId="right" orientation="right" stroke="#cbd5e1" fontSize={10} fontWeight={700} tickLine={false} axisLine={false} tickMargin={8} tickFormatter={formatKzAxis} width={68} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', borderRadius: '14px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', padding: '10px 16px' }}
                   labelStyle={{ color: '#94a3b8', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}
                   itemStyle={{ fontSize: '12px', fontWeight: 700 }}
                   cursor={{ fill: 'rgba(148,163,184,0.06)', radius: 8 }}
-                  formatter={(value: number, name: string) => [formatNumberAngola(value), name]}
+                  formatter={(value: number, name: string) => [
+                    name === 'descontoFaltas' ? formatKz(value, 0) : `${formatNumberAngola(value)} dias`,
+                    name === 'descontoFaltas' ? 'Desconto Faltas' : 'Dias Perdidos'
+                  ]}
                 />
-                <Bar dataKey="faltas" name="Faltas" fill="#f87171" radius={[8, 8, 0, 0]} barSize={22} />
-                <Bar dataKey="justificadas" name="Justificadas" fill="#10b981" radius={[8, 8, 0, 0]} barSize={22} />
+                <Bar yAxisId="left" isAnimationActive={false} dataKey="diasPerdidos" name="Dias Perdidos" fill="#9333ea" radius={[8, 8, 0, 0]} barSize={22} />
+                <Bar yAxisId="right" isAnimationActive={false} dataKey="descontoFaltas" name="Desconto Faltas" fill="#334155" radius={[8, 8, 0, 0]} barSize={22} />
               </BarChart>
             </ResponsiveContainer>
           )}

@@ -555,7 +555,7 @@ const ProcessamentoAtraso: React.FC = () => {
                     <p style={{ fontSize: '12px', fontWeight: 'bold', margin: 0, color: '#e11d48' }}>{formatMoney(snap.totalDescontos)}</p>
                   </div>
                 </div>
-                <div style={{ background: '#000', color: '#fff', padding: '2mm 4mm', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ background: '#6d28d9', color: '#fff', padding: '2mm 4mm', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '0.05em' }}>VALOR LÍQUIDO (KZ)</span>
                   <span style={{ fontSize: '16px', fontWeight: '900' }}>{formatMoney(snap.salarioLiquido)}</span>
                 </div>
@@ -601,7 +601,6 @@ const ProcessamentoAtraso: React.FC = () => {
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Processamento em Atraso</h1>
-          <p className="text-xs text-slate-400 font-medium mt-0.5">Gestão e liquidação acelerada de remunerações pendentes</p>
         </div>
 
         {/* Barra de Filtros Avançados */}
@@ -628,7 +627,7 @@ const ProcessamentoAtraso: React.FC = () => {
                 placeholder="Pesquisar por nome, NIF ou cargo..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-slate-900 transition-all w-full sm:w-64 shadow-sm"
+                className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-purple-600 transition-all w-full sm:w-64 shadow-sm"
               />
             </div>
           </div>
@@ -637,7 +636,7 @@ const ProcessamentoAtraso: React.FC = () => {
 
       {loading ? (
         <div className="flex justify-center p-12">
-          <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-900 border-t-transparent" />
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-purple-700 border-t-transparent" />
         </div>
       ) : grupos.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-3xl p-16 text-center shadow-sm">
@@ -682,7 +681,7 @@ const ProcessamentoAtraso: React.FC = () => {
                    className="w-full flex items-center gap-4 p-5 text-left hover:bg-slate-50 transition-colors"
                  >
                    {/* Avatar */}
-                   <div className="size-11 shrink-0 rounded-full bg-slate-900 text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                   <div className="size-11 shrink-0 rounded-xl bg-purple-700 text-white flex items-center justify-center text-sm font-bold overflow-hidden">
                      {colaborador.fotoUrl ? (
                        <img src={colaborador.fotoUrl} alt={colaborador.nome} className="w-full h-full object-cover" />
                      ) : (
@@ -698,7 +697,7 @@ const ProcessamentoAtraso: React.FC = () => {
 
                    {/* Badge: pending months */}
                    <div className="flex items-center gap-3 shrink-0">
-                     <span className="px-3 py-1 rounded-full bg-slate-900 text-white text-[11px] font-bold">
+                     <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 border border-purple-200 text-[11px] font-bold">
                      {formatMoney(valorEmAtrasoTopo * pendencias.length)} Valor em atraso
                      </span>
                      <span className="text-sm text-slate-500 font-medium hidden sm:block whitespace-nowrap">
@@ -736,7 +735,7 @@ const ProcessamentoAtraso: React.FC = () => {
                         className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
                           numSelected === 0 || processando
                             ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                            : 'bg-slate-900 text-white hover:bg-slate-800'
+                            : 'bg-purple-700 text-white hover:bg-purple-800'
                         }`}
                       >
                         {processando ? (
@@ -760,12 +759,12 @@ const ProcessamentoAtraso: React.FC = () => {
                           type="checkbox"
                           checked={allSelected}
                           onChange={() => toggleTodos(colaborador.id, pendencias)}
-                          className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                          className="rounded border-slate-300 text-purple-700 focus:ring-purple-700"
                         />
                         <span className="text-xs font-medium text-slate-600">Seleccionar todos os meses</span>
                       </label>
                       {numSelected > 0 && (
-                        <span className="text-xs text-slate-900 font-semibold">
+                        <span className="text-xs text-purple-700 font-bold">
                           {numSelected} {numSelected === 1 ? 'mês seleccionado' : 'meses seleccionados'}
                         </span>
                       )}
@@ -779,13 +778,13 @@ const ProcessamentoAtraso: React.FC = () => {
                         return (
                           <label
                             key={key}
-                            className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer select-none transition-all ${checked ? 'bg-slate-900 text-white border-slate-900' : 'bg-white border-slate-200 hover:border-slate-300'}`}
+                            className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer select-none transition-all ${checked ? 'bg-purple-700 text-white border-purple-700' : 'bg-white border-slate-200 hover:border-purple-300'}`}
                           >
                             <input
                               type="checkbox"
                               checked={checked}
                               onChange={() => toggleMes(colaborador.id, p.mes, p.ano)}
-                              className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                              className="rounded border-slate-300 text-purple-700 focus:ring-purple-700"
                             />
                             <div>
                               <p className={`text-xs font-semibold ${checked ? 'text-white' : 'text-slate-700'}`}>{numToMonth(p.mes)}</p>

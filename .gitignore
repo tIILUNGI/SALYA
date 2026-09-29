@@ -3,3 +3,6 @@
 /tsconfig.tsbuildinfo
 Dockerfile
 nginx.conf
+.env
+.env.local
+.env*.local

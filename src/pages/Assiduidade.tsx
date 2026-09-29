@@ -327,38 +327,26 @@ const Assiduidade: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500 font-semibold">Total de Faltas</p>
-            <span className="material-symbols-outlined text-rose-500 text-xl">event_busy</span>
-          </div>
-          <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{faltas.length}</p>
+          <p className="text-xs text-slate-500 font-semibold mb-1">Total de Faltas</p>
+          <p className="text-3xl font-bold text-slate-800 dark:text-white">{faltas.length}</p>
           <p className="text-[10px] text-slate-400 mt-1">Registos de ausências no período.</p>
         </div>
 
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500 font-semibold">Faltas com Desconto</p>
-            <span className="material-symbols-outlined text-amber-500 text-xl">warning</span>
-          </div>
-          <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{totalFaltasInjustificadas}</p>
+          <p className="text-xs text-slate-500 font-semibold mb-1">Faltas com Desconto</p>
+          <p className="text-3xl font-bold text-slate-800 dark:text-white">{totalFaltasInjustificadas}</p>
           <p className="text-[10px] text-slate-400 mt-1">Ausências que implicam desconto salarial.</p>
         </div>
 
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-emerald-500 font-semibold">Faltas Justificadas</p>
-            <span className="material-symbols-outlined text-emerald-500 text-xl">verified_user</span>
-          </div>
-          <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{totalFaltasJustificadas}</p>
+          <p className="text-xs text-purple-700 font-semibold mb-1">Faltas Justificadas</p>
+          <p className="text-3xl font-bold text-slate-800 dark:text-white">{totalFaltasJustificadas}</p>
           <p className="text-[10px] text-slate-400 mt-1">Ausências com justificação válida.</p>
         </div>
 
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-primary font-semibold">Atrasos Acumulados</p>
-            <span className="material-symbols-outlined text-primary text-xl">schedule</span>
-          </div>
-          <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{formatarAtrasosEmHoras(totalMinutosAtraso)}</p>
+          <p className="text-xs text-purple-700 font-semibold mb-1">Atrasos Acumulados</p>
+          <p className="text-3xl font-bold text-slate-800 dark:text-white">{formatarAtrasosEmHoras(totalMinutosAtraso)}</p>
           <p className="text-[10px] text-slate-400 mt-1">Total de horas de atraso registadas.</p>
         </div>
       </div>
@@ -443,7 +431,7 @@ const Assiduidade: React.FC = () => {
                   <tr key={colab.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all align-middle">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="size-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 text-white flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
+                        <div className="size-9 rounded-xl bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200/50 flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
                           {colab.fotoUrl ? (
                             <img src={colab.fotoUrl} alt={colab.nome} className="w-full h-full object-cover" />
                           ) : (
@@ -464,15 +452,15 @@ const Assiduidade: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       {colabFaltas.length === 0 ? (
-                        <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 inline-flex items-center gap-1">
+                        <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 inline-flex items-center gap-1">
                           100% Assíduo
                         </span>
                       ) : temInjustificadas ? (
-                        <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 inline-flex items-center gap-1">
+                        <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-white inline-flex items-center gap-1">
                           Com Desconto
                         </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 inline-flex items-center gap-1">
+                        <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 inline-flex items-center gap-1">
                           Justificado
                         </span>
                       )}
@@ -533,8 +521,8 @@ const Assiduidade: React.FC = () => {
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${
                         falta.tipo === 'INJUSTIFICADA'
-                          ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400'
-                          : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          ? 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-white'
+                          : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
                       }`}>
                         {falta.tipo}
                       </span>
@@ -544,9 +532,9 @@ const Assiduidade: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       {falta.descontaSalario ? (
-                        <span className="text-rose-600 font-bold text-xs">Sim (Salário + Subsídios)</span>
+                        <span className="text-slate-800 dark:text-white font-bold text-xs">Sim (Sal. + Sub.)</span>
                       ) : (
-                        <span className="text-emerald-600 font-bold text-xs">Não (Isento de Desconto)</span>
+                        <span className="text-purple-700 font-bold text-xs">Não (Isento)</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -600,7 +588,7 @@ const Assiduidade: React.FC = () => {
                     <td className="px-6 py-4 text-sm font-semibold text-slate-700 dark:text-white capitalize">
                       {reg.colaboradorNome}
                     </td>
-                    <td className="px-6 py-4 text-xs font-bold text-emerald-600 font-mono">
+                    <td className="px-6 py-4 text-xs font-bold text-purple-700 font-mono">
                       {reg.horaEntrada || '--:--'}
                     </td>
                     <td className="px-6 py-4 text-xs font-bold text-slate-500 font-mono">
@@ -608,7 +596,7 @@ const Assiduidade: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-xs font-mono">
                       {reg.minutosAtraso > 0 ? (
-                        <span className="text-amber-600 font-bold">+{reg.minutosAtraso} min</span>
+                        <span className="text-slate-800 dark:text-white font-bold">+{reg.minutosAtraso} min</span>
                       ) : (
                         <span className="text-slate-400">No horário</span>
                       )}
@@ -715,7 +703,7 @@ const Assiduidade: React.FC = () => {
           <div className="space-y-6">
             <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
               <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
-                <div className="size-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 flex items-center justify-center">
+                <div className="size-10 rounded-2xl bg-purple-100 dark:bg-purple-900/20 text-purple-700 flex items-center justify-center">
                   <span className="material-symbols-outlined text-xl">link</span>
                 </div>
                 <div>
@@ -740,7 +728,7 @@ const Assiduidade: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <button type="submit" className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-500 shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
+                <button type="submit" className="w-full py-3 bg-purple-700 text-white rounded-xl font-bold text-xs hover:bg-purple-800 shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2">
                   <span className="material-symbols-outlined text-base">save</span>
                   Guardar Mapeamento
                 </button>

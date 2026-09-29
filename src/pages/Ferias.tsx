@@ -7,9 +7,9 @@ import { Ferias } from '../types';
 
 const statusBadge: Record<string, string> = {
   'Pendente': 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-  'Aprovado': 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
-  'Rejeitado': 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400',
-  'Gozado': 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+  'Aprovado': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+  'Rejeitado': 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400',
+  'Gozado': 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
 };
 
 const FeriasPage: React.FC = () => {
@@ -508,35 +508,23 @@ const FeriasPage: React.FC = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500 font-semibold">Em Férias Hoje</p>
-            <span className="material-symbols-outlined text-primary text-xl">flight_takeoff</span>
-          </div>
-          <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{activeFeriasHoje}</p>
+          <p className="text-xs text-slate-500 font-semibold mb-1">Em Férias Hoje</p>
+          <p className="text-3xl font-bold text-slate-800 dark:text-white">{activeFeriasHoje}</p>
           <p className="text-[10px] text-slate-400 mt-1">Colaboradores ausentes presentemente.</p>
         </div>
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-400 font-semibold">Pendentes de Aprovação</p>
-            <span className="material-symbols-outlined text-slate-400 text-xl">pending_actions</span>
-          </div>
-          <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{totalPendentes}</p>
+          <p className="text-xs text-slate-500 font-semibold mb-1">Pendentes de Aprovação</p>
+          <p className="text-3xl font-bold text-slate-800 dark:text-white">{totalPendentes}</p>
           <p className="text-[10px] text-slate-400 mt-1">Marcações a aguardar retorno da direção.</p>
         </div>
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-blue-500 font-semibold">Dias Utilizados ({new Date().getFullYear()})</p>
-            <span className="material-symbols-outlined text-blue-500 text-xl">date_range</span>
-          </div>
-          <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{diasGozadosAno} dias</p>
+          <p className="text-xs text-purple-700 font-semibold mb-1">Dias Utilizados ({new Date().getFullYear()})</p>
+          <p className="text-3xl font-bold text-slate-800 dark:text-white">{diasGozadosAno} dias</p>
           <p className="text-[10px] text-slate-400 mt-1">Acumulado total de dias já gozados.</p>
         </div>
         <div className="glass-card p-6 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-emerald-500 font-semibold">Dias Disponíveis (Equipa)</p>
-            <span className="material-symbols-outlined text-emerald-500 text-xl">beach_access</span>
-          </div>
-          <p className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{totalDiasDisponiveisEquipa} dias</p>
+          <p className="text-xs text-purple-700 font-semibold mb-1">Dias Disponíveis (Equipa)</p>
+          <p className="text-3xl font-bold text-slate-800 dark:text-white">{totalDiasDisponiveisEquipa} dias</p>
           <p className="text-[10px] text-slate-400 mt-1">Saldo restante ({DIAS_FERIAS_ANUAIS} dias/ano por colaborador).</p>
         </div>
       </div>
@@ -641,12 +629,12 @@ const FeriasPage: React.FC = () => {
                         <tr key={ferias.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all align-middle group">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="size-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 text-white flex items-center justify-center text-xs font-bold text-center shrink-0 shadow-sm">
+                              <div className="size-9 rounded-xl bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200/50 flex items-center justify-center text-xs font-bold text-center shrink-0">
                                 {(ferias.colaborador || 'Colaborador').substring(0, 2).toUpperCase()}
                               </div>
                               <div>
                                 <p className="text-sm font-semibold text-slate-700 dark:text-white capitalize">{ferias.colaborador}</p>
-                                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
+                                <p className="text-[10px] text-purple-700 dark:text-purple-300 font-semibold mt-0.5">
                                   Gozou {gozou} / Disp. {disponivel} dias
                                 </p>
                               </div>
@@ -675,7 +663,7 @@ const FeriasPage: React.FC = () => {
                                 <>
                                   <button 
                                     onClick={() => handleChangeStatus(ferias.id, 'Aprovado')}
-                                    className="px-2 py-1 border border-emerald-500 text-emerald-600 bg-transparent hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-md text-[10px] font-bold transition-all flex items-center gap-1"
+                                    className="px-2 py-1 border border-purple-500 text-purple-700 bg-transparent hover:bg-purple-50 dark:hover:bg-purple-950/20 rounded-md text-[10px] font-bold transition-all flex items-center gap-1"
                                     title="Aprovar Férias"
                                   >
                                     <span className="material-symbols-outlined text-sm">check</span>
@@ -683,7 +671,7 @@ const FeriasPage: React.FC = () => {
                                   </button>
                                   <button 
                                     onClick={() => handleChangeStatus(ferias.id, 'Rejeitado')}
-                                    className="px-2 py-1 border border-rose-500 text-rose-600 bg-transparent hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-md text-[10px] font-bold transition-all flex items-center gap-1"
+                                    className="px-2 py-1 border border-slate-300 text-slate-700 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-[10px] font-bold transition-all flex items-center gap-1"
                                     title="Rejeitar Férias"
                                   >
                                     <span className="material-symbols-outlined text-sm">close</span>
@@ -694,7 +682,7 @@ const FeriasPage: React.FC = () => {
                               {ferias.status === 'Aprovado' && (
                                 <button 
                                   onClick={() => handleChangeStatus(ferias.id, 'Gozado')}
-                                  className="px-2.5 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-[10px] font-bold transition-all"
+                                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded text-[10px] font-bold transition-all"
                                   title="Marcar como Gozado"
                                 >
                                   Gozado
@@ -718,7 +706,7 @@ const FeriasPage: React.FC = () => {
                               </button>
                             </div>
                           </td>
-                        </tr>
+                          </tr>
                       );
                     })}
                   </tbody>
@@ -734,7 +722,6 @@ const FeriasPage: React.FC = () => {
           <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
             <div>
               <h3 className="font-bold text-slate-800 dark:text-white text-base">Visão Geral dos Direitos de Férias</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Resumo consolidado de Férias Gozadas, Não Gozadas e Saldo Acumulado (LGT 12/23)</p>
             </div>
             <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full">
               {colaboradores.filter(c => c.status !== 'Desligado').length} Colaboradores
@@ -770,7 +757,7 @@ const FeriasPage: React.FC = () => {
                   <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all align-middle">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="size-9 rounded-full bg-gradient-to-br from-indigo-500 to-blue-700 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                        <div className="size-9 rounded-xl bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200/50 flex items-center justify-center text-xs font-bold shrink-0">
                           {c.nome.substring(0, 2).toUpperCase()}
                         </div>
                         <div>
@@ -783,17 +770,17 @@ const FeriasPage: React.FC = () => {
                       {DIAS_FERIAS_ANUAIS} dias
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200">
                         {gozados} dias
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-200">
                         {naoGozados} dias
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white border border-slate-300">
                         {acumulados} dias
                       </span>
                     </td>
@@ -862,7 +849,7 @@ const FeriasPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 font-extrabold">Data Início *</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Data Início *</label>
                   <input
                     type="date"
                     required
@@ -872,7 +859,7 @@ const FeriasPage: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 font-extrabold">Data Fim *</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Data Fim *</label>
                   <input
                     type="date"
                     required
@@ -893,7 +880,7 @@ const FeriasPage: React.FC = () => {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 font-extrabold">Ano de Referência *</label>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Ano de Referência *</label>
                 <input
                   type="number"
                   required

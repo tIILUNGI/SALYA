@@ -951,7 +951,6 @@ const Processamento: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-base sm:text-lg font-bold text-white leading-tight">Simuladores Folha Angola</h3>
-                <p className="text-[11px] sm:text-xs text-slate-400">13.º Mês e Rescisão de Contrato (LGT 12/23 & IRT AGT)</p>
               </div>
             </div>
             <button
@@ -972,25 +971,17 @@ const Processamento: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Simulador Salarial Geral (Livre para todos) */}
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 p-5 flex flex-col justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="size-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-2xl">science</span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-slate-800 dark:text-white">Simulador Salarial</h3>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  Livre
-                </span>
-              </div>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-base font-bold text-slate-800 dark:text-white">Simulador Salarial</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">Livre</span>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setShowSimulationModal(true)}
-            className="w-full px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+            className="w-full px-5 py-2.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
           >
-            <span className="material-symbols-outlined text-base">calculate</span>
             Abrir Simulador Salarial
           </button>
         </div>
@@ -1025,32 +1016,23 @@ const Processamento: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-6 border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-2xs hover:shadow-md transition-all">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Bruto</p>
-            <span className="material-symbols-outlined text-emerald-500 text-xl">payments</span>
-          </div>
-          <p className="text-2xl font-black text-slate-900 dark:text-white mt-3 tracking-tight">{formatMoney(totaisPeriodo.bruto)}</p>
-          <div className="flex items-center gap-1.5 mt-2 text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
-            <span className="material-symbols-outlined text-sm">trending_up</span>
-            <span>{historicoDoPeriodo.length} recibo(s) gerado(s)</span>
-          </div>
+          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-3">Total Bruto</p>
+          <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{formatMoney(totaisPeriodo.bruto)}</p>
+          <p className="text-[11px] text-slate-400 font-semibold mt-2">{historicoDoPeriodo.length} recibo(s) gerado(s)</p>
         </div>
 
         <div className="p-6 border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-2xs hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-rose-500 font-bold uppercase tracking-wider">Total Descontos</p>
-            <span className="material-symbols-outlined text-rose-500 text-xl">output</span>
+            <p className="text-xs text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider">Total Descontos</p>
+            <span className="material-symbols-outlined text-slate-600 text-xl">output</span>
           </div>
           <p className="text-2xl font-black text-slate-900 dark:text-white mt-3 tracking-tight">{formatMoney(totaisPeriodo.descontos)}</p>
           <p className="text-[10px] font-semibold text-slate-400 mt-2">Deduções acumuladas (INSS & IRT)</p>
         </div>
 
         <div className="p-6 border border-primary/20 bg-primary/5 dark:bg-primary/10 rounded-2xl shadow-2xs hover:shadow-md transition-all">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-primary font-bold uppercase tracking-wider">Total Líquido</p>
-            <span className="material-symbols-outlined text-primary text-xl">account_balance_wallet</span>
-          </div>
-          <p className="text-2xl font-black text-primary dark:text-white mt-3 tracking-tight">{formatMoney(totaisPeriodo.liquido)}</p>
+          <p className="text-xs text-primary font-bold uppercase tracking-wider mb-3">Total Líquido</p>
+          <p className="text-2xl font-black text-primary dark:text-white tracking-tight">{formatMoney(totaisPeriodo.liquido)}</p>
           <p className="text-[10px] font-semibold text-primary/70 dark:text-slate-300 mt-2">Montante líquido a transferir</p>
         </div>
 

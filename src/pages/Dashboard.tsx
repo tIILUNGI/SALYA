@@ -74,7 +74,7 @@ const Dashboard: React.FC = () => {
   const [processamentosMes, setProcessamentosMes] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const DEPT_COLORS = ['#9333ea', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
+  const DEPT_COLORS = ['#7c3aed', '#0ea5e9', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16', '#ec4899'];
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -193,7 +193,6 @@ const Dashboard: React.FC = () => {
       <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-200/80 dark:border-slate-800">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Visão geral</h1>
-          <p className="text-xs text-slate-400 mt-1 font-medium">Painel executivo de monitorização salarial e gestão de equipa</p>
         </div>
         <button
           onClick={() => window.location.reload()}
@@ -271,10 +270,10 @@ const Dashboard: React.FC = () => {
               </div>
               
               {/* Alerta Contratos */}
-              <div className={`bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-xs border flex flex-col justify-between ${alertas.contratosExpirando === 0 ? 'border-slate-200/80 dark:border-slate-800' : 'border-rose-200 dark:border-rose-900/50'}`}>
+              <div className={`bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-xs border flex flex-col justify-between ${alertas.contratosExpirando === 0 ? 'border-slate-200/80 dark:border-slate-800' : 'border-purple-200 dark:border-purple-900/50'}`}>
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="size-10 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+                    <div className="size-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
                       <img src="/contratos.png" alt="Contratos" className="w-5 h-5 object-contain" />
                     </div>
                     <h4 className="font-bold text-slate-900 dark:text-white text-sm">Contratos</h4>
@@ -282,7 +281,7 @@ const Dashboard: React.FC = () => {
                   
                   <div className="flex items-center gap-4 mb-4">
                     <div>
-                      <span className={`block text-3xl font-black ${alertas.contratosExpirando === 0 ? 'text-emerald-600' : 'text-red-600'}`}>{alertas.contratosExpirando}</span>
+                      <span className={`block text-3xl font-black ${alertas.contratosExpirando === 0 ? 'text-purple-700' : 'text-slate-900'}`}>{alertas.contratosExpirando}</span>
                       <span className="text-xs text-slate-400 font-medium">{alertas.contratosExpirando === 0 ? 'Sem Pendências' : 'A expirar'}</span>
                     </div>
                   </div>
@@ -297,10 +296,10 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Alerta Documentos */}
-              <div className={`bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-xs border flex flex-col justify-between ${alertas.documentosExpirando === 0 ? 'border-slate-200/80 dark:border-slate-800' : 'border-rose-200 dark:border-rose-900/50'}`}>
+              <div className={`bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-xs border flex flex-col justify-between ${alertas.documentosExpirando === 0 ? 'border-slate-200/80 dark:border-slate-800' : 'border-purple-200 dark:border-purple-900/50'}`}>
                 <div>
                    <div className="flex items-center gap-3 mb-4">
-                    <div className="size-10 rounded-xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
+                    <div className="size-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
                       <img src="/Documentos.png" alt="Documentos" className="w-5 h-5 object-contain" />
                     </div>
                     <h4 className="font-bold text-slate-900 dark:text-white text-sm">Documentos</h4>
@@ -308,7 +307,7 @@ const Dashboard: React.FC = () => {
                   
                   <div className="flex items-center gap-4 mb-4">
                     <div>
-                      <span className={`block text-3xl font-black ${alertas.documentosExpirando === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{alertas.documentosExpirando}</span>
+                      <span className={`block text-3xl font-black ${alertas.documentosExpirando === 0 ? 'text-purple-700' : 'text-slate-900'}`}>{alertas.documentosExpirando}</span>
                       <span className="text-xs text-slate-400 font-medium">{alertas.documentosExpirando === 0 ? 'Todos Válidos' : 'A vencer'}</span>
                     </div>
                   </div>
@@ -326,13 +325,13 @@ const Dashboard: React.FC = () => {
               <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
                 <div>
                    <div className="flex items-center gap-3 mb-4">
-                    <div className="size-10 rounded-xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center">
+                    <div className="size-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
                       <img src="/total de colaboradores.png" alt="Colaboradores" className="w-5 h-5 object-contain" />
                     </div>
                     <h4 className="font-bold text-slate-900 dark:text-white text-sm">Colaboradores</h4>
                   </div>
                   <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-3xl font-black text-violet-600">{stats.totalColaboradores}</span>
+                    <span className="text-3xl font-black text-purple-700">{stats.totalColaboradores}</span>
                     <span className="text-xs text-slate-400 font-medium">activos</span>
                   </div>
                 </div>
@@ -405,7 +404,7 @@ const Dashboard: React.FC = () => {
                     <Tooltip content={<ChartTooltip />} />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '12px' }} />
                     <Area isAnimationActive={false} type="monotone" dataKey="bruto" name="Total Bruto" stroke="#9333ea" strokeWidth={2} fill="url(#colorBrutoDb)" />
-                    <Line isAnimationActive={false} type="monotone" dataKey="liquido" name="Total Líquido" stroke="#10b981" strokeWidth={2} dot={false} />
+                    <Line isAnimationActive={false} type="monotone" dataKey="liquido" name="Total Líquido" stroke="#334155" strokeWidth={2} dot={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
@@ -428,8 +427,8 @@ const Dashboard: React.FC = () => {
                     <YAxis yAxisId="right" orientation="right" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={formatKzShort} width={72} />
                     <Tooltip content={<ChartTooltip />} />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '12px' }} />
-                    <Bar yAxisId="left" name="Dias Perdidos" isAnimationActive={false} dataKey="diasPerdidos" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={20} />
-                    <Bar yAxisId="right" name="Desconto Faltas (Kz)" isAnimationActive={false} dataKey="descontoFaltas" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={20} />
+                    <Bar yAxisId="left" name="Dias Perdidos" isAnimationActive={false} dataKey="diasPerdidos" fill="#9333ea" radius={[4, 4, 0, 0]} barSize={20} />
+                    <Bar yAxisId="right" name="Desconto Faltas (Kz)" isAnimationActive={false} dataKey="descontoFaltas" fill="#334155" radius={[4, 4, 0, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
