@@ -255,6 +255,15 @@ const buildRelatoriosPDF = (
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+const relatoriosCacheRef = new Map<string, {
+  loadedAt: number;
+  data: {
+    chartProcessamento: any[];
+    chartAbsentismo: any[];
+    processamentos: ProcessamentoReport[];
+  };
+}>();
+
 const Relatórios: React.FC = () => {
   const { empresaId, empresa: empresaCtx, colaboradores: colabCtx } = useContext(AppContext);
   const [chartProcessamento, setChartProcessamento] = useState<any[]>([]);
@@ -296,27 +305,58 @@ const Relatórios: React.FC = () => {
 
   useEffect(() => {
     if (!empresaId) return;
+
+    const cacheKey = `relatorios:${empresaId}`;
+    const cachedSnapshot = relatoriosCacheRef.get(cacheKey);
+    if (cachedSnapshot && Date.now() - cachedSnapshot.loadedAt < 60000) {
+      setChartProcessamento(cachedSnapshot.data.chartProcessamento);
+      setChartAbsentismo(cachedSnapshot.data.chartAbsentismo);
+      setProcessamentos(cachedSnapshot.data.processamentos);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
     const fetchCharts = api.get(`/dashboard/charts?empresaId=${empresaId}`)
       .then(charts => {
-        setChartProcessamento(charts.processamentoMensal || []);
-        setChartAbsentismo(charts.absentismoDepartamento || []);
+        const nextCharts = {
+          processamentoMensal: charts.processamentoMensal || [],
+          absentismoDepartamento: charts.absentismoDepartamento || []
+        };
+        setChartProcessamento(nextCharts.processamentoMensal);
+        setChartAbsentismo(nextCharts.absentismoDepartamento);
+        return nextCharts;
       })
       .catch(err => { 
         console.error('Erro ao carregar dados dos gráficos:', err);
         setChartProcessamento([]); 
         setChartAbsentismo([]); 
+        return { processamentoMensal: [], absentismoDepartamento: [] };
       });
 
     const fetchProcessamentos = api.get(`/processamentos/historico?empresaId=${empresaId}`)
-      .then(data => setProcessamentos(Array.isArray(data) ? data : []))
+      .then(data => {
+        const nextData = Array.isArray(data) ? data : [];
+        setProcessamentos(nextData);
+        return nextData;
+      })
       .catch(err => {
         console.error('Erro ao carregar histórico para relatórios:', err);
         setProcessamentos([]);
+        return [] as ProcessamentoReport[];
       });
 
-    Promise.all([fetchCharts, fetchProcessamentos]).finally(() => setLoading(false));
+    Promise.all([fetchCharts, fetchProcessamentos]).then(([charts, items]) => {
+      relatoriosCacheRef.set(cacheKey, {
+        loadedAt: Date.now(),
+        data: {
+          chartProcessamento: charts.processamentoMensal || [],
+          chartAbsentismo: charts.absentismoDepartamento || [],
+          processamentos: items || []
+        }
+      });
+    }).finally(() => setLoading(false));
   }, [empresaId]);
 
   // ── PDF download ────────────────────────────────────────────────────────────

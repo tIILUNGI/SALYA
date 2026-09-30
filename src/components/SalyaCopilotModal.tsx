@@ -21,6 +21,23 @@ const cleanText = (raw: string): string => {
     .replace(/__(.*?)__/g, '$1');    // remove __underline__
 };
 
+const getGeminiModelCandidates = (): string[] => {
+  const configuredModel = (
+    process.env.REACT_APP_GEMINI_MODEL ||
+    (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_GEMINI_MODEL : '') ||
+    ''
+  ).trim();
+
+  const candidates = [
+    configuredModel,
+    'gemini-2.0-flash',
+    'gemini-2.5-flash',
+    'gemini-1.5-flash'
+  ];
+
+  return Array.from(new Set(candidates.filter(Boolean))) as string[];
+};
+
 export const SalyaCopilotModal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -257,66 +274,74 @@ DIRETRIZES DE COMPORTAMENTO:
     const apiKey = process.env.REACT_APP_GEMINI_API_KEY || (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_GEMINI_API_KEY : '');
 
     if (apiKey) {
-      try {
-        const historyContents = messages.map((m) => ({
-          role: m.sender === 'user' ? 'user' : 'model',
-          parts: [{ text: m.text }]
-        }));
+      const modelCandidates = getGeminiModelCandidates();
+      let lastErrorMessage = '';
 
-        historyContents.push({
-          role: 'user',
-          parts: [{ text: currentInput }]
-        });
+      for (const modelName of modelCandidates) {
+        try {
+          const historyContents = messages.map((m) => ({
+            role: m.sender === 'user' ? 'user' : 'model',
+            parts: [{ text: m.text }]
+          }));
 
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            system_instruction: {
-              parts: [{ text: SYSTEM_INSTRUCTION }]
-            },
-            contents: historyContents
-          })
-        });
+          historyContents.push({
+            role: 'user',
+            parts: [{ text: currentInput }]
+          });
 
-        if (!res.ok) {
-          const errBody = await res.json().catch(() => ({}));
-          console.error(`[SalIA] Gemini API error ${res.status}:`, errBody);
-          // Mostra erro visível ao utilizador para facilitar diagnóstico
-          const errMsg = errBody?.error?.message || `Erro de API (HTTP ${res.status})`;
-          setMessages((prev) => [
-            ...prev,
-            {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              system_instruction: {
+                parts: [{ text: SYSTEM_INSTRUCTION }]
+              },
+              contents: historyContents
+            })
+          });
+
+          if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            const errMsg = errBody?.error?.message || `Erro de API (HTTP ${res.status})`;
+            lastErrorMessage = errMsg;
+            console.warn(`[SalIA] Modelo Gemini falhou (${modelName}):`, errMsg);
+
+            const isModelNotAvailable = /not found|unsupported|is not supported|not supported/i.test(errMsg);
+            if (!isModelNotAvailable) {
+              break;
+            }
+            continue;
+          }
+
+          const data = await res.json();
+          const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (candidateText) {
+            const botText = cleanText(candidateText);
+            const botMsg: Message = {
               id: String(Date.now()),
               sender: 'assistant',
-              text: `Ocorreu um erro ao contactar a IA: ${errMsg}\n\nA usar resposta local como alternativa.`,
+              text: botText,
               timestamp: new Date().toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' })
+            };
+            setMessages((prev) => [...prev, botMsg]);
+            setLoading(false);
+
+            if (autoVoice) {
+              speakText(botText, botMsg.id);
             }
-          ]);
-          setLoading(false);
-          return;
-        }
-
-        const data = await res.json();
-        const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (candidateText) {
-          const botText = cleanText(candidateText);
-          const botMsg: Message = {
-            id: String(Date.now()),
-            sender: 'assistant',
-            text: botText,
-            timestamp: new Date().toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' })
-          };
-          setMessages((prev) => [...prev, botMsg]);
-          setLoading(false);
-
-          if (autoVoice) {
-            speakText(botText, botMsg.id);
+            return;
           }
-          return;
+
+          lastErrorMessage = 'A IA respondeu sem conteúdo válido.';
+        } catch (err) {
+          console.error('[SalIA] Erro de rede ao chamar Gemini:', err);
+          lastErrorMessage = err instanceof Error ? err.message : 'Erro ao contactar Gemini';
+          break;
         }
-      } catch (err) {
-        console.error('[SalIA] Erro de rede ao chamar Gemini:', err);
+      }
+
+      if (lastErrorMessage) {
+        console.warn('[SalIA] IA indisponível; a usar resposta local.', lastErrorMessage);
       }
     } else {
       console.warn('[SalIA] Sem API Key configurada — a usar fallback local.');
@@ -428,7 +453,7 @@ DIRETRIZES DE COMPORTAMENTO:
 
       {/* Painel Flutuante Responsivo SalIA */}
       {isOpen && (
-        <div className="fixed bottom-[5.5rem] right-4 sm:right-6 z-[150] w-[calc(100vw-2rem)] sm:w-[440px] max-w-full h-[62vh] sm:h-[620px] max-h-[700px] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200/80 dark:border-slate-800 animate-in slide-in-from-bottom-5 duration-200 font-app">
+        <div className="fixed bottom-4 right-3 z-[150] w-[calc(100vw-1rem)] max-w-[390px] h-[min(72vh,620px)] max-h-[calc(100vh-5rem)] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200/80 dark:border-slate-800 animate-in slide-in-from-bottom-5 duration-200 font-app">
           
           {/* Cabeçalho Corporativo com Marca SalIA */}
           <div className="p-4 px-5 bg-slate-950 text-white flex items-center justify-between shrink-0 border-b border-purple-900/40 shadow-xs">
@@ -489,7 +514,7 @@ DIRETRIZES DE COMPORTAMENTO:
           </div>
 
           {/* Atalhos Rápidos */}
-          <div className="p-2.5 px-4 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
+          <div className="p-2.5 px-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
             <button onClick={() => { setInput('Quem criou o Salya e o que é a ILUNGI?'); }} className="px-3 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-full text-[11px] font-semibold whitespace-nowrap hover:border-[#8e34eb] hover:text-[#8e34eb] transition-all">
               Sobre ILUNGI
             </button>
@@ -519,7 +544,7 @@ DIRETRIZES DE COMPORTAMENTO:
                     <img src="/salia-avatar.png" alt="SalIA" className="size-7 rounded-xl object-cover border border-purple-300/40 shrink-0 shadow-xs mb-1" />
                   )}
                   <div
-                    className={`max-w-[85%] rounded-2xl p-3.5 leading-relaxed shadow-xs relative group ${
+                    className={`max-w-[88%] rounded-2xl p-3.5 leading-relaxed shadow-xs relative group ${
                       m.sender === 'user'
                         ? 'bg-[#8e34eb] text-white rounded-br-none font-medium'
                         : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-100 dark:border-slate-700/80 rounded-bl-none font-normal'

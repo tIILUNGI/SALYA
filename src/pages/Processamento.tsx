@@ -96,6 +96,11 @@ const formatMoneyInput = (value?: number | null) => {
 };
 const createOtherGain = (): OutroGanhoInput => ({ id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, descricao: '', valor: 0 });
 
+const processamentoHistoricoCacheRef = new Map<string, {
+  loadedAt: number;
+  data: HistóricoProcessamento[];
+}>();
+
 // ── Data actual ─────────────────────────────────────────────────────────────
 const TODAY = new Date();
 const CURRENT_MONTH_NUM = TODAY.getMonth() + 1;
@@ -351,11 +356,23 @@ const Processamento: React.FC = () => {
 
   const loadHistórico = useCallback(async () => {
     if (!empresaId) return;
+
+    const cacheKey = `processamento-historico:${empresaId}`;
+    const cachedSnapshot = processamentoHistoricoCacheRef.get(cacheKey);
+    if (cachedSnapshot && Date.now() - cachedSnapshot.loadedAt < 60000) {
+      setHistórico(cachedSnapshot.data);
+      setHistóricoLoading(false);
+      setHistoricoLoadedOnce(true);
+      return;
+    }
+
     setHistóricoLoading(true);
     setHistóricoError('');
     try {
       const data = await api.get(`/processamentos/historico?empresaId=${empresaId}`);
-      setHistórico(Array.isArray(data) ? data : []);
+      const nextData = Array.isArray(data) ? data : [];
+      processamentoHistoricoCacheRef.set(cacheKey, { loadedAt: Date.now(), data: nextData });
+      setHistórico(nextData);
     } catch (error: any) {
       setHistórico([]);
       console.error('Erro ao carregar histórico:', error);

@@ -327,6 +327,36 @@ const readResponse = async (response: Response) => {
   };
 };
 
+const GET_CACHE_TTL_MS = 60000;
+const getCache = new Map<string, { expiresAt: number; promise: Promise<any> }>();
+
+const getCacheKey = (endpoint: string) => `${endpoint}`;
+
+const clearGetCache = (endpoint?: string) => {
+  if (!endpoint) {
+    getCache.clear();
+    return;
+  }
+  getCache.delete(getCacheKey(endpoint));
+};
+
+const getCachedResponse = (endpoint: string) => {
+  const key = getCacheKey(endpoint);
+  const cached = getCache.get(key);
+  if (!cached) return null;
+  if (cached.expiresAt > Date.now()) return cached.promise;
+  getCache.delete(key);
+  return null;
+};
+
+const setCachedResponse = (endpoint: string, promise: Promise<any>) => {
+  getCache.set(getCacheKey(endpoint), {
+    expiresAt: Date.now() + GET_CACHE_TTL_MS,
+    promise,
+  });
+  return promise;
+};
+
 export const getApiErrorMessage = (error: any) => {
   return humanizeMessage(error);
 };
@@ -367,21 +397,26 @@ const requestWithTimeout = (init: RequestInit, timeoutMs: number): { signal: Abo
 
 export const api = {
   async get(endpoint: string, silentError = false): Promise<any> {
+    const cached = getCachedResponse(endpoint);
+    if (cached) return cached;
+
     const { signal, clear } = requestWithTimeout({}, 30000);
     try {
       const retry = () => api.get(endpoint, silentError);
-      return await doRequest(
+      const requestPromise = doRequest(
         endpoint,
         { method: 'GET', headers: getHeaders(), cache: 'no-store', signal },
         retry,
         silentError
       );
+      return await setCachedResponse(endpoint, requestPromise);
     } finally {
       clear();
     }
   },
 
   async post(endpoint: string, data: any, silentError = false): Promise<any> {
+    clearGetCache();
     const { signal, clear } = requestWithTimeout({}, 30000);
     try {
       const retry = () => api.post(endpoint, data, silentError);
@@ -397,6 +432,7 @@ export const api = {
   },
 
   async postForm(endpoint: string, formData: FormData, silentError = false): Promise<any> {
+    clearGetCache();
     const { signal, clear } = requestWithTimeout({}, 60000);
     try {
       const retry = () => api.postForm(endpoint, formData, silentError);
@@ -412,6 +448,7 @@ export const api = {
   },
 
   async put(endpoint: string, data: any, silentError = false): Promise<any> {
+    clearGetCache();
     const { signal, clear } = requestWithTimeout({}, 30000);
     try {
       const retry = () => api.put(endpoint, data, silentError);
@@ -427,6 +464,7 @@ export const api = {
   },
 
   async patch(endpoint: string, data: any, silentError = false): Promise<any> {
+    clearGetCache();
     const retry = () => api.patch(endpoint, data, silentError);
     return await doRequest(
       endpoint,
@@ -437,6 +475,7 @@ export const api = {
   },
 
   async delete(endpoint: string, silentError = false): Promise<any> {
+    clearGetCache();
     const retry = () => api.delete(endpoint, silentError);
     return await doRequest(
       endpoint,

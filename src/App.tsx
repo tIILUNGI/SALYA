@@ -115,6 +115,9 @@ function App() {
     return key ? data?._embedded?.[key] || [] : [];
   };
 
+  const refreshDataInFlightRef = useRef<Promise<void> | null>(null);
+  const lastRefreshAtRef = useRef(0);
+
   const clearCompanyState = useCallback(() => {
     setEmpresas([]);
     setEmpresa(null);
@@ -126,13 +129,20 @@ function App() {
   const refreshData = useCallback(async () => {
     // Guard: do not hammer blocked endpoints when subscription is not active
     if (subscriptionBlockedRef.current) return;
-    setIsLoadingData(true);
-    try {
-      const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
-      if (!token) {
-        clearCompanyState();
-        return;
-      }
+    const now = Date.now();
+    if (refreshDataInFlightRef.current) return refreshDataInFlightRef.current;
+    if (now - lastRefreshAtRef.current < 10000 && empresaId) {
+      return;
+    }
+
+    refreshDataInFlightRef.current = (async () => {
+      setIsLoadingData(true);
+      try {
+        const token = localStorage.getItem('salya_token') || localStorage.getItem('token');
+        if (!token) {
+          clearCompanyState();
+          return;
+        }
 
       // Fetch Empresas — o backend filtra automaticamente pelo utilizador autenticado
       const empresasData = await api.get('/empresas?size=1000');
@@ -189,12 +199,17 @@ function App() {
         setColaboradores([]);
         setEffectivePlan(null);
       }
-    } catch (error) {
-      setColaboradores([]);
-      setEffectivePlan(null);
-    } finally {
-      setIsLoadingData(false);
-    }
+      } catch (error) {
+        setColaboradores([]);
+        setEffectivePlan(null);
+      } finally {
+        setIsLoadingData(false);
+        lastRefreshAtRef.current = Date.now();
+        refreshDataInFlightRef.current = null;
+      }
+    })();
+
+    return refreshDataInFlightRef.current;
   }, [clearCompanyState, empresaId]);
 
   // Exposed helper to check /auth/me and update subscription status silently

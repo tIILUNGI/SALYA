@@ -50,6 +50,28 @@ const normalizeList = (data: any, key?: string): any[] => {
   return [];
 };
 
+const dashboardCacheRef = new Map<string, {
+  loadedAt: number;
+  data: {
+    stats: {
+      totalEmpresas: number;
+      totalColaboradores: number;
+      totalProcessamentos: number;
+      valorFolhaMensal: number;
+      custoTotalEmpresa: number;
+      acumuladoTotal: number;
+    };
+    alertas: {
+      contratosExpirando: number;
+      documentosExpirando: number;
+    };
+    chartProcessamento: any[];
+    chartAbsentismo: any[];
+    chartDepartamentos: any[];
+    processamentosMes: number;
+  };
+}>();
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { empresaId, colaboradores: ctxColaboradores, empresas: ctxEmpresas } = useContext(AppContext);
@@ -78,105 +100,126 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!empresaId) return;
-      
+      if (!empresaId) {
+        setLoading(false);
+        return;
+      }
+
+      const currentYear = new Date().getFullYear();
+      const cacheKey = `${empresaId}:${currentYear}`;
+      const cachedSnapshot = dashboardCacheRef.get(cacheKey);
+      const isFresh = cachedSnapshot && Date.now() - cachedSnapshot.loadedAt < 15000;
+
+      if (isFresh) {
+        setStats(cachedSnapshot.data.stats);
+        setAlertas(cachedSnapshot.data.alertas);
+        setChartProcessamento(cachedSnapshot.data.chartProcessamento);
+        setChartAbsentismo(cachedSnapshot.data.chartAbsentismo);
+        setChartDepartamentos(cachedSnapshot.data.chartDepartamentos);
+        setProcessamentosMes(cachedSnapshot.data.processamentosMes);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
 
-        // Fetch raw history and collaborators; normalize paged Spring responses
-        const [historicoRaw, colaboradoresRaw] = await Promise.all([
-          api.get(`/processamentos/historico?empresaId=${empresaId}`),
-          api.get(`/trabalhadores?empresaId=${empresaId}&size=1000`)
+        const alertasPromise = api.get(`/alertas/resumo?empresaId=${empresaId}`).catch((error) => {
+          console.error('Erro ao buscar resumo de alertas:', error);
+          return null;
+        });
+        const colaboradoresPromise = ctxColaboradores.length > 0
+          ? Promise.resolve(ctxColaboradores)
+          : api.get(`/trabalhadores?empresaId=${empresaId}&size=1000`).then((data) => normalizeList(data, 'colaboradores'));
+        const [historicoRaw, colaboradores, alertasData] = await Promise.all([
+          api.get(`/processamentos/historico?empresaId=${empresaId}&ano=${currentYear}`),
+          colaboradoresPromise,
+          alertasPromise
         ]);
 
         const historico: any[] = normalizeList(historicoRaw, 'processamentos');
-        // Prefer context collaborators (already loaded+normalized in App.tsx); fallback to fresh fetch
-        const colaboradores: any[] = ctxColaboradores.length > 0
-          ? ctxColaboradores
-          : normalizeList(colaboradoresRaw, 'colaboradores');
-
         const totalEmpresas = ctxEmpresas.length;
 
-        // 1. Valor da Folha (Monthly processing potential)
         const colaboradoresAtivos = colaboradores.filter(c => c.status === 'Ativo');
-        const valorFolha = colaboradoresAtivos
-          .reduce((acc, c) => acc + (c.salarioBase || 0) + (c.subsidioAlimentacao || 0) + (c.subsidioTransporte || 0), 0);
-
-        // INSS Patronal 8% sobre Salário Base
-        const totalInssPatronal = colaboradoresAtivos
-          .reduce((acc, c) => acc + ((c.salarioBase || 0) * 0.08), 0);
+        const valorFolha = colaboradoresAtivos.reduce((acc, c) => acc + (c.salarioBase || 0) + (c.subsidioAlimentacao || 0) + (c.subsidioTransporte || 0), 0);
+        const totalInssPatronal = colaboradoresAtivos.reduce((acc, c) => acc + ((c.salarioBase || 0) * 0.08), 0);
         const custoTotalEmpresa = valorFolha + totalInssPatronal;
-
-        // 2. Acumulado Total (Sum of everything already processed)
         const acumulado = historico.reduce((acc, h) => acc + (h.totalBruto || 0), 0);
 
-        // 3. Evolução de Custos (Real chart data)
         const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-        const currentYear = new Date().getFullYear();
-        
-        const processamentoPorMes = meses.map((nome, index) => {
-          const mesNum = index + 1;
-          const doMes = historico.filter(
-            (h) => (h.mes === mesNum || h.mes === String(mesNum)) && (h.ano === currentYear || h.ano === String(currentYear))
-          );
-          return {
-            name: nome,
-            bruto: doMes.reduce((acc, h) => acc + Number(h.totalBruto || 0), 0),
-            liquido: doMes.reduce((acc, h) => acc + Number(h.salarioLiquido || 0), 0),
-            processamentos: doMes.length,
-          };
+        const processamentoPorMes = meses.map((name) => ({ name, bruto: 0, liquido: 0, processamentos: 0 }));
+        const colaboradorDepartamento = new Map(
+          colaboradores.map((colaborador) => [colaborador.id, colaborador.departamento || 'Geral'])
+        );
+        const absentismoPorDepartamento = new Map<string, { descontoFaltas: number; diasPerdidos: number }>();
+
+        historico.forEach((item) => {
+          const monthIndex = Number(item.mes) - 1;
+          if (monthIndex >= 0 && monthIndex < processamentoPorMes.length) {
+            const monthly = processamentoPorMes[monthIndex];
+            monthly.bruto += Number(item.totalBruto || 0);
+            monthly.liquido += Number(item.salarioLiquido || 0);
+            monthly.processamentos++;
+          }
+
+          const departamento = colaboradorDepartamento.get(item.colaboradorId);
+          if (departamento) {
+            const resumo = absentismoPorDepartamento.get(departamento) || { descontoFaltas: 0, diasPerdidos: 0 };
+            const diasUteis = Number(item.diasUteis) || 22;
+            const diasTrab = Number(item.diasTrabalhados) ?? diasUteis;
+            resumo.descontoFaltas += Number(item.valorFaltas || 0);
+            resumo.diasPerdidos += Math.max(0, diasUteis - diasTrab);
+            absentismoPorDepartamento.set(departamento, resumo);
+          }
         });
 
-        const historicoAno = historico.filter((h) => h.ano === currentYear || h.ano === String(currentYear));
         const mesActual = new Date().getMonth() + 1;
-        const historicoMesActual = historicoAno.filter((h) => h.mes === mesActual || h.mes === String(mesActual));
-        setProcessamentosMes(historicoMesActual.length);
+        const nextProcessamentosMes = processamentoPorMes[mesActual - 1]?.processamentos || 0;
+        const nextAlertas = alertasData && typeof alertasData === 'object'
+          ? {
+              contratosExpirando: alertasData.contratosExpirando || 0,
+              documentosExpirando: alertasData.documentosExpirando || 0,
+            }
+          : { contratosExpirando: 0, documentosExpirando: 0 };
 
-        const depts = Array.from(new Set(colaboradores.map((c) => c.departamento || 'Geral')));
-
-        const statsAbsentismo = depts.map((dept) => {
-          const colabsNoDept = colaboradores.filter((c) => (c.departamento || 'Geral') === dept).map((c) => c.id);
-          const registosDept = historicoAno.filter((h) => colabsNoDept.includes(h.colaboradorId));
-          const descontoFaltas = registosDept.reduce((acc, h) => acc + Number(h.valorFaltas || 0), 0);
-          const diasPerdidos = registosDept.reduce((acc, h) => {
-            const diasUteis = Number(h.diasUteis) || 22;
-            const diasTrab = Number(h.diasTrabalhados) ?? diasUteis;
-            return acc + Math.max(0, diasUteis - diasTrab);
-          }, 0);
-          return { name: dept.length > 12 ? `${dept.slice(0, 12)}…` : dept, dept, descontoFaltas, diasPerdidos };
-        }).filter((d) => d.descontoFaltas > 0 || d.diasPerdidos > 0);
-
-        const distribuicaoDept = depts.map(dept => ({
-          name: dept,
-          value: colaboradoresAtivos.filter(c => (c.departamento || 'Geral') === dept).length,
-        })).filter(d => d.value > 0);
-
-        setStats({
+        const nextStats = {
           totalEmpresas,
           totalColaboradores: colaboradoresAtivos.length,
           totalProcessamentos: historico.length,
           valorFolhaMensal: valorFolha,
           custoTotalEmpresa: custoTotalEmpresa,
           acumuladoTotal: acumulado
-        });
+        };
 
+        const nextChartAbsentismo = Array.from(absentismoPorDepartamento, ([dept, resumo]) => ({
+          name: dept.length > 12 ? `${dept.slice(0, 12)}…` : dept,
+          dept,
+          ...resumo
+        })).filter((d) => d.descontoFaltas > 0 || d.diasPerdidos > 0);
+
+        const depts = Array.from(new Set(colaboradoresAtivos.map((c) => (c.departamento || 'Geral')))).filter(Boolean) as string[];
+        const nextChartDepartamentos = depts.map((dept) => ({
+          name: dept,
+          value: colaboradoresAtivos.filter((c) => (c.departamento || 'Geral') === dept).length,
+        })).filter((d) => d.value > 0);
+
+        const snapshot = {
+          stats: nextStats,
+          alertas: nextAlertas,
+          chartProcessamento: processamentoPorMes,
+          chartAbsentismo: nextChartAbsentismo,
+          chartDepartamentos: nextChartDepartamentos.length > 0 ? nextChartDepartamentos : [{ name: 'Geral', value: colaboradoresAtivos.length || 1 }],
+          processamentosMes: nextProcessamentosMes,
+        };
+
+        dashboardCacheRef.set(cacheKey, { loadedAt: Date.now(), data: snapshot });
+
+        setStats(nextStats);
+        setAlertas(nextAlertas);
         setChartProcessamento(processamentoPorMes);
-        setChartAbsentismo(statsAbsentismo);
-        setChartDepartamentos(distribuicaoDept.length > 0 ? distribuicaoDept : [{ name: 'Geral', value: colaboradoresAtivos.length || 1 }]);
-
-        let alertasLocal = { contratosExpirando: 0, documentosExpirando: 0 };
-        try {
-          const alertasData = await api.get(`/alertas/resumo?empresaId=${empresaId}`);
-          if (alertasData && typeof alertasData === 'object') {
-            alertasLocal = {
-              contratosExpirando: alertasData.contratosExpirando || 0,
-              documentosExpirando: alertasData.documentosExpirando || 0,
-            };
-            setAlertas(alertasLocal);
-          }
-        } catch (e) {
-          console.error('Erro ao buscar resumo de alertas:', e);
-        }
+        setChartAbsentismo(nextChartAbsentismo);
+        setChartDepartamentos(snapshot.chartDepartamentos);
+        setProcessamentosMes(nextProcessamentosMes);
 
       } catch (error) {
         console.error('Erro geral no Dashboard:', error);
