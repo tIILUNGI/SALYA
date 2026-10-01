@@ -85,39 +85,41 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({ isOpen, onClose }) =
   };
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-[2.5rem] shadow-2xl max-w-lg w-full max-h-[95vh] overflow-y-auto border border-purple-100 dark:border-purple-900/40 relative my-auto">
-        {/* Fechar modal */}
-        <button
-          onClick={onClose}
-          className="absolute top-3.5 right-3.5 sm:top-5 sm:right-5 z-10 size-8 sm:size-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center transition-all"
-        >
-          <span className="material-symbols-outlined text-lg sm:text-xl">close</span>
-        </button>
-
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden border border-purple-500/30 relative flex flex-col max-h-[92vh] my-auto">
         {/* Top Header Design Banner */}
-        <div className="bg-gradient-to-br from-purple-900 via-purple-700 to-indigo-800 p-5 sm:p-8 text-white text-center relative overflow-hidden">
+        <div className="bg-gradient-to-br from-purple-900 via-purple-700 to-indigo-800 p-5 sm:p-7 text-white text-center relative shrink-0 overflow-hidden">
           {/* Subtle background blur shapes */}
           <div className="absolute -top-10 -right-10 size-40 bg-purple-400/20 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute -bottom-10 -left-10 size-40 bg-indigo-400/20 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full mb-3 sm:mb-4">
+          {/* Fechar modal integrado no topo roxo */}
+          <button
+            onClick={onClose}
+            type="button"
+            className="absolute top-3.5 right-3.5 sm:top-5 sm:right-5 z-20 size-8 sm:size-10 rounded-full bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-md flex items-center justify-center transition-all shadow-sm active:scale-95"
+            title="Fechar"
+          >
+            <span className="material-symbols-outlined text-lg sm:text-xl">close</span>
+          </button>
+
+          <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full mb-3">
             <span className="material-symbols-outlined text-yellow-300 text-xs sm:text-sm">workspace_premium</span>
             <span className="text-[10px] sm:text-[11px] font-black tracking-widest uppercase text-purple-100">PROMOÇÃO ESPECIAL</span>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-1.5 sm:mb-2 uppercase">
-            SALYA 60D <span className="text-purple-300 block text-xl sm:text-2xl font-extrabold mt-0.5 sm:mt-1">60 DIAS GRÁTIS</span>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-1 uppercase">
+            SALYA 60D <span className="text-purple-300 block text-xl sm:text-2xl font-extrabold mt-0.5">60 DIAS GRÁTIS</span>
           </h2>
           <p className="text-[11px] sm:text-xs text-purple-100/90 max-w-xs mx-auto font-medium leading-relaxed">
             Ganhe um voucher para usar o Salya gratuitamente com acesso total durante 60 dias.
           </p>
         </div>
 
-        {/* Voucher Input & Visual Ticket Body */}
-        <div className="p-4 sm:p-8">
+        {/* Voucher Input & Visual Ticket Body (Scrollable if screen height is small) */}
+        <div className="p-4 sm:p-7 overflow-y-auto flex-1 space-y-4 sm:space-y-6">
           {isVoucherActive && (
-            <div className="mb-5 p-3.5 sm:p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-start sm:items-center gap-2.5 sm:gap-3">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-start sm:items-center gap-2.5 sm:gap-3">
               <span className="material-symbols-outlined text-emerald-500 text-xl sm:text-2xl shrink-0 mt-0.5 sm:mt-0">check_circle</span>
               <div className="min-w-0">
                 <p className="font-bold text-xs sm:text-sm">Voucher Ativo na sua Conta!</p>
@@ -128,11 +130,11 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({ isOpen, onClose }) =
             </div>
           )}
 
-          <form onSubmit={handleActivate} className="space-y-4 sm:space-y-6">
+          <form onSubmit={handleActivate} className="space-y-4 sm:space-y-5">
             {/* Visual Voucher Ticket Box */}
             <div className="relative bg-gradient-to-r from-purple-700 to-indigo-800 text-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xl border border-purple-500/30 overflow-hidden min-w-0">
               <div className="flex items-center justify-between gap-3 min-w-0">
-                <div className="space-y-1 min-w-0">
+                <div className="space-y-1 min-w-0 flex-1">
                   <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest opacity-75">VOUCHER CÓDIGO</span>
                   <div className="text-xl sm:text-2xl font-black tracking-wider font-mono text-purple-200 truncate">
                     {code || 'DIGITE SEU CÓDIGO'}
@@ -151,24 +153,24 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({ isOpen, onClose }) =
 
             {/* Input Field */}
             <div>
-              <label className="block text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5 sm:mb-2">
+              <label className="block text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
                 Código do Voucher Promocional
               </label>
-              <div className="relative">
+              <div className="relative flex items-center">
                 <input
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="EX: SALYA60D"
-                  className="w-full pl-4 sm:pl-5 pr-24 py-3.5 sm:py-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-base sm:text-lg font-black tracking-wider focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all uppercase disabled:opacity-60"
+                  className="w-full pl-4 sm:pl-5 pr-24 py-3 sm:py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-base sm:text-lg font-black tracking-wider focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all uppercase disabled:opacity-60"
                   disabled={loading || isVoucherActive}
                 />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] sm:text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/60 px-2 sm:px-2.5 py-1 rounded-lg pointer-events-none">
+                <span className="absolute right-3 text-[10px] sm:text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/60 border border-purple-300/30 px-2 sm:px-2.5 py-1 rounded-lg pointer-events-none">
                   60D FREE
                 </span>
               </div>
               {errorMsg && (
-                <div className="mt-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/30 p-2.5 sm:p-3 rounded-xl border border-rose-200 dark:border-rose-900/40">
+                <div className="mt-2 text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/30 p-2.5 sm:p-3 rounded-xl border border-rose-200 dark:border-rose-900/40">
                   <span className="material-symbols-outlined text-base shrink-0">error</span>
                   <span className="leading-tight">{errorMsg}</span>
                 </div>
