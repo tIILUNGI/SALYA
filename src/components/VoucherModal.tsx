@@ -13,12 +13,18 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({ isOpen, onClose }) =
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const { refreshSubscriptionStatus, refreshData } = useContext(AppContext);
+  const { refreshSubscriptionStatus, refreshData, user } = useContext(AppContext);
 
   if (!isOpen) return null;
 
+  const isVoucherActive = user?.subscriptionStatus === 'ATIVA' && user?.planType !== 'ADMIN';
+
   const handleActivate = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (isVoucherActive) {
+      setErrorMsg('A sua conta já possui um voucher ativo (SALYA60D).');
+      return;
+    }
     if (!code.trim()) {
       setErrorMsg('Por favor introduza o código do voucher.');
       return;
@@ -110,6 +116,18 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({ isOpen, onClose }) =
 
         {/* Voucher Input & Visual Ticket Body */}
         <div className="p-8">
+          {isVoucherActive && (
+            <div className="mb-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-3">
+              <span className="material-symbols-outlined text-emerald-500 text-2xl shrink-0">check_circle</span>
+              <div>
+                <p className="font-bold text-sm">Voucher Ativo na sua Conta!</p>
+                <p className="text-emerald-700 dark:text-emerald-400 text-[11px] mt-0.5">
+                  A sua conta já possui o benefício do voucher ativado com acesso total ilimitado.
+                </p>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleActivate} className="space-y-6">
             {/* Visual Voucher Ticket Box */}
             <div className="relative bg-gradient-to-r from-purple-700 to-indigo-800 text-white rounded-3xl p-5 shadow-xl border border-purple-500/30 overflow-hidden">
@@ -142,8 +160,8 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({ isOpen, onClose }) =
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="EX: SALYA60D"
-                  className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-lg font-black tracking-wider focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all uppercase"
-                  disabled={loading}
+                  className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-lg font-black tracking-wider focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all uppercase disabled:opacity-60"
+                  disabled={loading || isVoucherActive}
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/60 px-2.5 py-1 rounded-lg">
                   60D FREE
@@ -160,13 +178,22 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({ isOpen, onClose }) =
             {/* Submit CTA Button */}
             <button
               type="submit"
-              disabled={loading || !code.trim()}
-              className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-lg shadow-purple-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+              disabled={loading || !code.trim() || isVoucherActive}
+              className={`w-full py-4 font-black text-sm uppercase tracking-widest rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 ${
+                isVoucherActive
+                  ? 'bg-emerald-600 text-white cursor-not-allowed opacity-90'
+                  : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-purple-500/25 disabled:opacity-50 disabled:pointer-events-none'
+              }`}
             >
               {loading ? (
                 <>
                   <div className="size-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>A ATIVAR VOUCHER...</span>
+                </>
+              ) : isVoucherActive ? (
+                <>
+                  <span className="material-symbols-outlined text-lg">check_circle</span>
+                  <span>VOUCHER JÁ ATIVADO</span>
                 </>
               ) : (
                 <>

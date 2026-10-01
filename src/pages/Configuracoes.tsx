@@ -105,7 +105,7 @@ const mapEmpresaToConfig = (emp: any): ConfiguraçãoEmpresa => ({
 const CONFIG_TAB_IDS = ['empresa', 'impostos', 'processamento', 'gestao', 'acesso', 'assinatura'] as const;
 
 const Configurações: React.FC = () => {
-  const { user, empresa, setEmpresa, isConfigured, setIsConfigured, empresas, empresaId, setEmpresaId, refreshData, setMessage, effectivePlan } = useContext(AppContext);
+  const { user, empresa, setEmpresa, isConfigured, setIsConfigured, empresas, empresaId, setEmpresaId, refreshData, refreshSubscriptionStatus, setMessage, effectivePlan } = useContext(AppContext);
 
   const navigate = useNavigate();
   const { tab: tabParam } = useParams<{ tab?: string }>();
@@ -1445,6 +1445,37 @@ const Configurações: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Indicador Visual de Voucher Ativo */}
+                {user?.subscriptionStatus === 'ATIVA' && user?.planType !== 'ADMIN' && (
+                  <div className="bg-gradient-to-r from-purple-900/90 via-indigo-900/90 to-slate-900 border border-purple-500/40 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="size-14 rounded-2xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-3xl text-yellow-300">workspace_premium</span>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-widest bg-yellow-400/20 text-yellow-300 border border-yellow-400/30 px-2.5 py-0.5 rounded-full">
+                            Voucher Promocional Ativo
+                          </span>
+                          <span className="text-xs text-purple-200 font-bold font-mono">SALYA60D</span>
+                        </div>
+                        <h4 className="text-lg font-black text-white">Benefício Promocional Salya Ativado</h4>
+                        <p className="text-xs text-purple-100/80 font-medium">
+                          A sua conta está associada ao Voucher Promocional Salya com acesso total ativo. Pode trocar de plano sem qualquer custo adicional durante a validade do seu voucher.
+                        </p>
+                      </div>
+                    </div>
+                    {user?.subscriptionExpiry && (
+                      <div className="text-right shrink-0 bg-white/10 px-4 py-3 rounded-2xl border border-white/15">
+                        <p className="text-[10px] font-bold text-purple-200 uppercase tracking-widest">Validade do Voucher</p>
+                        <p className="text-sm font-black text-white font-mono mt-0.5">
+                          {new Date(user.subscriptionExpiry).toLocaleDateString('pt-AO')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Card Promocional do Voucher SALYA60D */}
                 <div className="bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-purple-500/30">
                   <div className="space-y-2 text-center md:text-left">
@@ -1457,13 +1488,23 @@ const Configurações: React.FC = () => {
                       Ative o voucher <strong>SALYA60D</strong> para usufruir do plano Corporativo gratuitamente com emissão de recibos, relatórios e gestão completa durante 60 dias.
                     </p>
                   </div>
-                  <button
-                    onClick={() => setShowVoucherModal(true)}
-                    className="px-6 py-4 bg-white text-purple-900 font-black rounded-2xl text-xs uppercase tracking-wider hover:bg-purple-50 transition-all shadow-lg shrink-0 flex items-center gap-2"
-                  >
-                    <span className="material-symbols-outlined text-purple-700">redeem</span>
-                    Ativar Voucher 60D
-                  </button>
+                  {user?.subscriptionStatus === 'ATIVA' && user?.planType !== 'ADMIN' ? (
+                    <button
+                      disabled
+                      className="px-6 py-4 bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-black rounded-2xl text-xs uppercase tracking-wider cursor-not-allowed shrink-0 flex items-center gap-2 opacity-95"
+                    >
+                      <span className="material-symbols-outlined text-emerald-400">check_circle</span>
+                      Voucher Ativo
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setShowVoucherModal(true)}
+                      className="px-6 py-4 bg-white text-purple-900 font-black rounded-2xl text-xs uppercase tracking-wider hover:bg-purple-50 transition-all shadow-lg shrink-0 flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-purple-700">redeem</span>
+                      Ativar Voucher 60D
+                    </button>
+                  )}
                 </div>
 
                 {/* Modal Voucher */}
@@ -1559,6 +1600,8 @@ const Configurações: React.FC = () => {
                       { text: 'Simulador de 13º & Rescisão', allowed: true },
                     ];
 
+                    const hasUserActiveVoucher = user?.subscriptionStatus === 'ATIVA' && user?.planType !== 'ADMIN';
+
                     return (
                       <div
                         key={p.id}
@@ -1617,7 +1660,35 @@ const Configurações: React.FC = () => {
                         {/* Botão */}
                         <button
                           onClick={() => {
-                            if (!isCurrent && !isDemo && !isCorporativo) {
+                            if (hasUserActiveVoucher && !isCurrent) {
+                              Swal.fire({
+                                title: 'Mudar de Plano (Gratuito)',
+                                html: `Você possui um <b>Voucher Promocional Ativo</b>!<br/><br/>A alteração para o plano <b>${displayName}</b> é 100% gratuita e imediata.`,
+                                icon: 'info',
+                                showCancelButton: true,
+                                confirmButtonText: 'Confirmar Alteração',
+                                cancelButtonText: 'Cancelar',
+                                confirmButtonColor: '#9333ea',
+                                customClass: { popup: 'rounded-3xl', confirmButton: 'rounded-2xl px-5 py-3 font-bold uppercase text-xs' }
+                              }).then(async (result) => {
+                                if (result.isConfirmed) {
+                                  try {
+                                    await api.post(`/plans/${p.id}/subscribe`, { billingCycle: subBillingCycle });
+                                    await refreshData();
+                                    await refreshSubscriptionStatus();
+                                    Swal.fire({
+                                      icon: 'success',
+                                      title: 'PLANO ALTERADO!',
+                                      text: `A sua conta foi atualizada para o plano ${displayName} com sucesso!`,
+                                      confirmButtonColor: '#9333ea',
+                                      customClass: { popup: 'rounded-3xl' }
+                                    });
+                                  } catch (err: any) {
+                                    Swal.fire('Erro', 'Não foi possível alterar o plano.', 'error');
+                                  }
+                                }
+                              });
+                            } else if (!isCurrent && !isDemo && !isCorporativo) {
                               openBillingModal(p.id, displayName, isMicro, isRecommended);
                             } else if (isCorporativo) {
                               openCorporativoModal(p.id, displayName);
@@ -1630,7 +1701,7 @@ const Configurações: React.FC = () => {
                               : 'bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20'
                           }`}
                         >
-                          {isCurrent ? 'Plano Actual' : isDemo ? 'Indisponível' : isCorporativo ? 'Solicitar / Personalizar' : 'Escolher Plano'}
+                          {isCurrent ? 'Plano Actual' : isDemo ? 'Indisponível' : isCorporativo ? (hasUserActiveVoucher ? 'Alternar Plano' : 'Solicitar / Personalizar') : (hasUserActiveVoucher ? 'Alternar Grátis' : 'Escolher Plano')}
                         </button>
                       </div>
                     );

@@ -165,7 +165,7 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
               onClick={() => setShowVoucherModal(true)}
               className="px-3 py-1 bg-white/15 hover:bg-white/25 rounded-lg text-[11px] font-bold text-white border border-white/20"
             >
-              Adicionar Voucher
+              Ver Status do Voucher
             </button>
             <button
               onClick={() => { sessionStorage.setItem('salya_voucher_banner_dismissed', '1'); setDismissedVoucherBanner(true); }}
