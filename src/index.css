@@ -89,7 +89,13 @@ h1, h2, h3, h4, .font-app {
 /* --- FIM TEMA PROFISSIONAL --- */
 
 .material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', sans-serif;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-display: block;
+}
+
+html:not(.fonts-loaded) .material-symbols-outlined {
+  color: transparent !important;
 }
 
 ::-webkit-scrollbar {

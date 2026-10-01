@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 import { AppContext } from '../App';
+import { VoucherModal } from '../components/VoucherModal';
 import { api, getLogoUrl } from '../services/api';
 import { countries } from '../data/countries';
 import { getPlanLimits } from '../types';
@@ -175,6 +176,7 @@ const Configurações: React.FC = () => {
   const [logoLoading, setLogoLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
 
 
   // Sincronizar quando a empresa mudar via switcher
@@ -1442,6 +1444,30 @@ const Configurações: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Card Promocional do Voucher SALYA60D */}
+                <div className="bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-purple-500/30">
+                  <div className="space-y-2 text-center md:text-left">
+                    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-1 rounded-full text-[10px] font-black tracking-widest text-purple-200 uppercase">
+                      <span className="material-symbols-outlined text-yellow-300 text-sm">confirmation_number</span>
+                      VOUCHER PROMOCIONAL SALYA 60D
+                    </div>
+                    <h3 className="text-2xl font-black uppercase tracking-tight">Ganha 60 Dias Grátis de Acesso Total</h3>
+                    <p className="text-xs text-purple-100/90 max-w-xl font-medium">
+                      Ative o voucher <strong>SALYA60D</strong> para usufruir do plano Corporativo gratuitamente com emissão de recibos, relatórios e gestão completa durante 60 dias.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowVoucherModal(true)}
+                    className="px-6 py-4 bg-white text-purple-900 font-black rounded-2xl text-xs uppercase tracking-wider hover:bg-purple-50 transition-all shadow-lg shrink-0 flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-purple-700">redeem</span>
+                    Ativar Voucher 60D
+                  </button>
+                </div>
+
+                {/* Modal Voucher */}
+                <VoucherModal isOpen={showVoucherModal} onClose={() => setShowVoucherModal(false)} />
 
                 {/* Seletor de Modalidade Mensal / Anual */}
                 <div className="flex items-center justify-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">

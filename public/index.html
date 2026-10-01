@@ -20,24 +20,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" as="style" />
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0&display=block" as="style" />
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0&display=optional" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0&display=block" rel="stylesheet" />
 
     <!-- Prevent FOUC: hide root until fonts are ready, show a minimal loading screen -->
     <style>
-      html { background: #0f172a; }
+      html { background: #f8fafc; }
       #root {
-        opacity: 0;
+        opacity: 1;
         transition: opacity 0.2s ease;
       }
       #root.fonts-ready {
         opacity: 1;
       }
-      /* Prevent Material Symbols from showing as text before font loads */
       .material-symbols-outlined {
-        font-family: 'Material Symbols Outlined';
+        font-family: 'Material Symbols Outlined', sans-serif;
         font-size: 24px;
         font-weight: normal;
         font-style: normal;
@@ -51,11 +51,10 @@
         -webkit-font-feature-settings: 'liga';
         font-feature-settings: 'liga';
         -webkit-font-smoothing: antialiased;
-        /* Hide icon text until font is loaded */
-        visibility: hidden;
+        font-display: block;
       }
-      .fonts-loaded .material-symbols-outlined {
-        visibility: visible;
+      html:not(.fonts-loaded) .material-symbols-outlined {
+        color: transparent !important;
       }
       /* Minimal loading splash */
       #salya-splash {
@@ -103,25 +102,43 @@
     <div id="root"></div>
 
     <script>
-      // Show app and hide splash after fonts + first paint
-      function revealApp() {
-        document.documentElement.classList.add('fonts-loaded');
-        document.getElementById('root').classList.add('fonts-ready');
+      var splashHidden = false;
+      function hideSplash() {
+        if (splashHidden) return;
+        splashHidden = true;
+        var root = document.getElementById('root');
+        if (root) root.classList.add('fonts-ready');
         var splash = document.getElementById('salya-splash');
         if (splash) {
           splash.classList.add('hidden');
-          setTimeout(function() { splash.remove(); }, 350);
+          setTimeout(function() { if (splash && splash.parentNode) splash.remove(); }, 350);
         }
       }
 
-      if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(revealApp);
-      } else {
-        // Fallback: reveal after 800ms
-        setTimeout(revealApp, 800);
+      function markFontsLoaded() {
+        document.documentElement.classList.add('fonts-loaded');
       }
-      // Hard fallback: always reveal after 2s regardless
-      setTimeout(revealApp, 2000);
+
+      if (document.fonts && document.fonts.load) {
+        Promise.all([
+          document.fonts.load('24px "Material Symbols Outlined"'),
+          document.fonts.load('400 16px "Inter"')
+        ]).then(function() {
+          markFontsLoaded();
+          hideSplash();
+        }).catch(function() {
+          markFontsLoaded();
+          hideSplash();
+        });
+      } else if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function() {
+          markFontsLoaded();
+          hideSplash();
+        });
+      }
+
+      setTimeout(hideSplash, 600);
+      setTimeout(hideSplash, 1500);
 
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {

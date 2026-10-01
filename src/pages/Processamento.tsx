@@ -355,7 +355,10 @@ const Processamento: React.FC = () => {
   }, [historico, selectedHistoryPeriod]);
 
   const loadHistórico = useCallback(async () => {
-    if (!empresaId) return;
+    if (!empresaId) {
+      setHistoricoLoadedOnce(true);
+      return;
+    }
 
     const cacheKey = `processamento-historico:${empresaId}`;
     const cachedSnapshot = processamentoHistoricoCacheRef.get(cacheKey);
@@ -370,12 +373,55 @@ const Processamento: React.FC = () => {
     setHistóricoError('');
     try {
       const data = await api.get(`/processamentos/historico?empresaId=${empresaId}`);
-      const nextData = Array.isArray(data) ? data : [];
+      const nextData = Array.isArray(data)
+        ? data.map((item: any) => {
+            const inss = Number(item.valorINSS || 0);
+            const irt = Number(item.valorIRT || 0);
+            const faltas = Number(item.valorFaltas || item.faltasTotal || item.faltas || 0);
+            const retFerias = Number(item.retencaoFerias || 0);
+            const retNatal = Number(item.retencaoNatal || 0);
+            const outrosDesc = Number(item.outrosDescontos || item.outrosDescontosTotal || 0);
+
+            const sumComponents = inss + irt + faltas + retFerias + retNatal + outrosDesc;
+
+            const totalBruto = typeof item.totalBruto === 'number' ? item.totalBruto : (typeof item.salarioBruto === 'number' ? item.salarioBruto : Number(item.totalBruto || item.salarioBruto || 0));
+            const salarioLiquido = typeof item.salarioLiquido === 'number' ? item.salarioLiquido : Number(item.salarioLiquido || 0);
+            const diffBrutoLiquido = (totalBruto > 0 && salarioLiquido > 0 && totalBruto > salarioLiquido) ? (totalBruto - salarioLiquido) : 0;
+
+            const numDescontos = item.descontos !== undefined && item.descontos !== null ? Number(item.descontos) : null;
+            const numTotalDescontos = item.totalDescontos !== undefined && item.totalDescontos !== null ? Number(item.totalDescontos) : null;
+
+            let calculatedDiscount = 0;
+            if (numDescontos !== null && !isNaN(numDescontos) && numDescontos > 0) {
+              calculatedDiscount = numDescontos;
+            } else if (numTotalDescontos !== null && !isNaN(numTotalDescontos) && numTotalDescontos > 0) {
+              calculatedDiscount = numTotalDescontos;
+            } else if (sumComponents > 0) {
+              calculatedDiscount = sumComponents;
+            } else if (diffBrutoLiquido > 0) {
+              calculatedDiscount = diffBrutoLiquido;
+            } else if (numDescontos !== null && !isNaN(numDescontos)) {
+              calculatedDiscount = numDescontos;
+            } else if (numTotalDescontos !== null && !isNaN(numTotalDescontos)) {
+              calculatedDiscount = numTotalDescontos;
+            }
+
+            return {
+              ...item,
+              descontos: calculatedDiscount,
+              totalDescontos: calculatedDiscount,
+              valorINSS: inss,
+              valorIRT: irt,
+              valorFaltas: faltas,
+            };
+          })
+        : [];
       processamentoHistoricoCacheRef.set(cacheKey, { loadedAt: Date.now(), data: nextData });
       setHistórico(nextData);
+      setHistoricoLoadedOnce(true);
     } catch (error: any) {
-      setHistórico([]);
       console.error('Erro ao carregar histórico:', error);
+      setHistóricoError('Não foi possível carregar o histórico. Tente novamente.');
     } finally {
       setHistóricoLoading(false);
       setHistoricoLoadedOnce(true);
@@ -1368,6 +1414,7 @@ const Processamento: React.FC = () => {
                               <div className="text-[9px] text-slate-400 space-x-1.5 hidden sm:block">
                                 <span>INSS: {formatMoney(item.valorINSS)}</span>
                                 <span>IRT: {formatMoney(item.valorIRT)}</span>
+                                {(item.valorFaltas || 0) > 0 && <span>Faltas: {formatMoney(item.valorFaltas)}</span>}
                               </div>
                             </td>
                             <td className="px-4 py-3 text-right font-black text-emerald-600 text-sm">{formatMoney(item.salarioLiquido)}</td>

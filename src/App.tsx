@@ -9,6 +9,7 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
 import { SalyaCopilotModal } from './components/SalyaCopilotModal';
+import { VoucherModal } from './components/VoucherModal';
 import { Colaborador, Empresa } from './types';
 import { api, getRefreshToken, setAuthToken, clearAuthStorage, API_BASE_URL } from './services/api';
 import { notify } from './utils/notifications';
@@ -614,6 +615,7 @@ function SubscriptionBarrier() {
   const [paymentRef, setPaymentRef] = React.useState<{ referencia: string; entidade: string; valor: number; expira?: string } | null>(null);
   const [verifyingPayment, setVerifyingPayment] = React.useState(false);
   const [verifyMsg, setVerifyMsg] = React.useState('');
+  const [showVoucherModal, setShowVoucherModal] = React.useState(false);
   
   // Ref para controlar tentativas de verificação
   const checkAttemptsRef = React.useRef(0);
@@ -1208,6 +1210,13 @@ function SubscriptionBarrier() {
               {info.showCheck ? 'Solicitar Nova Assinatura' : 'Escolher Plano'}
             </button>
             <button 
+              onClick={() => setShowVoucherModal(true)}
+              className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-purple-500/25 transition-all flex items-center justify-center gap-3"
+            >
+              <span className="material-symbols-outlined text-yellow-300">confirmation_number</span>
+              Possui Voucher? Ativar 60D Grátis
+            </button>
+            <button 
               onClick={() => { 
                 localStorage.clear();
                 localStorage.removeItem('salya_request_sent');
@@ -1225,6 +1234,7 @@ function SubscriptionBarrier() {
           </p>
         </div>
       </div>
+      <VoucherModal isOpen={showVoucherModal} onClose={() => setShowVoucherModal(false)} />
     </div>
   );
 }

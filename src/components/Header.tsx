@@ -1,10 +1,11 @@
-import React, { useState, useContext, useEffect, useCallback } from 'react';
+import React, { useState, useContext, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { AppContext } from '../App';
 import { api } from '../services/api';
 import GlobalSearch from './GlobalSearch';
 import { OnboardingTourModal } from './OnboardingTourModal';
+import { VoucherModal } from './VoucherModal';
 
 interface LocalNotification {
   id: string;
@@ -21,6 +22,22 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<LocalNotification[]>([]);
   const [showBanner, setShowBanner] = useState(false);
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [dismissedVoucherBanner, setDismissedVoucherBanner] = useState(
+    () => sessionStorage.getItem('salya_voucher_banner_dismissed') === '1'
+  );
+
+  // Calcula dias restantes do voucher
+  const voucherDaysLeft = useMemo(() => {
+    if (!user?.planType || user.planType !== 'CORPORATIVO') return null;
+    if (user.subscriptionStatus !== 'ATIVA') return null;
+    if (!user.subscriptionExpiry) return null;
+    const expiry = new Date(user.subscriptionExpiry);
+    const now = new Date();
+    const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : null;
+  }, [user?.planType, user?.subscriptionStatus, user?.subscriptionExpiry]);
+
   useEffect(() => {
     document.documentElement.classList.remove('dark');
     localStorage.setItem('theme', 'light');
@@ -131,6 +148,35 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
         onClose={() => setShowTour(false)}
         onNavigate={(path) => navigate(path)}
       />
+      <VoucherModal isOpen={showVoucherModal} onClose={() => setShowVoucherModal(false)} />
+
+      {/* Banner: Voucher ativo com dias restantes */}
+      {voucherDaysLeft !== null && !dismissedVoucherBanner && (
+        <div className="bg-gradient-to-r from-purple-700 to-indigo-700 px-4 py-2 flex items-center justify-between gap-4 z-20 relative">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-yellow-300 text-sm">confirmation_number</span>
+            <p className="text-sm font-bold text-white">
+              Voucher <span className="text-yellow-300 font-black">SALYA60D</span> ativo
+              <span className="ml-2 text-purple-200 font-medium">— {voucherDaysLeft} {voucherDaysLeft === 1 ? 'dia restante' : 'dias restantes'}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowVoucherModal(true)}
+              className="px-3 py-1 bg-white/15 hover:bg-white/25 rounded-lg text-[11px] font-bold text-white border border-white/20"
+            >
+              Adicionar Voucher
+            </button>
+            <button
+              onClick={() => { sessionStorage.setItem('salya_voucher_banner_dismissed', '1'); setDismissedVoucherBanner(true); }}
+              className="p-1 hover:bg-white/20 rounded"
+            >
+              <span className="material-symbols-outlined text-white text-sm">close</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {showBanner && (
         <div className="bg-primary px-4 py-2 flex items-center justify-between gap-4 z-20 relative">
           <div className="flex items-center gap-2">
