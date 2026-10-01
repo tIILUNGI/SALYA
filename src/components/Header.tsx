@@ -152,24 +152,25 @@ const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
 
       {/* Banner: Voucher ativo com dias restantes */}
       {voucherDaysLeft !== null && !dismissedVoucherBanner && (
-        <div className="bg-gradient-to-r from-purple-700 to-indigo-700 px-4 py-2 flex items-center justify-between gap-4 z-20 relative">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-yellow-300 text-sm">confirmation_number</span>
-            <p className="text-sm font-bold text-white">
+        <div className="bg-gradient-to-r from-purple-700 to-indigo-700 px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 z-20 relative text-center sm:text-left">
+          <div className="flex items-center justify-center sm:justify-start gap-2 min-w-0">
+            <span className="material-symbols-outlined text-yellow-300 text-sm shrink-0">confirmation_number</span>
+            <p className="text-xs sm:text-sm font-bold text-white leading-tight break-words">
               Voucher <span className="text-yellow-300 font-black">SALYA60D</span> ativo
-              <span className="ml-2 text-purple-200 font-medium">— {voucherDaysLeft} {voucherDaysLeft === 1 ? 'dia restante' : 'dias restantes'}</span>
+              <span className="ml-1.5 sm:ml-2 text-purple-200 font-medium whitespace-nowrap">— {voucherDaysLeft} {voucherDaysLeft === 1 ? 'dia restante' : 'dias restantes'}</span>
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setShowVoucherModal(true)}
-              className="px-3 py-1 bg-white/15 hover:bg-white/25 rounded-lg text-[11px] font-bold text-white border border-white/20"
+              className="px-2.5 sm:px-3 py-1 bg-white/15 hover:bg-white/25 rounded-lg text-[10px] sm:text-[11px] font-bold text-white border border-white/20 whitespace-nowrap"
             >
               Ver Status do Voucher
             </button>
             <button
               onClick={() => { sessionStorage.setItem('salya_voucher_banner_dismissed', '1'); setDismissedVoucherBanner(true); }}
-              className="p-1 hover:bg-white/20 rounded"
+              className="p-1 hover:bg-white/20 rounded shrink-0"
+              title="Fechar Banner"
             >
               <span className="material-symbols-outlined text-white text-sm">close</span>
             </button>

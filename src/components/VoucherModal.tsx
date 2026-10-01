@@ -85,73 +85,73 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({ isOpen, onClose }) =
   };
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-lg w-full overflow-hidden border border-purple-100 dark:border-purple-900/40 relative">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-[2.5rem] shadow-2xl max-w-lg w-full max-h-[95vh] overflow-y-auto border border-purple-100 dark:border-purple-900/40 relative my-auto">
         {/* Fechar modal */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 z-10 size-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center transition-all"
+          className="absolute top-3.5 right-3.5 sm:top-5 sm:right-5 z-10 size-8 sm:size-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center transition-all"
         >
-          <span className="material-symbols-outlined text-xl">close</span>
+          <span className="material-symbols-outlined text-lg sm:text-xl">close</span>
         </button>
 
         {/* Top Header Design Banner */}
-        <div className="bg-gradient-to-br from-purple-900 via-purple-700 to-indigo-800 p-8 text-white text-center relative overflow-hidden">
+        <div className="bg-gradient-to-br from-purple-900 via-purple-700 to-indigo-800 p-5 sm:p-8 text-white text-center relative overflow-hidden">
           {/* Subtle background blur shapes */}
           <div className="absolute -top-10 -right-10 size-40 bg-purple-400/20 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute -bottom-10 -left-10 size-40 bg-indigo-400/20 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-full mb-4">
-            <span className="material-symbols-outlined text-yellow-300 text-sm">workspace_premium</span>
-            <span className="text-[11px] font-black tracking-widest uppercase text-purple-100">PROMOÇÃO ESPECIAL</span>
+          <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1 rounded-full mb-3 sm:mb-4">
+            <span className="material-symbols-outlined text-yellow-300 text-xs sm:text-sm">workspace_premium</span>
+            <span className="text-[10px] sm:text-[11px] font-black tracking-widest uppercase text-purple-100">PROMOÇÃO ESPECIAL</span>
           </div>
 
-          <h2 className="text-3xl font-black tracking-tight mb-2 uppercase">
-            SALYA 60D <span className="text-purple-300 block text-2xl font-extrabold mt-1">60 DIAS GRÁTIS</span>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-1.5 sm:mb-2 uppercase">
+            SALYA 60D <span className="text-purple-300 block text-xl sm:text-2xl font-extrabold mt-0.5 sm:mt-1">60 DIAS GRÁTIS</span>
           </h2>
-          <p className="text-xs text-purple-100/90 max-w-xs mx-auto font-medium">
+          <p className="text-[11px] sm:text-xs text-purple-100/90 max-w-xs mx-auto font-medium leading-relaxed">
             Ganhe um voucher para usar o Salya gratuitamente com acesso total durante 60 dias.
           </p>
         </div>
 
         {/* Voucher Input & Visual Ticket Body */}
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           {isVoucherActive && (
-            <div className="mb-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-3">
-              <span className="material-symbols-outlined text-emerald-500 text-2xl shrink-0">check_circle</span>
-              <div>
-                <p className="font-bold text-sm">Voucher Ativo na sua Conta!</p>
-                <p className="text-emerald-700 dark:text-emerald-400 text-[11px] mt-0.5">
+            <div className="mb-5 p-3.5 sm:p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-start sm:items-center gap-2.5 sm:gap-3">
+              <span className="material-symbols-outlined text-emerald-500 text-xl sm:text-2xl shrink-0 mt-0.5 sm:mt-0">check_circle</span>
+              <div className="min-w-0">
+                <p className="font-bold text-xs sm:text-sm">Voucher Ativo na sua Conta!</p>
+                <p className="text-emerald-700 dark:text-emerald-400 text-[10px] sm:text-[11px] mt-0.5 leading-tight">
                   A sua conta já possui o benefício do voucher ativado com acesso total ilimitado.
                 </p>
               </div>
             </div>
           )}
 
-          <form onSubmit={handleActivate} className="space-y-6">
+          <form onSubmit={handleActivate} className="space-y-4 sm:space-y-6">
             {/* Visual Voucher Ticket Box */}
-            <div className="relative bg-gradient-to-r from-purple-700 to-indigo-800 text-white rounded-3xl p-5 shadow-xl border border-purple-500/30 overflow-hidden">
-              <div className="flex items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-black uppercase tracking-widest opacity-75">VOUCHER CÓDIGO</span>
-                  <div className="text-2xl font-black tracking-wider font-mono text-purple-200">
+            <div className="relative bg-gradient-to-r from-purple-700 to-indigo-800 text-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xl border border-purple-500/30 overflow-hidden min-w-0">
+              <div className="flex items-center justify-between gap-3 min-w-0">
+                <div className="space-y-1 min-w-0">
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest opacity-75">VOUCHER CÓDIGO</span>
+                  <div className="text-xl sm:text-2xl font-black tracking-wider font-mono text-purple-200 truncate">
                     {code || 'DIGITE SEU CÓDIGO'}
                   </div>
-                  <div className="flex items-center gap-1.5 text-[11px] text-purple-100 font-medium pt-1">
-                    <span className="material-symbols-outlined text-sm">calendar_month</span>
-                    <span>60 dias de uso grátis</span>
+                  <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-purple-100 font-medium pt-0.5">
+                    <span className="material-symbols-outlined text-xs sm:text-sm shrink-0">calendar_month</span>
+                    <span className="truncate">60 dias de uso grátis</span>
                   </div>
                 </div>
 
-                <div className="size-14 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 shrink-0">
-                  <span className="material-symbols-outlined text-3xl text-yellow-300">redeem</span>
+                <div className="size-11 sm:size-14 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 shrink-0">
+                  <span className="material-symbols-outlined text-2xl sm:text-3xl text-yellow-300">redeem</span>
                 </div>
               </div>
             </div>
 
             {/* Input Field */}
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">
+              <label className="block text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5 sm:mb-2">
                 Código do Voucher Promocional
               </label>
               <div className="relative">
@@ -160,17 +160,17 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({ isOpen, onClose }) =
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="EX: SALYA60D"
-                  className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-lg font-black tracking-wider focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all uppercase disabled:opacity-60"
+                  className="w-full pl-4 sm:pl-5 pr-24 py-3.5 sm:py-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-base sm:text-lg font-black tracking-wider focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all uppercase disabled:opacity-60"
                   disabled={loading || isVoucherActive}
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/60 px-2.5 py-1 rounded-lg">
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] sm:text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/60 px-2 sm:px-2.5 py-1 rounded-lg pointer-events-none">
                   60D FREE
                 </span>
               </div>
               {errorMsg && (
-                <div className="mt-3 text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/30 p-3 rounded-xl border border-rose-200 dark:border-rose-900/40">
-                  <span className="material-symbols-outlined text-base">error</span>
-                  <span>{errorMsg}</span>
+                <div className="mt-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/30 p-2.5 sm:p-3 rounded-xl border border-rose-200 dark:border-rose-900/40">
+                  <span className="material-symbols-outlined text-base shrink-0">error</span>
+                  <span className="leading-tight">{errorMsg}</span>
                 </div>
               )}
             </div>
@@ -179,7 +179,7 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({ isOpen, onClose }) =
             <button
               type="submit"
               disabled={loading || !code.trim() || isVoucherActive}
-              className={`w-full py-4 font-black text-sm uppercase tracking-widest rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 ${
+              className={`w-full py-3.5 sm:py-4 font-black text-xs sm:text-sm uppercase tracking-widest rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 ${
                 isVoucherActive
                   ? 'bg-emerald-600 text-white cursor-not-allowed opacity-90'
                   : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-purple-500/25 disabled:opacity-50 disabled:pointer-events-none'
@@ -187,18 +187,18 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({ isOpen, onClose }) =
             >
               {loading ? (
                 <>
-                  <div className="size-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="size-4 sm:size-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>A ATIVAR VOUCHER...</span>
                 </>
               ) : isVoucherActive ? (
                 <>
-                  <span className="material-symbols-outlined text-lg">check_circle</span>
+                  <span className="material-symbols-outlined text-base sm:text-lg">check_circle</span>
                   <span>VOUCHER JÁ ATIVADO</span>
                 </>
               ) : (
                 <>
                   <span>ATIVAR O TEU VOUCHER</span>
-                  <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                  <span className="material-symbols-outlined text-base sm:text-lg">arrow_forward</span>
                 </>
               )}
             </button>
