@@ -1534,7 +1534,9 @@ const SimulationModal: React.FC<{ show: boolean; onClose: () => void; isFixedCom
   const inss = (isPrestador || isEstagiario) ? 0 : calcularINSS(salario);
   const alimentacaoTrib = Math.max(0, alimentacao - 30000);
   const transporteTrib = Math.max(0, transporte - 30000);
-  const mc = roundMoney(Math.max(0, salario + alimentacaoTrib + transporteTrib + horasExtra + bonus - inss));
+  const mc = isPrestador
+    ? bruto
+    : roundMoney(Math.max(0, salario + alimentacaoTrib + transporteTrib + horasExtra + bonus - inss));
   const irt = calcularIRT(mc, isPrestador, empresaProp?.categoria === 'Particular');
   
   const retFerias = (incluirFerias && !isPrestador) ? roundMoney(vFerias * 0.15) : 0;
