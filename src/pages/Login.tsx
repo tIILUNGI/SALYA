@@ -69,6 +69,32 @@ const Login: React.FC = () => {
     setTimeout(() => setShake(false), 600);
   };
 
+  // Validação de força de senha — ISO/IEC 27001
+  const getPasswordStrength = (pw: string) => {
+    const checks = {
+      length:   pw.length >= 8,
+      upper:    /[A-Z]/.test(pw),
+      lower:    /[a-z]/.test(pw),
+      number:   /[0-9]/.test(pw),
+      special:  /[!@#$%^&*()_+\-=[\]{};':"|,.<>/?\\]/.test(pw),
+    };
+    const score = Object.values(checks).filter(Boolean).length;
+    return { checks, score };
+  };
+
+  const validatePasswordFrontend = (pw: string, name: string, email: string): string | null => {
+    if (!pw || pw.length < 8) return 'A palavra-passe deve ter no mínimo 8 caracteres.';
+    if (!/[A-Z]/.test(pw)) return 'A palavra-passe deve conter pelo menos uma letra maiúscula (A-Z).';
+    if (!/[a-z]/.test(pw)) return 'A palavra-passe deve conter pelo menos uma letra minúscula (a-z).';
+    if (!/[0-9]/.test(pw)) return 'A palavra-passe deve conter pelo menos um dígito (0-9).';
+    if (!/[!@#$%^&*()_+\-=[\]{};':"|,.<>/?\\]/.test(pw)) return 'A palavra-passe deve conter pelo menos um caractere especial (!@#$%...).'
+    const firstName = name?.trim().split(' ')[0]?.toLowerCase() || '';
+    if (firstName.length > 2 && pw.toLowerCase().includes(firstName)) return 'A palavra-passe não pode conter o seu nome.';
+    const emailPrefix = email?.split('@')[0]?.toLowerCase() || '';
+    if (emailPrefix.length > 2 && pw.toLowerCase().includes(emailPrefix)) return 'A palavra-passe não pode conter parte do seu email.';
+    return null;
+  };
+
   useEffect(() => {
     setIsLoading(true);
     const searchParams = new URLSearchParams(location.search);
@@ -138,6 +164,9 @@ const Login: React.FC = () => {
         });
         setEmail(error.body.email || email);
         navigate('/registar/verificar');
+      } else if (error.body?.minutesLeft) {
+        // Conta bloqueada temporariamente
+        showError(`Conta bloqueada por segurança. Tente novamente em ${error.body.minutesLeft} minuto(s).`);
       } else {
         const msg = getApiErrorMessage(error);
         if (msg.includes('sessão expirou') || msg.includes('Sessão expirada')) {
@@ -160,8 +189,11 @@ const Login: React.FC = () => {
       showError('As palavras-passe não coincidem.');
       return;
     }
-    if (password.length < 6) {
-      showError('A senha deve ter pelo menos 6 caracteres.');
+
+    // Validação local ISO 27001 (feedback rápido antes de ir ao servidor)
+    const pwError = validatePasswordFrontend(password, name, email);
+    if (pwError) {
+      showError(pwError);
       return;
     }
     if (!selectedPlan) {
@@ -268,8 +300,8 @@ const Login: React.FC = () => {
     try {
       await api.post('/auth/forgot-password', { email, frontendUrl: APP_URL }, true);
       setMessage({ 
-        title: 'Email Enviado', 
-        text: 'Se o email existir, receberá instruções de recuperação.', 
+        title: 'Verifica o teu Email', 
+        text: 'Se este email estiver associado a uma conta SALYA, recebers as instruções de recuperação em breve. Verifica também a pasta de spam. Dúvidas? Contacta-nos em suporte@salya.ao.', 
         type: 'info' 
       });
       navigate('/login');
@@ -544,7 +576,7 @@ const Login: React.FC = () => {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Nome Completo</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Nome Completo <span className="text-red-500">*</span></label>
                   <input 
                     type="text" 
                     value={name} 
@@ -555,7 +587,7 @@ const Login: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Profissional</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Profissional <span className="text-red-500">*</span></label>
                   <input 
                     type="email" 
                     value={email} 
@@ -567,28 +599,67 @@ const Login: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Senha</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Senha <span className="text-red-500">*</span></label>
                     <input 
                       type="password" 
                       value={password} 
                       onChange={(e) => setPassword(e.target.value)} 
-                      placeholder="••••••" 
+                      placeholder="Mín. 8 caracteres" 
                       className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all dark:text-white" 
                       required 
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Confirmar</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Confirmar <span className="text-red-500">*</span></label>
                     <input 
                       type="password" 
                       value={confirmPassword} 
                       onChange={(e) => setConfirmPassword(e.target.value)} 
-                      placeholder="••••••" 
+                      placeholder="Repita a senha" 
                       className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all dark:text-white" 
                       required 
                     />
                   </div>
                 </div>
+
+                {/* Indicador de força de senha — ISO 27001 */}
+                {password.length > 0 && (() => {
+                  const { checks, score } = getPasswordStrength(password);
+                  const colors = ['bg-red-500','bg-orange-500','bg-yellow-500','bg-blue-500','bg-emerald-500'];
+                  const labels = ['Muito fraca','Fraca','Média','Boa','Forte'];
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex gap-1">
+                        {[0,1,2,3,4].map(i => (
+                          <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                            i < score ? colors[score - 1] : 'bg-slate-200 dark:bg-slate-700'
+                          }`} />
+                        ))}
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-400">Força: <span className={score >= 4 ? 'text-emerald-500' : score >= 3 ? 'text-blue-500' : 'text-orange-500'}>{labels[score - 1] || 'Muito fraca'}</span></p>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5"  >
+                        {[
+                          { key: 'length', label: 'Mín. 8 caracteres' },
+                          { key: 'upper',  label: 'Letra maiúscula (A-Z)' },
+                          { key: 'lower',  label: 'Letra minúscula (a-z)' },
+                          { key: 'number', label: 'Número (0-9)' },
+                          { key: 'special',label: 'Caractere especial (!@#...)' },
+                        ].map(({ key, label }) => (
+                          <div key={key} className="flex items-center gap-1">
+                            <span className={`material-symbols-outlined text-[13px] ${
+                              checks[key as keyof typeof checks] ? 'text-emerald-500' : 'text-slate-300'
+                            }`}>{checks[key as keyof typeof checks] ? 'check_circle' : 'radio_button_unchecked'}</span>
+                            <span className={`text-[10px] font-medium ${
+                              checks[key as keyof typeof checks] ? 'text-emerald-500' : 'text-slate-400'
+                            }`}>{label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <p className="text-[10px] text-slate-400"><span className="text-red-500">*</span> Campos obrigatórios</p>
               </div>
 
               <div className="flex flex-col gap-3 pt-4">

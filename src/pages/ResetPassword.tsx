@@ -32,8 +32,25 @@ const ResetPassword: React.FC = () => {
       return;
     }
 
-    if (password.length < 6) {
-      Swal.fire('Erro', 'A palavra-passe deve ter no mínimo 6 caracteres.', 'error');
+    // Validação ISO 27001 — Controlo A.9.4.3
+    if (!password || password.length < 8) {
+      Swal.fire('Palavra-passe Fraca', 'A palavra-passe deve ter no mínimo 8 caracteres.', 'warning');
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      Swal.fire('Palavra-passe Fraca', 'A palavra-passe deve conter pelo menos uma letra maiúscula (A-Z).', 'warning');
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      Swal.fire('Palavra-passe Fraca', 'A palavra-passe deve conter pelo menos uma letra minúscula (a-z).', 'warning');
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      Swal.fire('Palavra-passe Fraca', 'A palavra-passe deve conter pelo menos um dígito (0-9).', 'warning');
+      return;
+    }
+    if (!/[!@#$%^&*()_+\-=[\]{};':"|,.<>/?\\]/.test(password)) {
+      Swal.fire('Palavra-passe Fraca', 'A palavra-passe deve conter pelo menos um caractere especial (!@#$%...).', 'warning');
       return;
     }
 
@@ -87,7 +104,7 @@ const ResetPassword: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">Nova Palavra-passe</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">Nova Palavra-passe <span className="text-red-500">*</span></label>
             <input
               type="password"
               value={password}
@@ -95,12 +112,37 @@ const ResetPassword: React.FC = () => {
               className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-medium"
               required
               disabled={isLoading}
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Mínimo 8 caracteres"
             />
+            {/* Indicador de força — ISO 27001 */}
+            {password.length > 0 && (() => {
+              const checks = {
+                length:  password.length >= 8,
+                upper:   /[A-Z]/.test(password),
+                lower:   /[a-z]/.test(password),
+                number:  /[0-9]/.test(password),
+                special: /[!@#$%^&*()_+\-=[\]{};':"|,.<>/?\\]/.test(password),
+              };
+              const score = Object.values(checks).filter(Boolean).length;
+              const colors = ['bg-red-500','bg-orange-500','bg-yellow-500','bg-blue-500','bg-emerald-500'];
+              const labels = ['Muito fraca','Fraca','Média','Boa','Forte'];
+              return (
+                <div className="mt-3 space-y-2">
+                  <div className="flex gap-1">
+                    {[0,1,2,3,4].map(i => (
+                      <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                        i < score ? colors[score - 1] : 'bg-slate-200'
+                      }`} />
+                    ))}
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400">Força: <span className={score >= 5 ? 'text-emerald-500' : score >= 3 ? 'text-blue-500' : 'text-orange-500'}>{labels[score - 1] || 'Muito fraca'}</span></p>
+                </div>
+              );
+            })()}
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">Confirmar Nova Palavra-passe</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">Confirmar Nova Palavra-passe <span className="text-red-500">*</span></label>
             <input
               type="password"
               value={confirmPassword}

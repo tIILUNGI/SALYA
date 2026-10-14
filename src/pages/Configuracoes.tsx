@@ -498,13 +498,53 @@ const Configurações: React.FC = () => {
     setConfig((prev) => ({ ...prev, logoUrl: undefined }));
   };
 
+  // ── Validações de formato angolano ──
+  const validateNIF = (nif: string): boolean => /^5\d{9}$/.test(nif);
+  const validateBI = (bi: string): boolean => /^\d{9}[A-Z]{2}\d{3}$/.test(bi.toUpperCase());
+  const validateTelefone = (tel: string): boolean => /^\+244\d{9}$/.test(tel.replace(/\s/g, ''));
+  const validateEmail = (email: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
   const handleSave = async () => {
-    if (!config.nome || !config.nif) {
-      setMessage({
-        title: 'ERRO!',
-        text: 'Por favor, preencha o Nome e o NIF antes de salvar.',
-        type: 'error'
-      });
+    // Campos obrigatórios
+    if (!config.nome?.trim()) {
+      setMessage({ title: 'CAMPO OBRIGATÓRIO!', text: `Por favor, preencha o ${config.categoria === 'Particular' ? 'Nome do Empregador' : 'Nome da Empresa'}.`, type: 'error' });
+      return;
+    }
+    if (!config.nif?.trim()) {
+      setMessage({ title: 'CAMPO OBRIGATÓRIO!', text: `Por favor, preencha o ${config.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF'}.`, type: 'error' });
+      return;
+    }
+    if (!config.telefone?.trim()) {
+      setMessage({ title: 'CAMPO OBRIGATÓRIO!', text: 'Por favor, preencha o Telefone.', type: 'error' });
+      return;
+    }
+    if (!config.email?.trim()) {
+      setMessage({ title: 'CAMPO OBRIGATÓRIO!', text: 'Por favor, preencha o E-mail.', type: 'error' });
+      return;
+    }
+
+    // Validação de formato NIF/BI
+    if (config.categoria === 'Particular') {
+      if (!validateBI(config.nif)) {
+        setMessage({ title: 'FORMATO INVÁLIDO!', text: 'O Nº de BI deve seguir o formato angolano: 9 dígitos + 2 letras + 3 dígitos (ex: 000000000LA000).', type: 'error' });
+        return;
+      }
+    } else {
+      if (!validateNIF(config.nif)) {
+        setMessage({ title: 'FORMATO INVÁLIDO!', text: 'O NIF deve ter exactamente 10 dígitos e começar pelo número 5 (ex: 5400000000).', type: 'error' });
+        return;
+      }
+    }
+
+    // Validação de formato Telefone
+    if (!validateTelefone(config.telefone)) {
+      setMessage({ title: 'FORMATO INVÁLIDO!', text: 'O Telefone deve seguir o formato angolano: +244 seguido de 9 dígitos (ex: +244912345678).', type: 'error' });
+      return;
+    }
+
+    // Validação de formato Email
+    if (!validateEmail(config.email)) {
+      setMessage({ title: 'FORMATO INVÁLIDO!', text: 'Por favor, insira um endereço de e-mail válido (ex: empresa@email.com).', type: 'error' });
       return;
     }
 
@@ -886,12 +926,32 @@ const Configurações: React.FC = () => {
                   <h3 className="font-black text-lg mb-6 uppercase tracking-wider text-slate-800 dark:text-white">Identidade</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{config.categoria === 'Particular' ? 'Nome do Empregador' : 'Nome da Empresa'}</label>
-                      <input type="text" value={config.nome || ''} placeholder={config.categoria === 'Particular' ? 'Ex: José da Silva' : 'Ex: SALYA Lda'} onChange={(e) => setConfig({...config, nome: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{config.categoria === 'Particular' ? 'Nome do Empregador' : 'Nome da Empresa'} <span className="text-red-500">*</span></label>
+                      <input type="text" value={config.nome || ''} placeholder={config.categoria === 'Particular' ? 'Ex: José da Silva' : 'Ex: SALYA Lda'} onChange={(e) => setConfig({...config, nome: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" required />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{config.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF'}</label>
-                      <input type="text" value={config.nif} onChange={(e) => setConfig({...config, nif: e.target.value.replace(/\D/g, '')})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder={config.categoria === 'Particular' ? 'Ex: 000000000LA000' : 'Ex: 500000001'} />
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{config.categoria === 'Particular' ? 'Nº BI/Passaporte' : 'NIF'} <span className="text-red-500">*</span></label>
+                      <input type="text" value={config.nif} onChange={(e) => {
+                        if (config.categoria === 'Particular') {
+                          // BI: permite dígitos e letras, max 14 chars
+                          setConfig({...config, nif: e.target.value.replace(/[^0-9A-Za-z]/g, '').slice(0, 14).toUpperCase()});
+                        } else {
+                          // NIF: apenas dígitos, max 10
+                          setConfig({...config, nif: e.target.value.replace(/\D/g, '').slice(0, 10)});
+                        }
+                      }} className={`w-full px-4 py-3 rounded-xl border bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary ${
+                        config.nif && (
+                          config.categoria === 'Particular'
+                            ? !/^\d{9}[A-Z]{2}\d{3}$/.test(config.nif)
+                            : !/^5\d{9}$/.test(config.nif)
+                        ) ? 'border-orange-400 dark:border-orange-500' : 'border-slate-200 dark:border-slate-700'
+                      }`} placeholder={config.categoria === 'Particular' ? 'Ex: 000000000LA000' : 'Ex: 5400000000'} required />
+                      {config.nif && config.categoria !== 'Particular' && !/^5\d{9}$/.test(config.nif) && (
+                        <p className="text-[9px] text-orange-500 mt-1 font-bold">Formato NIF: 10 dígitos, começando por 5</p>
+                      )}
+                      {config.nif && config.categoria === 'Particular' && !/^\d{9}[A-Z]{2}\d{3}$/.test(config.nif) && (
+                        <p className="text-[9px] text-orange-500 mt-1 font-bold">Formato BI: 9 dígitos + 2 letras + 3 dígitos (ex: 000000000LA000)</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Regime Fiscal</label>
@@ -925,6 +985,7 @@ const Configurações: React.FC = () => {
                         </div>
                       </div>
                     </div>
+                    <p className="text-[10px] text-slate-400 mt-4 md:col-span-2"><span className="text-red-500">*</span> Campos obrigatórios</p>
                   </div>
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -949,12 +1010,28 @@ const Configurações: React.FC = () => {
                       <input type="text" value={config.municipio} onChange={(e) => setConfig({...config, municipio: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Telefone</label>
-                      <input type="text" value={config.telefone} onChange={(e) => setConfig({...config, telefone: e.target.value.replace(/[^0-9+]/g, '').slice(0, 13)})} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder="+244912345678" />
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Telefone <span className="text-red-500">*</span></label>
+                      <input type="text" value={config.telefone} onChange={(e) => {
+                        let val = e.target.value.replace(/[^0-9+]/g, '');
+                        // Auto-adiciona +244 se o utilizador começar a digitar sem prefixo
+                        if (val && !val.startsWith('+') && !val.startsWith('244')) val = '+244' + val;
+                        if (val.startsWith('244') && !val.startsWith('+244')) val = '+' + val;
+                        setConfig({...config, telefone: val.slice(0, 13)});
+                      }} className={`w-full px-4 py-3 rounded-xl border bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary ${
+                        config.telefone && !/^\+244\d{9}$/.test(config.telefone.replace(/\s/g, '')) ? 'border-orange-400 dark:border-orange-500' : 'border-slate-200 dark:border-slate-700'
+                      }`} placeholder="+244912345678" required />
+                      {config.telefone && !/^\+244\d{9}$/.test(config.telefone.replace(/\s/g, '')) && (
+                        <p className="text-[9px] text-orange-500 mt-1 font-bold">Formato: +244 seguido de 9 dígitos (ex: +244912345678)</p>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">E-mail</label>
-                      <input type="email" value={config.email} onChange={(e) => setConfig({...config, email: e.target.value})} onBlur={(e) => { if (e.target.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value)) { setConfig({...config, email: ''}); }}} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary" placeholder="exemplo@email.com" />
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">E-mail <span className="text-red-500">*</span></label>
+                      <input type="email" value={config.email} onChange={(e) => setConfig({...config, email: e.target.value})} className={`w-full px-4 py-3 rounded-xl border bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-primary ${
+                        config.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(config.email) ? 'border-orange-400 dark:border-orange-500' : 'border-slate-200 dark:border-slate-700'
+                      }`} placeholder="exemplo@email.com" required />
+                      {config.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(config.email) && (
+                        <p className="text-[9px] text-orange-500 mt-1 font-bold">Formato de e-mail inválido</p>
+                      )}
                     </div>
                   </div>
                 </div>
